@@ -73,6 +73,40 @@ export const VEHICLE_CATALOGUE = {
     defaultColor: 0x1f4068, // Midnight Steel Blue
     bodyShape: 'suv',
   },
+  'sherpa-4x4': {
+    id: 'sherpa-4x4',
+    name: 'Sherpa 4x4',
+    category: 'Rugged Off-Roader',
+    description: 'Lifted heavy-duty 4x4 offroader with immense terrain clearance and solid collision mass.',
+    price: 5200,
+    unlockedByDefault: false,
+    topSpeed: 64,       // m/s (~230 km/h)
+    acceleration: 30,
+    braking: 35,
+    handling: 2.20,
+    grip: 0.98,
+    drift: 0.40,
+    weight: 2100,
+    defaultColor: 0x5a4d41, // Desert Sand Camo
+    bodyShape: 'offroad',
+  },
+  'apex-gt': {
+    id: 'apex-gt',
+    name: 'Apex GT Hypercar',
+    category: 'Expressway Hypercar',
+    description: 'Flagship carbon-fiber NCR hypercar engineered for 330+ km/h expressway domination.',
+    price: 9500,
+    unlockedByDefault: false,
+    topSpeed: 92,       // m/s (~331 km/h)
+    acceleration: 42,
+    braking: 45,
+    handling: 3.10,
+    grip: 0.97,
+    drift: 0.78,
+    weight: 1100,
+    defaultColor: 0x111317, // Stealth Carbon
+    bodyShape: 'hypercar',
+  },
 };
 
 export const VANTRA_RS = VEHICLE_CATALOGUE['vantra-rs'];
@@ -85,6 +119,7 @@ export const AVAILABLE_PAINTS = [
   { id: 'gold', name: 'Aravalli Gold', hex: 0xf5a623 },
   { id: 'silver', name: 'Silver Frost', hex: 0xe2e8f0 },
   { id: 'black', name: 'Stealth Phantom', hex: 0x111317 },
+  { id: 'purple', name: 'Sector 143 Neon Violet', hex: 0x8a2be2 },
 ];
 
 /**
@@ -103,10 +138,6 @@ export function buildVehicleMesh(vehicleDef = VANTRA_RS, customColor = null) {
     color: 0x0d131a,
     roughness: 0.1,
     metalness: 0.85,
-  });
-  const trimMat = new THREE.MeshStandardMaterial({
-    color: 0x181818,
-    roughness: 0.7,
   });
   const wheelMat = new THREE.MeshStandardMaterial({
     color: 0x0d0d0d,
@@ -141,6 +172,14 @@ export function buildVehicleMesh(vehicleDef = VANTRA_RS, customColor = null) {
     bodyWidth = 2.05; bodyHeight = 0.68; bodyLength = 4.4;
     cabinWidth = 1.65; cabinHeight = 0.60; cabinLength = 2.4; cabinZ = -0.1; cabinY = 1.20;
     wheelRadius = 0.38;
+  } else if (shape === 'offroad') {
+    bodyWidth = 2.15; bodyHeight = 0.75; bodyLength = 4.3;
+    cabinWidth = 1.70; cabinHeight = 0.65; cabinLength = 2.2; cabinZ = -0.15; cabinY = 1.35;
+    wheelRadius = 0.44;
+  } else if (shape === 'hypercar') {
+    bodyWidth = 2.05; bodyHeight = 0.40; bodyLength = 4.6;
+    cabinWidth = 1.35; cabinHeight = 0.38; cabinLength = 2.0; cabinZ = -0.05; cabinY = 0.76;
+    wheelRadius = 0.36;
   }
 
   // Main chassis
@@ -162,11 +201,11 @@ export function buildVehicleMesh(vehicleDef = VANTRA_RS, customColor = null) {
   roof.castShadow = true;
   group.add(roof);
 
-  // Sports rear spoiler for coupe & muscle sedan
-  if (shape === 'coupe' || shape === 'sedan') {
+  // Sports rear spoiler for coupe, sedan & hypercar
+  if (shape === 'coupe' || shape === 'sedan' || shape === 'hypercar') {
     const wingMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4 });
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth * 0.85, 0.05, 0.35), wingMat);
-    wing.position.set(0, bodyHeight + 0.35, -bodyLength / 2 + 0.3);
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth * (shape === 'hypercar' ? 0.95 : 0.85), 0.05, 0.35), wingMat);
+    wing.position.set(0, bodyHeight + (shape === 'hypercar' ? 0.42 : 0.35), -bodyLength / 2 + 0.3);
     wing.castShadow = true;
     group.add(wing);
 

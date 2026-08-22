@@ -67,7 +67,7 @@ async function main() {
 
       // Traffic must stay on the road network within the active district bounds.
       const strays = trafficAfter.filter(
-        (c) => c.x !== undefined && (Math.abs(c.x) > 420 || Math.abs(c.z) > 520)
+        (c) => c.x !== undefined && (Math.abs(c.x) > 420 || c.z > 520 || c.z < -1750)
       );
       if (strays.length) {
         failures.push(`${strays.length} traffic cars left the road network: ${JSON.stringify(strays[0])}`);

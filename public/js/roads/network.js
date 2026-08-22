@@ -1,8 +1,10 @@
-// Road network dataset for NCR ESCAPE (spec §3-6, §11-12).
-// Single source of truth for rendering, collisions, traffic lane following, and junction generation.
+// Complete Multi-Region Road Network for NCR ESCAPE (spec §3-6, §11-12).
+// Master Highway & Urban Corridor: Gurugram -> Delhi -> Yamuna Bridge -> Noida -> Sector 143.
 
 export const roadSegments = [
-  // --- Cyber District Central ---
+  // ==========================================
+  // REGION 1: GURUGRAM (Cyber District, Corporate Mile, Golf Belt, Industrial, Old Market)
+  // ==========================================
   {
     id: 'main-boulevard',
     type: 'highway',
@@ -65,7 +67,7 @@ export const roadSegments = [
     exits: [],
   },
 
-  // --- Corporate Mile (North Expansion) ---
+  // --- Corporate Mile (North) ---
   {
     id: 'corporate-mile',
     type: 'highway',
@@ -79,7 +81,7 @@ export const roadSegments = [
     traffic: { density: 0.85, allowTrucks: true },
     raceSuitability: 'high-speed',
     connections: ['corporate-connector', 'industrial-north-link'],
-    exits: ['noida-corridor-future'],
+    exits: [],
   },
   {
     id: 'corporate-connector',
@@ -112,7 +114,7 @@ export const roadSegments = [
     exits: [],
   },
 
-  // --- Golf Course Belt (East Expansion) ---
+  // --- Golf Course Belt (East) ---
   {
     id: 'golf-belt-east',
     type: 'urban',
@@ -144,7 +146,7 @@ export const roadSegments = [
     exits: [],
   },
 
-  // --- Industrial Edge (West Expansion) ---
+  // --- Industrial Edge (West) ---
   {
     id: 'industrial-edge-west',
     type: 'industrial',
@@ -176,7 +178,7 @@ export const roadSegments = [
     exits: [],
   },
 
-  // --- Old Market & Delhi Gate (South Expansion) ---
+  // --- Old Market (South Transition) ---
   {
     id: 'old-market-avenue',
     type: 'urban-dense',
@@ -190,7 +192,7 @@ export const roadSegments = [
     traffic: { density: 1.1, allowTrucks: true },
     raceSuitability: 'heavy-traffic-weaving',
     connections: ['main-boulevard', 'old-market-cross'],
-    exits: ['delhi-ring-road-future'],
+    exits: ['delhi-central-vista'],
   },
   {
     id: 'old-market-cross',
@@ -207,6 +209,143 @@ export const roadSegments = [
     connections: ['old-market-avenue'],
     exits: [],
   },
+
+  // ==========================================
+  // REGION 2: DELHI (Central Vista, Ring Road Highway, Heritage Plaza)
+  // ==========================================
+  {
+    id: 'delhi-ring-road',
+    type: 'highway',
+    district: 'Delhi Central',
+    from: { x: -320, z: -480 },
+    to: { x: 320, z: -480 },
+    width: 18,
+    lanes: 2,
+    speedLimit: 30, // ~108 km/h
+    elevated: false,
+    traffic: { density: 1.2, allowTrucks: true },
+    raceSuitability: 'high-speed-highway',
+    connections: ['old-market-avenue', 'delhi-central-vista'],
+    exits: [],
+  },
+  {
+    id: 'delhi-central-vista',
+    type: 'highway',
+    district: 'Delhi Central',
+    from: { x: 0, z: -760 },
+    to: { x: 0, z: -480 },
+    width: 20,
+    lanes: 3,
+    speedLimit: 28, // ~100 km/h
+    elevated: false,
+    traffic: { density: 1.0, allowTrucks: false },
+    raceSuitability: 'grand-boulevard',
+    connections: ['delhi-ring-road', 'delhi-plaza-cross', 'yamuna-bridge'],
+    exits: [],
+  },
+  {
+    id: 'delhi-plaza-cross',
+    type: 'urban',
+    district: 'Delhi Central',
+    from: { x: -240, z: -760 },
+    to: { x: 240, z: -760 },
+    width: 14,
+    lanes: 2,
+    speedLimit: 18,
+    elevated: false,
+    traffic: { density: 0.9, allowTrucks: false },
+    raceSuitability: 'technical',
+    connections: ['delhi-central-vista'],
+    exits: [],
+  },
+
+  // ==========================================
+  // YAMUNA RIVER EXPRESSWAY BRIDGE (Delhi <-> Noida Crossing)
+  // ==========================================
+  {
+    id: 'yamuna-bridge',
+    type: 'highway-elevated',
+    district: 'Yamuna River Crossing',
+    from: { x: 0, z: -1060 },
+    to: { x: 0, z: -760 },
+    width: 20,
+    lanes: 3,
+    speedLimit: 35, // ~126 km/h
+    elevated: true,
+    liftHeight: 7.5,
+    traffic: { density: 0.85, allowTrucks: true },
+    raceSuitability: 'high-speed-bridge-drag',
+    connections: ['delhi-central-vista', 'noida-expressway-main'],
+    exits: [],
+  },
+
+  // ==========================================
+  // REGION 3: NOIDA (6-Lane Expressway, Sector Grid, Tech Parks)
+  // ==========================================
+  {
+    id: 'noida-expressway-main',
+    type: 'highway',
+    district: 'Noida Expressway',
+    from: { x: 0, z: -1420 },
+    to: { x: 0, z: -1060 },
+    width: 24,
+    lanes: 3,
+    speedLimit: 36, // ~130 km/h
+    elevated: false,
+    traffic: { density: 1.1, allowTrucks: true },
+    raceSuitability: 'expressway-drag',
+    connections: ['yamuna-bridge', 'noida-sector-link', 'sector-143-boulevard'],
+    exits: [],
+  },
+  {
+    id: 'noida-sector-link',
+    type: 'urban',
+    district: 'Noida Expressway',
+    from: { x: -280, z: -1240 },
+    to: { x: 280, z: -1240 },
+    width: 14,
+    lanes: 2,
+    speedLimit: 20,
+    elevated: false,
+    traffic: { density: 0.95, allowTrucks: true },
+    raceSuitability: 'sector-sprint',
+    connections: ['noida-expressway-main'],
+    exits: [],
+  },
+
+  // ==========================================
+  // REGION 4: SECTOR 143 (Technology Valley & High-Tech Racing Hub)
+  // ==========================================
+  {
+    id: 'sector-143-boulevard',
+    type: 'highway',
+    district: 'Sector 143 Tech District',
+    from: { x: 0, z: -1700 },
+    to: { x: 0, z: -1420 },
+    width: 22,
+    lanes: 3,
+    speedLimit: 34, // ~122 km/h
+    elevated: false,
+    traffic: { density: 1.0, allowTrucks: false },
+    raceSuitability: 'championship-finish',
+    connections: ['noida-expressway-main', 'sector-143-innovation-loop'],
+    exits: [],
+  },
+  {
+    id: 'sector-143-innovation-loop',
+    type: 'urban',
+    district: 'Sector 143 Tech District',
+    from: { x: -240, z: -1700 },
+    to: { x: 240, z: -1700 },
+    width: 14,
+    lanes: 2,
+    speedLimit: 20,
+    elevated: false,
+    traffic: { density: 0.8, allowTrucks: false },
+    raceSuitability: 'tech-loop',
+    connections: ['sector-143-boulevard'],
+    exits: [],
+  },
 ];
 
 export const raceRoutes = [
@@ -221,22 +360,19 @@ export const raceRoutes = [
     segments: ['main-boulevard', 'corporate-mile', 'corporate-connector', 'golf-belt-north', 'golf-belt-east', 'corporate-loop'],
   },
   {
-    id: 'industrial-drift-run',
-    label: 'Industrial Edge Drift Run',
-    segments: ['industrial-edge-west', 'industrial-haul-road', 'industrial-north-link'],
+    id: 'ncr-grand-expressway-run',
+    label: 'NCR Grand Expressway Run (Gurugram -> Delhi -> Noida -> Sector 143)',
+    segments: ['main-boulevard', 'old-market-avenue', 'delhi-central-vista', 'yamuna-bridge', 'noida-expressway-main', 'sector-143-boulevard'],
   },
 ];
 
 export const spawnPoint = { x: 0, y: 0.6, z: -180, headingDeg: 0 };
 
-/** Segments AI traffic may use (ground level, density > 0). */
+/** Segments AI traffic may use. */
 export function getDrivableSegments() {
-  return roadSegments.filter((s) => !s.elevated && s.traffic.density > 0);
+  return roadSegments.filter((s) => s.traffic.density > 0);
 }
 
-/**
- * Which world axis a road predominantly runs along.
- */
 export function axisOf(seg) {
   return Math.abs(seg.to.x - seg.from.x) > Math.abs(seg.to.z - seg.from.z) ? 'x' : 'z';
 }
@@ -245,9 +381,6 @@ function cross2(ax, az, bx, bz) {
   return ax * bz - az * bx;
 }
 
-/**
- * Computes where two segments physically cross using parametric line-segment intersection.
- */
 function segIntersect(a, b) {
   const rx = a.to.x - a.from.x;
   const rz = a.to.z - a.from.z;
@@ -266,7 +399,6 @@ function segIntersect(a, b) {
   return { x: a.from.x + rx * t, z: a.from.z + rz * t };
 }
 
-/** All derived junctions between drivable roads. */
 export function getIntersections() {
   const segs = getDrivableSegments();
   const out = [];
@@ -286,9 +418,6 @@ export function getIntersections() {
   return out;
 }
 
-/**
- * Parametric position (0..1) of a world point along a segment in travel direction.
- */
 export function tAlong(seg, x, z, dir) {
   const ax = dir > 0 ? seg.from.x : seg.to.x;
   const az = dir > 0 ? seg.from.z : seg.to.z;
@@ -303,9 +432,6 @@ export function segmentLength(seg) {
   return Math.hypot(seg.to.x - seg.from.x, seg.to.z - seg.from.z);
 }
 
-/**
- * Returns a world-space point + heading for a position along a segment lane.
- */
 export function sampleLane(seg, t, dir, laneIndex) {
   const ax = dir > 0 ? seg.from.x : seg.to.x;
   const az = dir > 0 ? seg.from.z : seg.to.z;

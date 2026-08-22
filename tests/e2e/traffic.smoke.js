@@ -16,15 +16,19 @@ function findChromium() {
 
 // Road corridors from roads/network.js, padded by lane half-width + a small tolerance.
 function onRoadNetwork(c) {
-  const northSouthHighway = Math.abs(c.x) <= 14 && c.z >= -500 && c.z <= 500;
+  const northSouthSpine = Math.abs(c.x) <= 16 && c.z >= -1720 && c.z <= 500;
   const centralBelt = Math.abs(c.z - 40) <= 12 && c.x >= -380 && c.x <= 400;
   const golfNorth = Math.abs(c.x - 380) <= 12 && c.z >= 30 && c.z <= 360;
   const corpConnector = Math.abs(c.z - 340) <= 12 && c.x >= -10 && c.x <= 400;
   const indHaul = Math.abs(c.x + 360) <= 12 && c.z >= 30 && c.z <= 300;
   const indNorth = Math.abs(c.z - 280) <= 12 && c.x >= -380 && c.x <= 10;
   const oldMarketCross = Math.abs(c.z + 350) <= 12 && c.x >= -200 && c.x <= 200;
+  const delhiRingRoad = Math.abs(c.z + 480) <= 14 && c.x >= -340 && c.x <= 340;
+  const delhiPlaza = Math.abs(c.z + 760) <= 14 && c.x >= -260 && c.x <= 260;
+  const noidaSectorLink = Math.abs(c.z + 1240) <= 14 && c.x >= -300 && c.x <= 300;
+  const sector143Loop = Math.abs(c.z + 1700) <= 14 && c.x >= -260 && c.x <= 260;
   const service = Math.abs(c.x + 60) <= 8 && c.z >= -25 && c.z <= 105;
-  return northSouthHighway || centralBelt || golfNorth || corpConnector || indHaul || indNorth || oldMarketCross || service;
+  return northSouthSpine || centralBelt || golfNorth || corpConnector || indHaul || indNorth || oldMarketCross || delhiRingRoad || delhiPlaza || noidaSectorLink || sector143Loop || service;
 }
 
 (async () => {

@@ -1,5 +1,5 @@
 // Race/event definitions for NCR ESCAPE (spec §13-15).
-// Modular data structure for Sprints, Multi-Lap Circuits, Drift Competitions, and Time Trials.
+// Modular data structure for Sprints, Multi-Lap Circuits, Drift Competitions, and Highway Runs across all 4 regions.
 
 export const EVENT_TYPES = {
   SPRINT: 'sprint',
@@ -9,6 +9,7 @@ export const EVENT_TYPES = {
 };
 
 export const raceEvents = [
+  // --- Region 1: Gurugram ---
   {
     id: 'cyber-sprint-1',
     label: 'Cyber District Sprint',
@@ -99,6 +100,59 @@ export const raceEvents = [
     opponents: [
       { name: 'Kabir (NCR Taxi)', vehicleId: 'vantra-rs', color: 0xf2c14b },
       { name: 'Yash (Street Fox)', vehicleId: 'kaveri-gt', color: 0x1a365d },
+    ],
+  },
+
+  // --- Region 2 & Bridge: Delhi & Yamuna River ---
+  {
+    id: 'yamuna-midnight-dash',
+    label: 'Yamuna Bridge Midnight Dash',
+    type: EVENT_TYPES.SPRINT,
+    difficulty: 'High Speed',
+    description: 'Full-throttle blast across Delhi Central Vista and the Yamuna Cable-Stayed Bridge into Noida.',
+    marker: { x: 0, z: -550, radius: 10 },
+    laps: 1,
+    checkpoints: [
+      { x: 0, z: -660, radius: 18 },
+      { x: 0, z: -840, radius: 18 },
+      { x: 0, z: -980, radius: 18 },
+      { x: 0, z: -1080, radius: 18 },
+    ],
+    targetTime: 28,
+    reward: { cash: 2400, xp: 400, rep: 160 },
+    bonusReward: { cash: 1000, xp: 180, rep: 70 },
+    opponents: [
+      { name: 'Aakash (Phantom)', vehicleId: 'garuda-rx', color: 0x111317 },
+      { name: 'Meera (Cyclone)', vehicleId: 'apex-gt', color: 0x8a2be2 },
+      { name: 'Raj (Thunder)', vehicleId: 'kaveri-gt', color: 0xff7a18 },
+    ],
+  },
+
+  // --- Region 3 & 4: Noida Expressway & Sector 143 Tech Finale ---
+  {
+    id: 'sector-143-championship',
+    label: 'Sector 143 Innovation Grand Championship',
+    type: EVENT_TYPES.CIRCUIT,
+    difficulty: 'Elite Master',
+    description: 'Final 2-lap championship finale around the futuristic Sector 143 Innovation Center and Tech Valley.',
+    marker: { x: 0, z: -1450, radius: 11 },
+    laps: 2,
+    checkpoints: [
+      { x: 0, z: -1560, radius: 20 },
+      { x: 0, z: -1680, radius: 20 },
+      { x: 180, z: -1700, radius: 18 },
+      { x: -180, z: -1700, radius: 18 },
+      { x: 0, z: -1560, radius: 20 },
+      { x: 0, z: -1450, radius: 20 },
+    ],
+    targetTime: 70,
+    reward: { cash: 5000, xp: 1000, rep: 450 },
+    bonusReward: { cash: 2500, xp: 500, rep: 200 },
+    opponents: [
+      { name: 'Veer (Apex Legend)', vehicleId: 'apex-gt', color: 0x111317 },
+      { name: 'Tara (Electro)', vehicleId: 'kaveri-gt', color: 0x00d4aa },
+      { name: 'Karan (Titan)', vehicleId: 'sherpa-4x4', color: 0x5a4d41 },
+      { name: 'Zoya (Fury)', vehicleId: 'garuda-rx', color: 0xd62828 },
     ],
   },
 ];
