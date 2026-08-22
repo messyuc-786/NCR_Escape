@@ -3,7 +3,7 @@ import { UPGRADES } from '/js/progression/progression.js';
 import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS } from '/js/vehicles/vehicle.js';
 
 // Game UI Controller for NCR ESCAPE (spec §17-18).
-// Manages Garage car selection, paint customizer, performance upgrades, event HUD, and results.
+// Manages Garage car selection, paint customizer, performance upgrades, event HUD, live position & laps, and results.
 
 const el = (id) => document.getElementById(id);
 
@@ -20,6 +20,7 @@ export class GameUI {
     this.raceHud = el('race-hud');
     this.raceTimer = el('race-timer');
     this.raceCheckpoint = el('race-checkpoint');
+    this.racePosition = el('race-position');
     this.results = el('results');
     this.resultsBody = el('results-body');
     this.garage = el('garage');
@@ -80,14 +81,25 @@ export class GameUI {
     if (racing && race.activeEvent) {
       this.raceTimer.textContent = race.elapsed.toFixed(2);
       const total = race.activeEvent.checkpoints.length;
-      this.raceCheckpoint.textContent = `CP ${Math.min(race.checkpointIndex + 1, total)} / ${total}`;
+      const cpText = `CP ${Math.min(race.checkpointIndex + 1, total)} / ${total}`;
+      const lapText = race.totalLaps > 1 ? ` · LAP ${race.currentLap} / ${race.totalLaps}` : '';
+      this.raceCheckpoint.textContent = `${cpText}${lapText}`;
+
+      if (this.racePosition) {
+        const totalRacers = race.aiOpponents.length + 1;
+        this.racePosition.textContent = `POS ${race.playerPosition} / ${totalRacers}`;
+      }
     }
   }
 
   showResults(result) {
     const t = result.time.toFixed(2);
+    const posSuffix = result.position === 1 ? '1st' : result.position === 2 ? '2nd' : result.position === 3 ? '3rd' : `${result.position}th`;
+    const posBadge = `<div class="res-pos-badge ${result.position === 1 ? 'gold' : result.position <= 3 ? 'podium' : ''}">FINISH: ${posSuffix} of ${result.totalRacers}</div>`;
+
     this.resultsBody.innerHTML = `
       <div class="res-event">${result.eventLabel}</div>
+      ${posBadge}
       <div class="res-time">${t}<span>s</span></div>
       <div class="res-target">${result.beatTarget
         ? `Beat target of ${result.targetTime}s — bonus awarded`

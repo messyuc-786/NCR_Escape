@@ -251,13 +251,53 @@ html, body {
   text-shadow: 0 2px 12px rgba(0,0,0,0.9);
 }
 
+.race-hud-meta {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
 #race-checkpoint {
-  margin-top: 2px;
   font-size: 14px;
   letter-spacing: 2px;
   color: #00d4aa;
   font-weight: 800;
   text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+#race-position {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #ffd166;
+  font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.res-pos-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #eef3ff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+  margin: 8px 0;
+}
+
+.res-pos-badge.gold {
+  background: rgba(255, 209, 102, 0.2);
+  border-color: #ffd166;
+  color: #ffd166;
+  box-shadow: 0 0 15px rgba(255, 209, 102, 0.3);
+}
+
+.res-pos-badge.podium {
+  background: rgba(0, 212, 170, 0.2);
+  border-color: #00d4aa;
+  color: #00d4aa;
 }
 
 /* ---------- Modals (Results & Garage) ---------- */

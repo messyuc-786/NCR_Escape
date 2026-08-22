@@ -1,14 +1,13 @@
 import * as THREE from '/js/vendor/three.module.js';
 import { raceEvents, EVENT_TYPES } from '/js/racing/events.js';
+import { AIOpponent } from '/js/racing/aiOpponent.js';
 
-// Phase 5 race framework. One reusable state machine drives every event; nothing about
-// "cyber-sprint-1" specifically appears below. Adding another sprint is a data edit in
-// racing/events.js. Other event types (circuit/drift/etc.) need their own completion rule
-// in `checkCompletion` — declared in events.js, not yet implemented, not faked.
+// Reusable Race Framework for NCR ESCAPE (spec §13-15).
+// Supports Sprints, Multi-Lap Circuits, AI Opponents, Checkpoints, and Live Position Tracking.
 
 export const RACE_STATE = {
-  IDLE: 'idle',            // free driving, no event in range
-  PROMPT: 'prompt',        // player is inside a marker, can press E
+  IDLE: 'idle',
+  PROMPT: 'prompt',
   COUNTDOWN: 'countdown',
   RACING: 'racing',
   FINISHED: 'finished',
@@ -24,12 +23,16 @@ export class RaceSystem {
     this.activeEvent = null;
     this.nearbyEvent = null;
     this.checkpointIndex = 0;
+    this.currentLap = 1;
+    this.totalLaps = 1;
     this.elapsed = 0;
     this.countdown = 0;
     this.lastResult = null;
+    this.playerPosition = 1;
 
     this.markerMeshes = new Map();
     this.checkpointMeshes = [];
+    this.aiOpponents = [];
 
     for (const ev of raceEvents) {
       this.markerMeshes.set(ev.id, this.buildMarker(ev));
@@ -38,12 +41,6 @@ export class RaceSystem {
 
   buildMarker(ev) {
     const group = new THREE.Group();
-    // Slim beacon rather than a wide cylinder: a wide one fills the screen the moment the
-    // player drives inside its radius, which is exactly when they most need to read the world.
-    // The beacon sits in a live driving lane, so it must be readable without becoming an
-    // obstacle the player tries to steer around. Earlier version was 1.1m x 15m at 30%
-    // opacity, which rendered as a solid orange bar blocking the road ahead (caught in a
-    // screenshot, not by any assertion). Thin + faint + lifted clear of eye level instead.
     const mat = new THREE.MeshBasicMaterial({
       color: 0xff7a18, transparent: true, opacity: 0.16,
       depthWrite: false, side: THREE.DoubleSide,
@@ -63,9 +60,6 @@ export class RaceSystem {
     ring.position.set(ev.marker.x, 0.06, ev.marker.z);
     group.add(ring);
 
-    // Keep a handle on the pillar (and where it stands) so update() can fade it out as the
-    // player closes in — the chase camera sits ~9m behind the car and would otherwise end up
-    // *inside* this cylinder, filling half the screen with flat orange.
     group.userData.pillar = pillar;
     group.userData.markerX = ev.marker.x;
     group.userData.markerZ = ev.marker.z;
@@ -83,8 +77,6 @@ export class RaceSystem {
         color, transparent: true, opacity: 0.22,
         depthWrite: false, side: THREE.DoubleSide,
       });
-      // Open-ended ring wall the player drives through; low opacity + no depth write so it
-      // never blocks the view of the road when you're inside it.
       const gate = new THREE.Mesh(
         new THREE.CylinderGeometry(cp.radius, cp.radius, 9, 26, 1, true), mat
       );
@@ -100,7 +92,6 @@ export class RaceSystem {
     this.checkpointMeshes = [];
   }
 
-  /** Only the current checkpoint (and the next one, dimmer) is shown — keeps the world readable. */
   refreshCheckpointVisibility() {
     this.checkpointMeshes.forEach((m, i) => {
       m.visible = i === this.checkpointIndex || i === this.checkpointIndex + 1;
@@ -108,46 +99,65 @@ export class RaceSystem {
     });
   }
 
+  spawnAIOpponents(ev) {
+    this.clearAIOpponents();
+    if (!ev.opponents || ev.opponents.length === 0) return;
+
+    ev.opponents.forEach((opp, i) => {
+      // Grid start slots behind/alongside marker
+      const lateralOffset = (i % 2 === 0 ? 1 : -1) * (3.5 + Math.floor(i / 2) * 2.0);
+      const longitudinalOffset = -6 - (i + 1) * 7.0;
+      const startX = ev.marker.x + lateralOffset;
+      const startZ = ev.marker.z + longitudinalOffset;
+
+      const ai = new AIOpponent(opp.name, opp.vehicleId, opp.color, startX, startZ, this.scene);
+      this.aiOpponents.push(ai);
+    });
+  }
+
+  clearAIOpponents() {
+    for (const ai of this.aiOpponents) {
+      ai.destroy();
+    }
+    this.aiOpponents = [];
+  }
+
   startEvent(ev) {
     this.activeEvent = ev;
     this.state = RACE_STATE.COUNTDOWN;
     this.countdown = COUNTDOWN_SECONDS;
     this.checkpointIndex = 0;
+    this.currentLap = 1;
+    this.totalLaps = ev.laps || 1;
     this.elapsed = 0;
     this.lastResult = null;
+    this.playerPosition = 1;
+
     this.buildCheckpointMeshes(ev);
     this.refreshCheckpointVisibility();
-    this.markerMeshes.get(ev.id).visible = false;
+    this.spawnAIOpponents(ev);
+
+    if (this.markerMeshes.has(ev.id)) {
+      this.markerMeshes.get(ev.id).visible = false;
+    }
   }
 
   abandon() {
-    if (this.activeEvent) this.markerMeshes.get(this.activeEvent.id).visible = true;
+    if (this.activeEvent && this.markerMeshes.has(this.activeEvent.id)) {
+      this.markerMeshes.get(this.activeEvent.id).visible = true;
+    }
     this.clearCheckpointMeshes();
+    this.clearAIOpponents();
     this.activeEvent = null;
     this.state = RACE_STATE.IDLE;
   }
 
-  /** Completion rule per event type. Only sprint is implemented (see events.js). */
-  checkCompletion(ev) {
-    switch (ev.type) {
-      case EVENT_TYPES.SPRINT:
-        return this.checkpointIndex >= ev.checkpoints.length;
-      default:
-        // Unimplemented type — never silently "completes".
-        return false;
-    }
-  }
-
-  update(dt, playerX, playerZ, interactPressed) {
-    // Pulse markers so they read as interactive
+  update(dt, playerX, playerZ, interactPressed, trafficPositions) {
+    // Pulse event markers
     const pulse = 1 + Math.sin(performance.now() * 0.004) * 0.08;
     for (const g of this.markerMeshes.values()) {
       g.scale.set(pulse, 1, pulse);
 
-      // Fade the vertical beacon out over the last ~26m. Beyond that it's the thing that
-      // makes the event findable; up close the prompt card has taken over and the pillar is
-      // only in the way. Full transparency by 12m keeps the chase camera from ever passing
-      // through a visible surface. The ground ring stays lit the whole time.
       const pillar = g.userData.pillar;
       if (pillar) {
         const d = Math.hypot(playerX - g.userData.markerX, playerZ - g.userData.markerZ);
@@ -161,7 +171,10 @@ export class RaceSystem {
       this.nearbyEvent = null;
       for (const ev of raceEvents) {
         const d = Math.hypot(playerX - ev.marker.x, playerZ - ev.marker.z);
-        if (d < ev.marker.radius) { this.nearbyEvent = ev; break; }
+        if (d < ev.marker.radius) {
+          this.nearbyEvent = ev;
+          break;
+        }
       }
       this.state = this.nearbyEvent ? RACE_STATE.PROMPT : RACE_STATE.IDLE;
 
@@ -183,43 +196,103 @@ export class RaceSystem {
     if (this.state === RACE_STATE.RACING) {
       this.elapsed += dt;
       const ev = this.activeEvent;
+
+      // Update AI Opponents
+      for (const ai of this.aiOpponents) {
+        ai.update(dt, ev.checkpoints, trafficPositions, this.totalLaps, this.elapsed);
+      }
+
+      // Check Player Checkpoint
       const cp = ev.checkpoints[this.checkpointIndex];
       if (cp) {
         const d = Math.hypot(playerX - cp.x, playerZ - cp.z);
         if (d < cp.radius) {
           this.checkpointIndex++;
+          if (this.checkpointIndex >= ev.checkpoints.length) {
+            if (this.currentLap < this.totalLaps) {
+              this.currentLap++;
+              this.checkpointIndex = 0;
+            } else {
+              this.finish(ev);
+              return;
+            }
+          }
           this.refreshCheckpointVisibility();
         }
       }
 
-      if (this.checkCompletion(ev)) {
-        this.finish(ev);
-      }
+      // Calculate Player Position Relative to AI Opponents
+      this.updatePlayerPosition(playerX, playerZ, ev);
+    }
+  }
+
+  updatePlayerPosition(playerX, playerZ, ev) {
+    if (!this.aiOpponents.length) {
+      this.playerPosition = 1;
       return;
     }
+
+    const playerTotalScore = (this.currentLap - 1) * ev.checkpoints.length + this.checkpointIndex;
+    const targetCp = ev.checkpoints[this.checkpointIndex] || ev.checkpoints[0];
+    const playerDist = Math.hypot(targetCp.x - playerX, targetCp.z - playerZ);
+
+    let position = 1;
+    for (const ai of this.aiOpponents) {
+      if (ai.finished) {
+        position++;
+        continue;
+      }
+      const aiTotalScore = (ai.currentLap - 1) * ev.checkpoints.length + ai.checkpointIndex;
+      if (aiTotalScore > playerTotalScore) {
+        position++;
+      } else if (aiTotalScore === playerTotalScore) {
+        const aiDist = Math.hypot(targetCp.x - ai.x, targetCp.z - ai.z);
+        if (aiDist < playerDist) {
+          position++;
+        }
+      }
+    }
+
+    this.playerPosition = position;
   }
 
   finish(ev) {
     this.state = RACE_STATE.FINISHED;
     const beatTarget = this.elapsed <= ev.targetTime;
-    const cash = ev.reward.cash + (beatTarget ? ev.bonusReward.cash : 0);
-    const xp = ev.reward.xp + (beatTarget ? ev.bonusReward.xp : 0);
-    const rep = ev.reward.rep + (beatTarget ? ev.bonusReward.rep : 0);
+    const isPodium = this.playerPosition <= 3;
+    const posMultiplier = this.playerPosition === 1 ? 1.0 : this.playerPosition === 2 ? 0.75 : this.playerPosition === 3 ? 0.55 : 0.35;
+
+    const baseCash = Math.round(ev.reward.cash * posMultiplier);
+    const baseXP = Math.round(ev.reward.xp * posMultiplier);
+    const baseRep = Math.round(ev.reward.rep * posMultiplier);
+
+    const bonusCash = beatTarget ? ev.bonusReward.cash : 0;
+    const bonusXP = beatTarget ? ev.bonusReward.xp : 0;
+    const bonusRep = beatTarget ? ev.bonusReward.rep : 0;
+
+    const cash = baseCash + bonusCash;
+    const xp = baseXP + bonusXP;
+    const rep = baseRep + bonusRep;
 
     this.lastResult = {
       eventLabel: ev.label,
       time: this.elapsed,
       targetTime: ev.targetTime,
       beatTarget,
+      position: this.playerPosition,
+      totalRacers: this.aiOpponents.length + 1,
       cash, xp, rep,
     };
 
     this.clearCheckpointMeshes();
-    this.markerMeshes.get(ev.id).visible = true;
+    if (this.markerMeshes.has(ev.id)) {
+      this.markerMeshes.get(ev.id).visible = true;
+    }
     if (this.onReward) this.onReward(this.lastResult);
   }
 
   dismissResults() {
+    this.clearAIOpponents();
     this.activeEvent = null;
     this.state = RACE_STATE.IDLE;
   }
@@ -228,6 +301,9 @@ export class RaceSystem {
     return {
       state: this.state,
       checkpointIndex: this.checkpointIndex,
+      currentLap: this.currentLap,
+      totalLaps: this.totalLaps,
+      position: this.playerPosition,
       elapsed: Number(this.elapsed.toFixed(2)),
       lastResult: this.lastResult,
     };

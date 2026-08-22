@@ -4,7 +4,7 @@ import { roadSegments } from '/js/roads/network.js';
 const ASPHALT = 0x2b2f38;
 const CURB = 0x50565f;
 const GROUND = 0x0f2a1c;
-const BUILDING_COLORS = [0x1c2536, 0x24304a, 0x1a2230, 0x2b3550, 0x182030];
+const GOLF_GRASS = 0x144023;
 const METRO_COLOR = 0x8a929e;
 
 export const LIGHTING_MODES = {
@@ -13,119 +13,80 @@ export const LIGHTING_MODES = {
   NIGHT: 'night',
 };
 
+export const WEATHER_MODES = {
+  CLEAR: 'clear',
+  RAIN: 'rain',
+  HAZE: 'haze',
+};
+
 /**
- * Builds the Cyber District scene: ground, roads (from roadSegments data), a flyover,
- * NCR metro viaduct line, overhead highway signs, streetlights, buildings with neon accents,
- * and returns colliders and lighting controller for carPhysics and day/night toggles.
+ * Builds the connected Region 1 world: Cyber District, Corporate Mile, Golf Course Belt,
+ * Industrial Edge, Old Market, Metro line, trees, signage, streetlights, and weather controllers.
  */
 export function buildDistrict(scene) {
   const colliders = [];
 
-  // Ground
+  // 1. Main Ground Plane
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(900, 900),
+    new THREE.PlaneGeometry(1400, 1400),
     new THREE.MeshStandardMaterial({ color: GROUND, roughness: 1 })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Roads
+  // Golf Course Green Belt Patch (East)
+  const golfGrass = new THREE.Mesh(
+    new THREE.PlaneGeometry(350, 400),
+    new THREE.MeshStandardMaterial({ color: GOLF_GRASS, roughness: 0.9 })
+  );
+  golfGrass.rotation.x = -Math.PI / 2;
+  golfGrass.position.set(280, 0.02, 190);
+  golfGrass.receiveShadow = true;
+  scene.add(golfGrass);
+
+  // 2. Road Network Meshes
   for (const seg of roadSegments) {
     buildRoadSegment(scene, seg, colliders);
   }
 
-  // Central intersection pad
-  const intersection = new THREE.Mesh(
-    new THREE.PlaneGeometry(24, 24),
-    new THREE.MeshStandardMaterial({
-      color: ASPHALT,
-      roughness: 0.9,
-      polygonOffset: true,
-      polygonOffsetFactor: -5,
-      polygonOffsetUnits: -5,
-    })
-  );
-  intersection.rotation.x = -Math.PI / 2;
-  intersection.position.set(0, 0.06, 40);
-  scene.add(intersection);
+  // 3. Buildings Across All Connected Districts
+  buildAllDistrictBuildings(scene, colliders);
 
-  // Buildings lining the district
-  const buildingSpecs = [
-    { x: 40, z: -100, w: 22, h: 38, d: 22, neon: 0x00d4aa },
-    { x: -40, z: -60, w: 18, h: 55, d: 18, neon: 0xff7a18 },
-    { x: 45, z: -10, w: 20, h: 28, d: 20, neon: 0x38ef7d },
-    { x: -110, z: 40, w: 20, h: 42, d: 26, neon: 0x00d4aa },
-    { x: 110, z: 40, w: 26, h: 60, d: 20, neon: 0xff2d55 },
-    { x: -40, z: 130, w: 24, h: 34, d: 24, neon: 0xf5a623 },
-    { x: 45, z: 150, w: 22, h: 46, d: 22, neon: 0x00d4aa },
-    { x: 90, z: -60, w: 18, h: 30, d: 18, neon: 0x50e3c2 },
-  ];
-
-  buildingSpecs.forEach((b, i) => {
-    const color = BUILDING_COLORS[i % BUILDING_COLORS.length];
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(b.w, b.h, b.d),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.15 })
-    );
-    mesh.position.set(b.x, b.h / 2, b.z);
-    mesh.castShadow = true;
-    scene.add(mesh);
-
-    // Neon accent strip on top of building (Cyber NCR vibe)
-    const neonMat = new THREE.MeshStandardMaterial({
-      color: b.neon,
-      emissive: b.neon,
-      emissiveIntensity: 0.8,
-    });
-    const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.2, 0.6, b.d + 0.2), neonMat);
-    neonStrip.position.set(b.x, b.h + 0.3, b.z);
-    scene.add(neonStrip);
-
-    colliders.push({
-      minX: b.x - b.w / 2,
-      maxX: b.x + b.w / 2,
-      minZ: b.z - b.d / 2,
-      maxZ: b.z + b.d / 2,
-    });
-  });
-
-  // NCR Elevated Metro Rail Track & Viaduct Pillars (Running alongside Main Boulevard)
+  // 4. District Props: Trees (Golf Belt), Silos (Industrial), Gantries (Highways), Metro Line
   buildMetroViaduct(scene);
-
-  // Overhead Highway Signboards
   buildHighwaySigns(scene);
-
-  // Streetlights
   buildStreetlights(scene);
+  buildGolfTrees(scene);
+  buildIndustrialSilos(scene, colliders);
 
-  // Simple perimeter fence colliders so the car can't drive off into the void forever
-  const bound = 400;
-  colliders.push({ minX: -bound, maxX: -bound + 2, minZ: -bound, maxZ: bound });
-  colliders.push({ minX: bound - 2, maxX: bound, minZ: -bound, maxZ: bound });
-  colliders.push({ minX: -bound, maxX: bound, minZ: -bound, maxZ: -bound + 2 });
-  colliders.push({ minX: -bound, maxX: bound, minZ: bound - 2, maxZ: bound });
+  // 5. World Perimeter Boundaries
+  const bound = 620;
+  colliders.push({ minX: -bound, maxX: -bound + 3, minZ: -bound, maxZ: bound });
+  colliders.push({ minX: bound - 3, maxX: bound, minZ: -bound, maxZ: bound });
+  colliders.push({ minX: -bound, maxX: bound, minZ: -bound, maxZ: -bound + 3 });
+  colliders.push({ minX: -bound, maxX: bound, minZ: bound - 3, maxZ: bound });
 
-  // Lighting setup with dynamic mode controller
+  // 6. Lighting Controller
   const hemi = new THREE.HemisphereLight(0xa8c0ff, 0x4a4436, 1.15);
   scene.add(hemi);
   const ambient = new THREE.AmbientLight(0x8899bb, 0.65);
   scene.add(ambient);
   const sun = new THREE.DirectionalLight(0xffd9a8, 1.5);
-  sun.position.set(120, 180, -80);
+  sun.position.set(120, 220, -80);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.camera.left = -250;
-  sun.shadow.camera.right = 250;
-  sun.shadow.camera.top = 250;
-  sun.shadow.camera.bottom = -250;
+  sun.shadow.camera.left = -400;
+  sun.shadow.camera.right = 400;
+  sun.shadow.camera.top = 400;
+  sun.shadow.camera.bottom = -400;
   scene.add(sun);
-  scene.fog = new THREE.Fog(0x2a3550, 260, 700);
+  scene.fog = new THREE.Fog(0x2a3550, 300, 950);
 
-  let currentMode = LIGHTING_MODES.DAY;
+  let currentLighting = LIGHTING_MODES.DAY;
 
   function setDayNight(mode) {
-    currentMode = mode;
+    currentLighting = mode;
     if (mode === LIGHTING_MODES.NIGHT) {
       scene.background = new THREE.Color(0x0a0e17);
       scene.fog.color = new THREE.Color(0x0a0e17);
@@ -147,7 +108,6 @@ export function buildDistrict(scene) {
       sun.color.setHex(0xffaa44);
       sun.intensity = 1.3;
     } else {
-      // Day
       scene.background = new THREE.Color(0x2a3550);
       scene.fog.color = new THREE.Color(0x2a3550);
       hemi.color.setHex(0xa8c0ff);
@@ -163,7 +123,7 @@ export function buildDistrict(scene) {
   return {
     colliders,
     setDayNight,
-    getCurrentMode: () => currentMode,
+    getCurrentMode: () => currentLighting,
   };
 }
 
@@ -190,7 +150,7 @@ function buildRoadSegment(scene, seg, colliders) {
   road.receiveShadow = true;
   scene.add(road);
 
-  // Road Lane Markings (White dashed centre line)
+  // Dashed lane dividers for multi-lane roads
   if (seg.lanes >= 2 && !seg.elevated) {
     const dashCount = Math.floor(length / 8);
     const dashMat = new THREE.MeshStandardMaterial({
@@ -226,7 +186,7 @@ function buildRoadSegment(scene, seg, colliders) {
     scene.add(curb);
   }
 
-  // Flyover support pillars if elevated
+  // Flyover support pillars
   if (lift > 0) {
     const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3a3f4a });
     for (let t = 0.15; t < 1; t += 0.3) {
@@ -240,54 +200,165 @@ function buildRoadSegment(scene, seg, colliders) {
 }
 
 /**
- * Builds elevated NCR Metro viaduct line running alongside the main corridor.
+ * Builds architecture and towers across all 5 Region 1 districts.
  */
+function buildAllDistrictBuildings(scene, colliders) {
+  const buildingSpecs = [
+    // --- Cyber District (Central) ---
+    { x: 40, z: -100, w: 22, h: 42, d: 22, color: 0x1c2536, neon: 0x00d4aa },
+    { x: -40, z: -60, w: 18, h: 55, d: 18, color: 0x24304a, neon: 0xff7a18 },
+    { x: 45, z: -10, w: 20, h: 32, d: 20, color: 0x1a2230, neon: 0x38ef7d },
+    { x: -110, z: 40, w: 20, h: 45, d: 26, color: 0x2b3550, neon: 0x00d4aa },
+    { x: 110, z: 40, w: 26, h: 62, d: 20, color: 0x1c2536, neon: 0xff2d55 },
+    { x: -40, z: 130, w: 24, h: 36, d: 24, color: 0x24304a, neon: 0xf5a623 },
+    { x: 45, z: 150, w: 22, h: 50, d: 22, color: 0x1a2230, neon: 0x00d4aa },
+
+    // --- Corporate Mile (North) ---
+    { x: 45, z: 270, w: 28, h: 76, d: 24, color: 0x18243b, neon: 0x00d4aa },
+    { x: -45, z: 310, w: 26, h: 84, d: 26, color: 0x141f33, neon: 0x4aa8ff },
+    { x: 48, z: 390, w: 30, h: 90, d: 30, color: 0x1e2c45, neon: 0xff7a18 },
+    { x: -48, z: 430, w: 28, h: 80, d: 28, color: 0x162238, neon: 0x00d4aa },
+    { x: 180, z: 340, w: 34, h: 68, d: 26, color: 0x1f2e4a, neon: 0xf5a623 },
+
+    // --- Golf Course Belt (East) ---
+    { x: 260, z: 80, w: 24, h: 16, d: 24, color: 0x2d3a4f, neon: 0x38ef7d },
+    { x: 340, z: 120, w: 26, h: 18, d: 22, color: 0x33445c, neon: 0x38ef7d },
+    { x: 440, z: 180, w: 30, h: 22, d: 26, color: 0x2a384d, neon: 0x00d4aa },
+    { x: 440, z: 280, w: 28, h: 20, d: 24, color: 0x28364a, neon: 0x38ef7d },
+
+    // --- Industrial Edge (West) ---
+    { x: -260, z: 80, w: 42, h: 18, d: 36, color: 0x3a3f4a, neon: 0xff7a18 },
+    { x: -420, z: 120, w: 48, h: 20, d: 40, color: 0x333842, neon: 0xf5a623 },
+    { x: -420, z: 220, w: 44, h: 18, d: 38, color: 0x3d434f, neon: 0xff7a18 },
+    { x: -240, z: 280, w: 40, h: 16, d: 34, color: 0x383e49, neon: 0xff3d68 },
+
+    // --- Old Market (South) ---
+    { x: 42, z: -290, w: 18, h: 24, d: 20, color: 0x4a3b32, neon: 0xffa040 },
+    { x: -42, z: -320, w: 16, h: 26, d: 18, color: 0x543e33, neon: 0xffdd55 },
+    { x: 44, z: -410, w: 20, h: 22, d: 22, color: 0x46372f, neon: 0xff7a18 },
+    { x: -44, z: -440, w: 18, h: 28, d: 20, color: 0x4e3c35, neon: 0xff5533 },
+    { x: -110, z: -350, w: 22, h: 20, d: 20, color: 0x44352d, neon: 0xffa040 },
+    { x: 110, z: -350, w: 24, h: 22, d: 22, color: 0x4d3b33, neon: 0xffd166 },
+  ];
+
+  buildingSpecs.forEach((b) => {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(b.w, b.h, b.d),
+      new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.65, metalness: 0.15 })
+    );
+    mesh.position.set(b.x, b.h / 2, b.z);
+    mesh.castShadow = true;
+    scene.add(mesh);
+
+    // Neon accent strip
+    const neonMat = new THREE.MeshStandardMaterial({
+      color: b.neon,
+      emissive: b.neon,
+      emissiveIntensity: 0.8,
+    });
+    const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.3, 0.6, b.d + 0.3), neonMat);
+    neonStrip.position.set(b.x, b.h + 0.3, b.z);
+    scene.add(neonStrip);
+
+    colliders.push({
+      minX: b.x - b.w / 2,
+      maxX: b.x + b.w / 2,
+      minZ: b.z - b.d / 2,
+      maxZ: b.z + b.d / 2,
+    });
+  });
+}
+
+function buildGolfTrees(scene) {
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.9 });
+  const leavesMat = new THREE.MeshStandardMaterial({ color: 0x228b22, roughness: 0.8 });
+
+  const treePositions = [
+    { x: 210, z: 60 }, { x: 230, z: 110 }, { x: 290, z: 50 },
+    { x: 320, z: 90 }, { x: 350, z: 160 }, { x: 370, z: 220 },
+    { x: 410, z: 110 }, { x: 420, z: 260 }, { x: 360, z: 300 },
+  ];
+
+  treePositions.forEach((pos) => {
+    const group = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 3.5, 8), trunkMat);
+    trunk.position.y = 1.75;
+    group.add(trunk);
+
+    const leaves = new THREE.Mesh(new THREE.ConeGeometry(2.4, 5.0, 8), leavesMat);
+    leaves.position.y = 5.2;
+    group.add(leaves);
+
+    group.position.set(pos.x, 0, pos.z);
+    scene.add(group);
+  });
+}
+
+function buildIndustrialSilos(scene, colliders) {
+  const siloMat = new THREE.MeshStandardMaterial({ color: 0x7c8594, roughness: 0.4, metalness: 0.6 });
+  const siloPositions = [
+    { x: -310, z: 120, r: 4, h: 16 },
+    { x: -310, z: 132, r: 4, h: 16 },
+    { x: -310, z: 200, r: 5, h: 18 },
+    { x: -310, z: 215, r: 5, h: 18 },
+  ];
+
+  siloPositions.forEach((s) => {
+    const silo = new THREE.Mesh(new THREE.CylinderGeometry(s.r, s.r, s.h, 16), siloMat);
+    silo.position.set(s.x, s.h / 2, s.z);
+    silo.castShadow = true;
+    scene.add(silo);
+
+    colliders.push({
+      minX: s.x - s.r,
+      maxX: s.x + s.r,
+      minZ: s.z - s.r,
+      maxZ: s.z + s.r,
+    });
+  });
+}
+
 function buildMetroViaduct(scene) {
-  const metroX = 18; // offset from Main Boulevard
+  const metroX = 18;
   const height = 11;
-  const length = 440;
+  const length = 920;
   const pillarSpacing = 40;
 
   const concreteMat = new THREE.MeshStandardMaterial({ color: METRO_COLOR, roughness: 0.8 });
   const railMat = new THREE.MeshStandardMaterial({ color: 0x333b47, roughness: 0.5 });
 
-  // Elevated track deck
   const deck = new THREE.Mesh(new THREE.BoxGeometry(5.5, 1.2, length), concreteMat);
   deck.position.set(metroX, height, 0);
   scene.add(deck);
 
-  // Twin rails
   for (const rx of [-1.4, 1.4]) {
     const rail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, length), railMat);
     rail.position.set(metroX + rx, height + 0.75, 0);
     scene.add(rail);
   }
 
-  // Support Viaduct Pillars
-  for (let z = -200; z <= 200; z += pillarSpacing) {
+  for (let z = -440; z <= 440; z += pillarSpacing) {
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, height, 16), concreteMat);
     pillar.position.set(metroX, height / 2, z);
     scene.add(pillar);
   }
 }
 
-/**
- * Builds iconic green highway overhead signboards for NCR routes.
- */
 function buildHighwaySigns(scene) {
   const signMat = new THREE.MeshStandardMaterial({
-    color: 0x007a33, // Indian Highway Green
+    color: 0x007a33,
     roughness: 0.4,
   });
   const gantryMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6 });
 
   const signLocations = [
-    { x: 0, z: -120, label: 'CYBER CITY / NH-48', dir: 'NORTH' },
-    { x: 0, z: 100, label: 'NOIDA EXPWY / SECTOR 143', dir: 'SOUTH' },
+    { x: 0, z: -120, label: 'CYBER CITY / NH-48' },
+    { x: 0, z: 100, label: 'NOIDA EXPWY / SECTOR 143' },
+    { x: 0, z: 320, label: 'CORPORATE MILE / TECH DISTRICT' },
+    { x: 0, z: -320, label: 'OLD MARKET / DELHI RING ROAD' },
   ];
 
   signLocations.forEach((s) => {
-    // Overhead gantry arch
     const gantry = new THREE.Group();
     const beam = new THREE.Mesh(new THREE.BoxGeometry(22, 0.5, 0.5), gantryMat);
     beam.position.set(0, 7.5, 0);
@@ -301,8 +372,7 @@ function buildHighwaySigns(scene) {
     postR.position.set(10.5, 3.75, 0);
     gantry.add(postR);
 
-    // Green Signboard
-    const board = new THREE.Mesh(new THREE.BoxGeometry(8.5, 2.2, 0.2), signMat);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(9.0, 2.2, 0.2), signMat);
     board.position.set(0, 7.5, 0.1);
     gantry.add(board);
 
@@ -311,9 +381,6 @@ function buildHighwaySigns(scene) {
   });
 }
 
-/**
- * Builds streetlight poles along the main routes.
- */
 function buildStreetlights(scene) {
   const poleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
   const bulbMat = new THREE.MeshStandardMaterial({
@@ -323,11 +390,12 @@ function buildStreetlights(scene) {
   });
 
   const positions = [
-    { x: 9.5, z: -160 }, { x: -9.5, z: -160 },
+    { x: 9.5, z: -400 }, { x: -9.5, z: -400 },
+    { x: 9.5, z: -240 }, { x: -9.5, z: -240 },
     { x: 9.5, z: -80 },  { x: -9.5, z: -80 },
-    { x: 9.5, z: 0 },    { x: -9.5, z: 0 },
     { x: 9.5, z: 80 },   { x: -9.5, z: 80 },
-    { x: 9.5, z: 160 },  { x: -9.5, z: 160 },
+    { x: 9.5, z: 240 },  { x: -9.5, z: 240 },
+    { x: 9.5, z: 400 },  { x: -9.5, z: 400 },
   ];
 
   positions.forEach((p) => {

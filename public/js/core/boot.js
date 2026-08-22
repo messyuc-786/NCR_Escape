@@ -1,5 +1,6 @@
 import * as THREE from '/js/vendor/three.module.js';
 import { buildDistrict, LIGHTING_MODES } from '/js/world/district.js';
+import { WeatherSystem, WEATHER_TYPES } from '/js/world/weather.js';
 import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
 import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
 import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
@@ -17,6 +18,7 @@ const canvas = document.getElementById('game-canvas');
 const startBtn = document.getElementById('start-btn');
 const introOverlay = document.getElementById('intro-overlay');
 const modeToggleBtn = document.getElementById('mode-toggle');
+const weatherToggleBtn = document.getElementById('weather-toggle');
 const audioToggleBtn = document.getElementById('audio-toggle');
 const touchToggleBtn = document.getElementById('touch-toggle');
 const touchControls = document.getElementById('touch-controls');
@@ -31,6 +33,7 @@ scene.background = new THREE.Color(0x2a3550);
 
 const camera = createChaseCamera(window.innerWidth / window.innerHeight);
 const { colliders, setDayNight, getCurrentMode } = buildDistrict(scene);
+const weather = new WeatherSystem(scene);
 
 // --- Progression + Garage + Vehicles -----------------------------------------
 const progression = new Progression();
@@ -51,7 +54,7 @@ function rebuildCarMesh() {
 }
 
 const traffic = new TrafficSystem(scene);
-const minimap = new Minimap('minimap-canvas');
+const minimap = new Minimap('minimap-canvas', 'minimap-label');
 
 let paused = false;
 
@@ -118,7 +121,6 @@ function updateDriftScore(dt, state, isHandbraking) {
     ui.updateDrift(driftScore, driftMultiplier, true);
   } else {
     if (driftScore > 0 && performance.now() - lastDriftEnd > 700) {
-      // Bank drift score
       if (driftScore > 50) {
         progression.awardDrift(driftScore);
         ui.updateWallet();
@@ -133,13 +135,22 @@ function updateDriftScore(dt, state, isHandbraking) {
   return isDrifting;
 }
 
-// --- Quick Toggles (Day/Night, Audio, Touch) --------------------------------
+// --- Quick Toggles (Day/Night, Weather, Audio, Touch) ------------------------
 if (modeToggleBtn) {
   modeToggleBtn.addEventListener('click', () => {
     const cur = getCurrentMode();
     const next = cur === LIGHTING_MODES.DAY ? LIGHTING_MODES.SUNSET : cur === LIGHTING_MODES.SUNSET ? LIGHTING_MODES.NIGHT : LIGHTING_MODES.DAY;
     setDayNight(next);
     modeToggleBtn.textContent = next === LIGHTING_MODES.DAY ? '☀️ DAY' : next === LIGHTING_MODES.SUNSET ? '🌅 SUNSET' : '🌙 NIGHT';
+  });
+}
+
+if (weatherToggleBtn) {
+  weatherToggleBtn.addEventListener('click', () => {
+    const cur = weather.currentWeather;
+    const next = cur === WEATHER_TYPES.CLEAR ? WEATHER_TYPES.RAIN : cur === WEATHER_TYPES.RAIN ? WEATHER_TYPES.HAZE : WEATHER_TYPES.CLEAR;
+    weather.setWeather(next);
+    weatherToggleBtn.textContent = next === WEATHER_TYPES.CLEAR ? '☀️ CLEAR' : next === WEATHER_TYPES.RAIN ? '🌧️ RAIN' : '🌫️ HAZE';
   });
 }
 
@@ -162,7 +173,7 @@ initTouchControls();
 let running = false;
 let lastTime = performance.now();
 
-// Exposed for the Playwright smoke tests
+// Exposed for Playwright tests
 window.__DEBUG_SPEED = () => Math.abs(carState.speed);
 window.__DEBUG_POS = () => ({ x: carState.x, z: carState.z });
 window.__DEBUG_TRAFFIC = () => traffic.getDebugState();
@@ -210,7 +221,8 @@ function animate(now) {
     const interactPressed = consumePress('KeyE');
 
     traffic.update(dt, carState.x, carState.z);
-    race.update(dt, carState.x, carState.z, interactPressed);
+    race.update(dt, carState.x, carState.z, interactPressed, traffic.getPositions());
+    weather.update(dt, carState.x, carState.z);
 
     // Audio cue during countdown
     if (race.state === RACE_STATE.COUNTDOWN) {
@@ -232,13 +244,18 @@ function animate(now) {
     }
 
     const speedBeforeStep = carState.speed;
+    const frictionMod = weather.getFrictionMultiplier();
+    const effectiveVehicle = {
+      ...vehicle,
+      grip: vehicle.grip * frictionMod,
+    };
 
     stepCarPhysics(
       carState,
       frozen
         ? { throttle: 0, brake: 0, steer: 0, handbrake: false }
         : { throttle: input.throttle, brake: input.brake, steer: input.steer, handbrake: input.handbrake },
-      vehicle,
+      effectiveVehicle,
       dt,
       frameColliders
     );
@@ -277,7 +294,6 @@ startBtn.addEventListener('click', () => {
   running = true;
 });
 
-// Also unlock audio on initial touch or click anywhere
 window.addEventListener('touchstart', () => audioEngine.unlock(), { once: true, passive: true });
 window.addEventListener('click', () => audioEngine.unlock(), { once: true, passive: true });
 

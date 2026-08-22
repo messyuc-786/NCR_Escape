@@ -16,10 +16,15 @@ function findChromium() {
 
 // Road corridors from roads/network.js, padded by lane half-width + a small tolerance.
 function onRoadNetwork(c) {
-  const mainBlvd = Math.abs(c.x) <= 12 && c.z >= -230 && c.z <= 230;
-  const corpLoop = Math.abs(c.z - 40) <= 9 && Math.abs(c.x) <= 180;
-  const service = Math.abs(c.x + 60) <= 6 && c.z >= -20 && c.z <= 100;
-  return mainBlvd || corpLoop || service;
+  const northSouthHighway = Math.abs(c.x) <= 14 && c.z >= -500 && c.z <= 500;
+  const centralBelt = Math.abs(c.z - 40) <= 12 && c.x >= -380 && c.x <= 400;
+  const golfNorth = Math.abs(c.x - 380) <= 12 && c.z >= 30 && c.z <= 360;
+  const corpConnector = Math.abs(c.z - 340) <= 12 && c.x >= -10 && c.x <= 400;
+  const indHaul = Math.abs(c.x + 360) <= 12 && c.z >= 30 && c.z <= 300;
+  const indNorth = Math.abs(c.z - 280) <= 12 && c.x >= -380 && c.x <= 10;
+  const oldMarketCross = Math.abs(c.z + 350) <= 12 && c.x >= -200 && c.x <= 200;
+  const service = Math.abs(c.x + 60) <= 8 && c.z >= -25 && c.z <= 105;
+  return northSouthHighway || centralBelt || golfNorth || corpConnector || indHaul || indNorth || oldMarketCross || service;
 }
 
 (async () => {

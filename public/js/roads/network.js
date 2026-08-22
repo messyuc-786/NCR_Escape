@@ -1,51 +1,47 @@
-// Plain data describing Cyber District's road network.
-//
-// This file is the single source of truth for roads. It is read by:
-//   - world/district.js          (road/curb mesh generation)
-//   - traffic/trafficSystem.js   (lane paths, density, speed limits)
-//   - racing/                    (future: race routes reference segment ids, never geometry)
-// A road is defined once here and never re-authored per system.
-//
-// Per spec §12 each segment carries: id, type, lanes, width, speedLimit, connections,
-// traffic settings, and race suitability.
+// Road network dataset for NCR ESCAPE (spec §3-6, §11-12).
+// Single source of truth for rendering, collisions, traffic lane following, and junction generation.
 
 export const roadSegments = [
+  // --- Cyber District Central ---
   {
     id: 'main-boulevard',
     type: 'highway',
+    district: 'Cyber District',
     from: { x: 0, z: -220 },
     to: { x: 0, z: 220 },
     width: 16,
-    lanes: 2,                // lanes PER DIRECTION
-    speedLimit: 26,          // m/s (~94 km/h)
+    lanes: 2,
+    speedLimit: 26, // ~94 km/h
     elevated: false,
     traffic: { density: 1.0, allowTrucks: true },
     raceSuitability: 'high-speed',
-    connections: ['corporate-loop'],
-    exits: ['north-to-corporate-mile', 'south-to-old-market'],
+    connections: ['corporate-loop', 'flyover-ramp'],
+    exits: ['corporate-mile', 'old-market-avenue'],
   },
   {
     id: 'corporate-loop',
     type: 'urban',
+    district: 'Cyber District',
     from: { x: -170, z: 40 },
     to: { x: 170, z: 40 },
-    width: 10,
+    width: 11,
     lanes: 1,
-    speedLimit: 15,          // m/s (~54 km/h)
+    speedLimit: 16, // ~58 km/h
     elevated: false,
     traffic: { density: 0.9, allowTrucks: false },
     raceSuitability: 'technical',
     connections: ['main-boulevard', 'service-lane'],
-    exits: ['east-to-golf-belt', 'west-to-industrial-edge'],
+    exits: ['golf-belt-east', 'industrial-edge-west'],
   },
   {
     id: 'service-lane',
     type: 'service',
+    district: 'Cyber District',
     from: { x: -60, z: 90 },
     to: { x: -60, z: -10 },
     width: 5,
     lanes: 1,
-    speedLimit: 9,           // m/s (~32 km/h)
+    speedLimit: 10,
     elevated: false,
     traffic: { density: 0.35, allowTrucks: false },
     raceSuitability: 'shortcut',
@@ -55,19 +51,160 @@ export const roadSegments = [
   {
     id: 'flyover-ramp',
     type: 'highway-elevated',
+    district: 'Cyber District',
     from: { x: 0, z: -40 },
     to: { x: 0, z: 120 },
     width: 12,
     lanes: 1,
-    speedLimit: 30,
+    speedLimit: 32,
     elevated: true,
     liftHeight: 9,
-    // No AI traffic on the flyover yet: it has no on/off ramp geometry for cars to merge
-    // through, so spawning them there would make them pop in mid-air. Marked explicitly
-    // rather than faked.
     traffic: { density: 0, allowTrucks: false },
     raceSuitability: 'high-speed',
     connections: [],
+    exits: [],
+  },
+
+  // --- Corporate Mile (North Expansion) ---
+  {
+    id: 'corporate-mile',
+    type: 'highway',
+    district: 'Corporate Mile',
+    from: { x: 0, z: 220 },
+    to: { x: 0, z: 480 },
+    width: 16,
+    lanes: 2,
+    speedLimit: 28, // ~100 km/h
+    elevated: false,
+    traffic: { density: 0.85, allowTrucks: true },
+    raceSuitability: 'high-speed',
+    connections: ['corporate-connector', 'industrial-north-link'],
+    exits: ['noida-corridor-future'],
+  },
+  {
+    id: 'corporate-connector',
+    type: 'urban',
+    district: 'Corporate Mile',
+    from: { x: 0, z: 340 },
+    to: { x: 380, z: 340 },
+    width: 11,
+    lanes: 1,
+    speedLimit: 18,
+    elevated: false,
+    traffic: { density: 0.75, allowTrucks: false },
+    raceSuitability: 'technical',
+    connections: ['corporate-mile', 'golf-belt-north'],
+    exits: [],
+  },
+  {
+    id: 'industrial-north-link',
+    type: 'industrial',
+    district: 'Corporate Mile',
+    from: { x: -360, z: 280 },
+    to: { x: 0, z: 280 },
+    width: 12,
+    lanes: 1,
+    speedLimit: 17,
+    elevated: false,
+    traffic: { density: 0.8, allowTrucks: true },
+    raceSuitability: 'medium',
+    connections: ['corporate-mile', 'industrial-haul-road'],
+    exits: [],
+  },
+
+  // --- Golf Course Belt (East Expansion) ---
+  {
+    id: 'golf-belt-east',
+    type: 'urban',
+    district: 'Golf Course Belt',
+    from: { x: 170, z: 40 },
+    to: { x: 380, z: 40 },
+    width: 12,
+    lanes: 1,
+    speedLimit: 20,
+    elevated: false,
+    traffic: { density: 0.7, allowTrucks: false },
+    raceSuitability: 'smooth-curves',
+    connections: ['corporate-loop', 'golf-belt-north'],
+    exits: [],
+  },
+  {
+    id: 'golf-belt-north',
+    type: 'urban',
+    district: 'Golf Course Belt',
+    from: { x: 380, z: 40 },
+    to: { x: 380, z: 340 },
+    width: 12,
+    lanes: 1,
+    speedLimit: 22,
+    elevated: false,
+    traffic: { density: 0.65, allowTrucks: false },
+    raceSuitability: 'high-speed',
+    connections: ['golf-belt-east', 'corporate-connector'],
+    exits: [],
+  },
+
+  // --- Industrial Edge (West Expansion) ---
+  {
+    id: 'industrial-edge-west',
+    type: 'industrial',
+    district: 'Industrial Edge',
+    from: { x: -360, z: 40 },
+    to: { x: -170, z: 40 },
+    width: 12,
+    lanes: 1,
+    speedLimit: 16,
+    elevated: false,
+    traffic: { density: 0.85, allowTrucks: true },
+    raceSuitability: 'drifting',
+    connections: ['corporate-loop', 'industrial-haul-road'],
+    exits: [],
+  },
+  {
+    id: 'industrial-haul-road',
+    type: 'industrial',
+    district: 'Industrial Edge',
+    from: { x: -360, z: 40 },
+    to: { x: -360, z: 280 },
+    width: 13,
+    lanes: 1,
+    speedLimit: 16,
+    elevated: false,
+    traffic: { density: 0.9, allowTrucks: true },
+    raceSuitability: 'drifting',
+    connections: ['industrial-edge-west', 'industrial-north-link'],
+    exits: [],
+  },
+
+  // --- Old Market & Delhi Gate (South Expansion) ---
+  {
+    id: 'old-market-avenue',
+    type: 'urban-dense',
+    district: 'Old Market',
+    from: { x: 0, z: -480 },
+    to: { x: 0, z: -220 },
+    width: 14,
+    lanes: 2,
+    speedLimit: 18,
+    elevated: false,
+    traffic: { density: 1.1, allowTrucks: true },
+    raceSuitability: 'heavy-traffic-weaving',
+    connections: ['main-boulevard', 'old-market-cross'],
+    exits: ['delhi-ring-road-future'],
+  },
+  {
+    id: 'old-market-cross',
+    type: 'urban-dense',
+    district: 'Old Market',
+    from: { x: -180, z: -350 },
+    to: { x: 180, z: -350 },
+    width: 10,
+    lanes: 1,
+    speedLimit: 14,
+    elevated: false,
+    traffic: { density: 1.15, allowTrucks: false },
+    raceSuitability: 'technical-traffic',
+    connections: ['old-market-avenue'],
     exits: [],
   },
 ];
@@ -77,6 +214,16 @@ export const raceRoutes = [
     id: 'cyber-loop-1',
     label: 'Cyber District Loop',
     segments: ['main-boulevard', 'flyover-ramp', 'corporate-loop', 'service-lane'],
+  },
+  {
+    id: 'corporate-grand-prix',
+    label: 'Corporate Mile Grand Prix',
+    segments: ['main-boulevard', 'corporate-mile', 'corporate-connector', 'golf-belt-north', 'golf-belt-east', 'corporate-loop'],
+  },
+  {
+    id: 'industrial-drift-run',
+    label: 'Industrial Edge Drift Run',
+    segments: ['industrial-edge-west', 'industrial-haul-road', 'industrial-north-link'],
   },
 ];
 
@@ -88,8 +235,7 @@ export function getDrivableSegments() {
 }
 
 /**
- * Which world axis a road predominantly runs along. Used to group segments into opposing
- * traffic-light phases: roads on different axes cannot hold green simultaneously.
+ * Which world axis a road predominantly runs along.
  */
 export function axisOf(seg) {
   return Math.abs(seg.to.x - seg.from.x) > Math.abs(seg.to.z - seg.from.z) ? 'x' : 'z';
@@ -100,10 +246,7 @@ function cross2(ax, az, bx, bz) {
 }
 
 /**
- * Computes where two segments physically cross, using a standard parametric line-segment
- * intersection. Deliberately generic rather than hardcoding the two junctions this district
- * happens to have — adding a new road to roadSegments should produce new intersections for
- * free, which is the whole point of keeping roads as data (spec §12).
+ * Computes where two segments physically cross using parametric line-segment intersection.
  */
 function segIntersect(a, b) {
   const rx = a.to.x - a.from.x;
@@ -112,7 +255,7 @@ function segIntersect(a, b) {
   const sz = b.to.z - b.from.z;
 
   const denom = cross2(rx, rz, sx, sz);
-  if (Math.abs(denom) < 1e-6) return null; // parallel or collinear
+  if (Math.abs(denom) < 1e-6) return null;
 
   const qpx = b.from.x - a.from.x;
   const qpz = b.from.z - a.from.z;
@@ -123,7 +266,7 @@ function segIntersect(a, b) {
   return { x: a.from.x + rx * t, z: a.from.z + rz * t };
 }
 
-/** All junctions between drivable roads, derived from the segment data. */
+/** All derived junctions between drivable roads. */
 export function getIntersections() {
   const segs = getDrivableSegments();
   const out = [];
@@ -136,8 +279,6 @@ export function getIntersections() {
         x: p.x,
         z: p.z,
         segIds: [segs[i].id, segs[j].id],
-        // Junction box half-size: the wider of the two roads, so a car is considered "inside"
-        // the intersection for as long as it's physically over the painted crossing.
         half: Math.max(segs[i].width, segs[j].width) / 2,
       });
     }
@@ -146,8 +287,7 @@ export function getIntersections() {
 }
 
 /**
- * Parametric position (0..1) of a world point along a segment, measured in travel direction.
- * Mirrors sampleLane's dir convention so the two never disagree about which end is the start.
+ * Parametric position (0..1) of a world point along a segment in travel direction.
  */
 export function tAlong(seg, x, z, dir) {
   const ax = dir > 0 ? seg.from.x : seg.to.x;
@@ -165,9 +305,6 @@ export function segmentLength(seg) {
 
 /**
  * Returns a world-space point + heading for a position along a segment lane.
- * @param t 0..1 along the segment in travel direction
- * @param dir +1 = from->to, -1 = to->from
- * @param laneIndex 0..lanes-1, offset outward from the centre line
  */
 export function sampleLane(seg, t, dir, laneIndex) {
   const ax = dir > 0 ? seg.from.x : seg.to.x;
@@ -180,7 +317,7 @@ export function sampleLane(seg, t, dir, laneIndex) {
   const len = Math.hypot(dx, dz);
   const heading = Math.atan2(dx, dz);
 
-  // Keep-left convention: lanes stack outward from the centre line on the travel side.
+  // Keep-left convention
   const laneWidth = seg.width / (seg.lanes * 2);
   const offset = laneWidth * (0.5 + laneIndex);
   const px = Math.cos(heading) * offset;

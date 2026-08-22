@@ -65,10 +65,9 @@ async function main() {
         failures.push(`Expected several traffic cars to move, only ${movedCount} did`);
       }
 
-      // Traffic must stay on the road network. Cyber District roads all sit within
-      // x within +/-175 and z within +/-225; anything outside means lane math is broken.
+      // Traffic must stay on the road network within the active district bounds.
       const strays = trafficAfter.filter(
-        (c) => c.x !== undefined && (Math.abs(c.x) > 180 || Math.abs(c.z) > 230)
+        (c) => c.x !== undefined && (Math.abs(c.x) > 420 || Math.abs(c.z) > 520)
       );
       if (strays.length) {
         failures.push(`${strays.length} traffic cars left the road network: ${JSON.stringify(strays[0])}`);

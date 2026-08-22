@@ -2,12 +2,22 @@ import { roadSegments } from '/js/roads/network.js';
 import { raceEvents } from '/js/racing/events.js';
 
 // Real-time 2D Canvas Radar Minimap for NCR ESCAPE (spec §18).
+// Tracks road network, player orientation, AI traffic, AI race opponents, checkpoints, and live district name.
 
 export class Minimap {
-  constructor(canvasId = 'minimap-canvas') {
+  constructor(canvasId = 'minimap-canvas', labelId = 'minimap-label') {
     this.canvas = document.getElementById(canvasId);
+    this.labelEl = document.getElementById(labelId);
     this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
-    this.scale = 0.28; // world meters to canvas pixels
+    this.scale = 0.22; // world meters to canvas pixels
+  }
+
+  getDistrictName(x, z) {
+    if (x > 140) return 'GOLF COURSE BELT';
+    if (x < -140) return 'INDUSTRIAL EDGE';
+    if (z > 220) return 'CORPORATE MILE';
+    if (z < -220) return 'OLD MARKET';
+    return 'CYBER DISTRICT';
   }
 
   update(playerState, trafficSystem, raceSystem) {
@@ -18,6 +28,14 @@ export class Minimap {
     const cx = w / 2;
     const cy = h / 2;
 
+    const px = playerState.x;
+    const pz = playerState.z;
+
+    // Update district title
+    if (this.labelEl) {
+      this.labelEl.textContent = this.getDistrictName(px, pz);
+    }
+
     const ctx = this.ctx;
     ctx.clearRect(0, 0, w, h);
 
@@ -25,24 +43,20 @@ export class Minimap {
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(12, 17, 26, 0.85)';
+    ctx.fillStyle = 'rgba(10, 14, 24, 0.88)';
     ctx.fill();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(0, 212, 170, 0.4)';
+    ctx.strokeStyle = 'rgba(0, 212, 170, 0.45)';
     ctx.stroke();
     ctx.clip();
 
     // World transform centered on player
     ctx.save();
     ctx.translate(cx, cy);
-    // Rotate map with player heading so forward is always UP on minimap
     ctx.rotate(-playerState.heading);
 
-    const px = playerState.x;
-    const pz = playerState.z;
-
     // 1. Draw Road Network
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4.5;
     ctx.lineCap = 'round';
     for (const seg of roadSegments) {
       ctx.beginPath();
@@ -55,11 +69,13 @@ export class Minimap {
       ctx.lineTo(x2, y2);
 
       if (seg.elevated) {
-        ctx.strokeStyle = '#55657e';
+        ctx.strokeStyle = '#64748b';
       } else if (seg.type === 'highway') {
-        ctx.strokeStyle = '#3a4a63';
+        ctx.strokeStyle = '#384b66';
+      } else if (seg.type === 'industrial') {
+        ctx.strokeStyle = '#4a4852';
       } else {
-        ctx.strokeStyle = '#2d3a4f';
+        ctx.strokeStyle = '#2d3e54';
       }
       ctx.stroke();
     }
@@ -69,7 +85,7 @@ export class Minimap {
       const mx = (ev.marker.x - px) * this.scale;
       const my = (ev.marker.z - pz) * this.scale;
       ctx.beginPath();
-      ctx.arc(mx, my, 4.5, 0, Math.PI * 2);
+      ctx.arc(mx, my, 4.0, 0, Math.PI * 2);
       ctx.fillStyle = '#ff7a18';
       ctx.fill();
       ctx.strokeStyle = '#fff';
@@ -91,6 +107,23 @@ export class Minimap {
           ctx.fill();
         }
       });
+
+      // Draw AI Opponents
+      if (raceSystem.aiOpponents) {
+        ctx.fillStyle = '#ff2d55';
+        for (const ai of raceSystem.aiOpponents) {
+          const ax = (ai.x - px) * this.scale;
+          const ay = (ai.z - pz) * this.scale;
+          if (Math.hypot(ax, ay) < cx) {
+            ctx.beginPath();
+            ctx.arc(ax, ay, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
     }
 
     // 4. Draw Traffic Vehicles
