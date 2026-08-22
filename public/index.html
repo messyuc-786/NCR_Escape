@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d1117" />
+  <title>NCR ESCAPE — Open World Indian Street Racing</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Minimap Radar -->
+    <div id="minimap-container">
+      <canvas id="minimap-canvas" width="140" height="140"></canvas>
+      <div id="minimap-label">CYBER DISTRICT</div>
+    </div>
+
+    <!-- In-Game HUD -->
+    <div id="hud">
+      <div class="hud-speedometer">
+        <div id="hud-speed"><span id="speed-value">0</span><span class="unit">km/h</span></div>
+        <div id="hud-gear">N</div>
+      </div>
+      <div id="rpm-bar-bg">
+        <div id="rpm-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Drift Score Notification -->
+    <div id="drift-hud" class="hidden">
+      <div id="drift-score">DRIFT <strong>+0</strong> <span class="d-mult">x1.0</span></div>
+    </div>
+
+    <!-- Top Status Bar -->
+    <div id="topbar">
+      <div id="wallet"></div>
+      <div class="topbar-actions">
+        <button id="mode-toggle" title="Toggle Day/Night Mode">☀️ DAY</button>
+        <button id="audio-toggle" title="Toggle Audio">🔊 SOUND</button>
+        <button id="touch-toggle" title="Toggle Mobile Controls">📱 TOUCH</button>
+        <button id="garage-open">GARAGE</button>
+      </div>
+    </div>
+
+    <!-- Event Discovery Marker Prompt -->
+    <div id="event-prompt" class="hidden">
+      <div class="ep-tag">DISCOVERED EVENT</div>
+      <div id="event-name"></div>
+      <div id="event-desc"></div>
+      <div class="ep-key">Press <strong>E</strong> or tap <strong>START</strong></div>
+    </div>
+
+    <!-- Race State Displays -->
+    <div id="countdown" class="hidden">3</div>
+    <div id="race-hud" class="hidden">
+      <div id="race-timer">0.00</div>
+      <div id="race-checkpoint">CP 1 / 4</div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="results" class="hidden">
+      <div class="panel">
+        <div class="panel-title">RACE COMPLETE</div>
+        <div id="results-body"></div>
+        <button id="results-close" class="primary-btn">CONTINUE</button>
+      </div>
+    </div>
+
+    <!-- Garage Modal -->
+    <div id="garage" class="hidden">
+      <div class="panel garage-panel">
+        <div class="panel-title">NCR CUSTOMS & GARAGE</div>
+        <div id="garage-body"></div>
+        <button id="garage-close" class="primary-btn">BACK TO WORLD</button>
+      </div>
+    </div>
+
+    <!-- Mobile Virtual Touch Controls -->
+    <div id="touch-controls" class="hidden">
+      <div class="touch-left-cluster">
+        <button id="btn-steer-left" class="touch-btn touch-steer" aria-label="Steer Left">◀</button>
+        <button id="btn-steer-right" class="touch-btn touch-steer" aria-label="Steer Right">▶</button>
+      </div>
+      <div class="touch-center-cluster">
+        <button id="btn-interact" class="touch-btn touch-action" aria-label="Interact / Start Race">⚡ EVENT</button>
+        <button id="btn-reset" class="touch-btn touch-action" aria-label="Reset Car">↺ RESET</button>
+      </div>
+      <div class="touch-right-cluster">
+        <button id="btn-handbrake" class="touch-btn touch-drift" aria-label="Handbrake / Drift">DRIFT</button>
+        <div class="touch-pedals">
+          <button id="btn-brake" class="touch-btn touch-pedal pedal-brake" aria-label="Brake / Reverse">BRAKE</button>
+          <button id="btn-gas" class="touch-btn touch-pedal pedal-gas" aria-label="Gas / Accelerate">GAS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Intro / Launch Overlay -->
+    <div id="intro-overlay">
+      <div class="intro-card">
+        <div class="intro-logo">NCR<span>ESCAPE</span></div>
+        <p class="intro-sub">Open-World Indian Street Driving & Racing</p>
+        <p class="intro-district">Gurugram → Delhi → Noida Expressway Route</p>
+        
+        <div class="intro-controls-grid">
+          <div>
+            <strong>Desktop Controls</strong>
+            <span><strong>W / ↑</strong> Gas &nbsp; <strong>S / ↓</strong> Brake/Reverse</span>
+            <span><strong>A / D / ← →</strong> Steer &nbsp; <strong>SPACE</strong> Drift</span>
+            <span><strong>E</strong> Event &nbsp; <strong>R</strong> Reset &nbsp; <strong>G</strong> Garage</span>
+          </div>
+          <div>
+            <strong>Phone / Tablet</strong>
+            <span>Virtual on-screen touch controls with multi-touch steering, pedals & drift button</span>
+          </div>
+        </div>
+
+        <button id="start-btn" class="primary-btn">ENTER WORLD</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/core/boot.js"></script>
+</body>
+</html>

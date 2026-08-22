@@ -1,0 +1,3 @@
+Placeholder for the world module (full spec layout).
+Currently implemented, running code lives in public/js/ - see docs/TECHNICAL_ARCHITECTURE.md.
+This folder will be filled in as later phases (see docs/ROADMAP.md) move code here properly.

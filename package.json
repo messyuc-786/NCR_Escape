@@ -1,0 +1,17 @@
+{
+  "name": "ncr-escape",
+  "version": "0.1.0",
+  "description": "NCR ESCAPE - original open-world Indian street-driving/racing game (vertical slice)",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node tests/run-all.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

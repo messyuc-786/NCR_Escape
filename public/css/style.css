@@ -1,0 +1,625 @@
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05070d;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- Radar Minimap ---------- */
+#minimap-container {
+  position: absolute;
+  top: 75px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+#minimap-canvas {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(0, 212, 170, 0.15);
+}
+
+#minimap-label {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #00d4aa;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+
+/* ---------- In-Game HUD ---------- */
+#hud {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  color: #eef3ff;
+  pointer-events: none;
+  user-select: none;
+  z-index: 5;
+}
+
+.hud-speedometer {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+#hud-speed {
+  font-size: 50px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-shadow: 0 3px 12px rgba(0,0,0,0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+#hud-speed .unit {
+  font-size: 16px;
+  font-weight: 600;
+  margin-left: 6px;
+  opacity: 0.7;
+  color: #00d4aa;
+}
+
+#hud-gear {
+  background: linear-gradient(135deg, #ff7a18, #ff3d68);
+  color: #0a0a0a;
+  font-weight: 900;
+  padding: 3px 12px;
+  border-radius: 5px;
+  font-size: 16px;
+  box-shadow: 0 2px 10px rgba(255, 122, 24, 0.4);
+}
+
+#rpm-bar-bg {
+  width: 140px;
+  height: 5px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+#rpm-bar-fill {
+  width: 10%;
+  height: 100%;
+  background: linear-gradient(90deg, #00d4aa, #ff7a18, #ff2d55);
+  transition: width 0.05s ease-out;
+}
+
+/* ---------- Drift Score Banner ---------- */
+#drift-hud {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 14, 24, 0.85);
+  border: 1px solid #ff7a18;
+  padding: 8px 24px;
+  border-radius: 30px;
+  color: #fff;
+  font-size: 16px;
+  letter-spacing: 2px;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow: 0 0 25px rgba(255, 122, 24, 0.4);
+  animation: pulseDrift 0.3s alternate infinite ease-in-out;
+}
+
+#drift-score strong { color: #ffd166; font-size: 20px; }
+.d-mult { color: #ff7a18; font-weight: 800; margin-left: 6px; }
+
+@keyframes pulseDrift {
+  from { transform: translateX(-50%) scale(1); }
+  to { transform: translateX(-50%) scale(1.04); }
+}
+
+/* ---------- Top Status Bar ---------- */
+#topbar {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #eef3ff;
+  z-index: 10;
+}
+
+#wallet {
+  font-size: 14px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10, 14, 26, 0.75);
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+}
+
+#wallet .w-cash { color: #ffd166; font-weight: 800; font-size: 16px; }
+#wallet .w-sep { opacity: 0.35; }
+#wallet .w-xp { color: #00d4aa; font-weight: 700; }
+#wallet .w-rep { color: #4aa8ff; font-weight: 700; }
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.topbar-actions button, #garage-open {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #eef3ff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+}
+
+.topbar-actions button:hover, #garage-open:hover {
+  background: rgba(255, 122, 24, 0.9);
+  color: #0a0a0a;
+  border-color: transparent;
+}
+
+/* ---------- Event Discovery Card ---------- */
+#event-prompt {
+  position: absolute;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(8, 12, 22, 0.92);
+  border: 1px solid rgba(255, 122, 24, 0.6);
+  border-radius: 12px;
+  padding: 18px 28px;
+  text-align: center;
+  color: #eef3ff;
+  min-width: 320px;
+  max-width: 440px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(255,122,24,0.25);
+  z-index: 10;
+}
+
+.ep-tag { font-size: 11px; letter-spacing: 3px; color: #ff7a18; font-weight: 800; margin-bottom: 6px; }
+#event-name { font-size: 20px; font-weight: 800; color: #fff; }
+#event-desc { font-size: 13px; opacity: 0.75; margin-top: 6px; line-height: 1.4; }
+.ep-key { margin-top: 12px; font-size: 13px; opacity: 0.9; }
+.ep-key strong { background: #ff7a18; color: #0a0a0a; padding: 2px 8px; border-radius: 4px; font-weight: 800; }
+
+/* ---------- Race Countdown & HUD ---------- */
+#countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 130px;
+  font-weight: 900;
+  color: #ff7a18;
+  text-shadow: 0 6px 40px rgba(0,0,0,0.9);
+  z-index: 15;
+}
+
+#race-hud {
+  position: absolute;
+  top: 75px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: #eef3ff;
+  z-index: 10;
+}
+
+#race-timer {
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9);
+}
+
+#race-checkpoint {
+  margin-top: 2px;
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #00d4aa;
+  font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+/* ---------- Modals (Results & Garage) ---------- */
+#results, #garage {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: rgba(3, 6, 14, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.panel {
+  background: linear-gradient(160deg, #111827, #0b0f19);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #eef3ff;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+}
+
+.panel-title {
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: #ff7a18;
+  font-weight: 800;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.primary-btn {
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+  background: linear-gradient(135deg, #ff7a18, #ff3d68);
+  color: #0a0a0a;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.primary-btn:hover { transform: translateY(-2px); }
+
+/* Results */
+.res-event { font-size: 18px; font-weight: 700; text-align: center; opacity: 0.9; }
+.res-time { font-size: 56px; font-weight: 900; text-align: center; margin: 8px 0; color: #fff; }
+.res-time span { font-size: 22px; opacity: 0.6; margin-left: 4px; }
+.res-target { font-size: 13px; text-align: center; opacity: 0.7; }
+.res-rewards { display: flex; gap: 24px; justify-content: center; margin-top: 24px; }
+.res-rewards div { display: flex; flex-direction: column; gap: 4px; text-align: center; }
+.res-rewards span { font-size: 11px; letter-spacing: 2px; opacity: 0.6; }
+.res-rewards strong { font-size: 20px; color: #ffd166; }
+
+/* Garage Showroom */
+.garage-section-title {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  color: #00d4aa;
+  font-weight: 800;
+  margin: 18px 0 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 4px;
+}
+
+.garage-car-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+}
+
+.car-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.car-card.selected {
+  border-color: #ff7a18;
+  background: rgba(255, 122, 24, 0.08);
+}
+
+.car-card-header strong { font-size: 13px; display: block; color: #fff; }
+.car-card-header span { font-size: 10px; opacity: 0.55; text-transform: uppercase; }
+
+.car-stats-mini { font-size: 10px; opacity: 0.8; line-height: 1.4; }
+.car-stats-mini span { opacity: 0.5; }
+
+.car-act-btn {
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.car-act-btn.active { background: rgba(0, 212, 170, 0.2); color: #00d4aa; cursor: default; }
+.car-act-btn.select { background: #00d4aa; color: #0a0a0a; }
+.car-act-btn.buy { background: #ff7a18; color: #0a0a0a; }
+.car-act-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Paint palette */
+.garage-paint-palette {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+}
+
+.paint-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease;
+}
+
+.paint-swatch:hover { transform: scale(1.15); }
+.paint-swatch.active { border-color: #ffffff; box-shadow: 0 0 10px rgba(255,255,255,0.6); }
+
+/* Performance Tuning */
+.up-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.up-meta { flex: 1; text-align: left; }
+.up-name { display: block; font-size: 13px; font-weight: 700; }
+.up-stat { font-size: 10px; opacity: 0.45; }
+.up-pips { display: flex; gap: 4px; }
+.up-pips i {
+  width: 14px;
+  height: 6px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.12);
+  display: block;
+}
+.up-pips i.on { background: #ff7a18; }
+.up-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #eef3ff;
+  padding: 6px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 86px;
+}
+.up-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+.up-btn:not(:disabled):hover { background: #ff7a18; color: #0a0a0a; border-color: transparent; }
+
+/* ---------- Virtual Touch Controls (Phone & Tablet) ---------- */
+#touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 24px;
+}
+
+.touch-left-cluster, .touch-right-cluster, .touch-center-cluster {
+  pointer-events: auto;
+  display: flex;
+  gap: 14px;
+}
+
+.touch-center-cluster {
+  position: absolute;
+  top: 80px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.touch-btn {
+  background: rgba(18, 26, 43, 0.78);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-radius: 12px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-btn:active {
+  background: rgba(255, 122, 24, 0.9);
+  color: #0a0a0a;
+  transform: scale(0.95);
+}
+
+.touch-steer {
+  width: 68px;
+  height: 68px;
+  font-size: 26px;
+}
+
+.touch-pedals {
+  display: flex;
+  gap: 12px;
+}
+
+.touch-pedal {
+  width: 72px;
+  height: 90px;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.pedal-gas {
+  background: rgba(0, 212, 170, 0.35);
+  border-color: #00d4aa;
+}
+
+.pedal-gas:active {
+  background: #00d4aa;
+  color: #0a0a0a;
+}
+
+.pedal-brake {
+  background: rgba(255, 61, 104, 0.35);
+  border-color: #ff3d68;
+}
+
+.pedal-brake:active {
+  background: #ff3d68;
+  color: #0a0a0a;
+}
+
+.touch-drift {
+  width: 68px;
+  height: 68px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  background: rgba(255, 122, 24, 0.35);
+  border-color: #ff7a18;
+}
+
+.touch-action {
+  padding: 8px 14px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  border-radius: 6px;
+}
+
+/* ---------- Intro Card ---------- */
+#intro-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(20,30,55,0.95), rgba(3,4,10,0.98));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  padding: 20px;
+}
+
+.intro-card {
+  text-align: center;
+  color: #eef3ff;
+  max-width: 580px;
+}
+
+.intro-logo {
+  font-size: 50px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #ff7a18;
+}
+
+.intro-logo span {
+  color: #eef3ff;
+  margin-left: 10px;
+}
+
+.intro-sub {
+  margin-top: 6px;
+  opacity: 0.9;
+  letter-spacing: 2px;
+  font-size: 14px;
+  color: #00d4aa;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.intro-district {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+.intro-controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.intro-controls-grid strong {
+  display: block;
+  font-size: 12px;
+  color: #ff7a18;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.intro-controls-grid span {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  #topbar { top: 12px; left: 12px; right: 12px; }
+  #wallet { font-size: 12px; padding: 6px 10px; gap: 6px; }
+  .topbar-actions button, #garage-open { padding: 6px 8px; font-size: 10px; }
+  #minimap-container { top: 60px; left: 12px; }
+  #minimap-canvas { width: 100px; height: 100px; }
+  #hud { bottom: 12px; left: 12px; }
+  #hud-speed { font-size: 38px; }
+  .intro-controls-grid { grid-template-columns: 1fr; }
+  .intro-logo { font-size: 36px; }
+  .touch-steer { width: 56px; height: 56px; }
+  .touch-pedal { width: 60px; height: 75px; }
+  .touch-drift { width: 56px; height: 56px; }
+  #touch-controls { padding: 14px; }
+}
