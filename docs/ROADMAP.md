@@ -7,12 +7,11 @@ Status legend: ✅ Done & Automated-Tested · 🚧 In Progress · ⏳ Planned (F
 ---
 
 ## Phase 1 — Foundation ✅
-- Project boot (Express server with static delivery and stub save API)
+- Express server with static delivery and JSON save/status endpoints
 - Three.js WebGL engine (local vendored ES module — zero CDN dependency)
 - High-framerate game loop (`requestAnimationFrame`) with delta-time clamping
 - Dual-platform input system: Keyboard, Gamepad, and Multi-Touch virtual controls for smartphones/tablets
 - Third-person dynamic chase camera with spawn snap and high-speed trailing
-- Low-poly original vehicle mesh generation and transform integration
 
 ## Phase 2 — Driving Physics ✅
 - Longitudinal acceleration and deceleration curves with top speed clamping
@@ -22,71 +21,53 @@ Status legend: ✅ Done & Automated-Tested · 🚧 In Progress · ⏳ Planned (F
 - Axis-Aligned Bounding Box (AABB) static obstacle and building collision resolution
 - Multi-touch responsive phone controls (steer buttons, gas/brake pedals, drift button)
 
-## Phase 3 — First NCR World Slice ✅
-- Fictional **Cyber District** (Gurugram-inspired):
-  - **Main Boulevard**: 4-lane divided central artery
-  - **Corporate Loop**: East-west connector with tighter cornering
-  - **Service Lane**: Narrow urban shortcut behind corporate blocks
-  - **The Flyover**: Elevated multi-lane ramp with concrete support pillars
-  - **Elevated NCR Metro Viaduct Line**: Track deck, twin rails, and viaduct pillars running parallel to the highway corridor
-  - **Overhead Highway Signboards**: Iconic Indian highway green signage ("CYBER CITY", "NOIDA EXPWY / SECTOR 143")
-  - **Streetlight System**: Lamp posts with illumination along key corridors
-  - **Dynamic Lighting**: Day, Sunset, and Night atmospheric modes with neon building highlights
+## Phase 3 — Master 4-Region NCR Open World ✅
+- Seamless connected route spanning over 2.4 km:
+  1. **Region 1: Gurugram** (Cyber District, Corporate Mile, Golf Course Belt, Industrial Edge, Old Market)
+  2. **Region 2: Delhi Central** (Central Vista Grand Boulevard, India Gate-inspired Heritage Gateway Arch, Sandstone Pavilions, Ring Road Highway)
+  3. **Yamuna River Crossing** (Water channel with reflective surface & elevated Cable-Stayed Expressway Bridge with twin 42m suspension pylons)
+  4. **Region 3: Noida** (6-Lane high-speed Expressway, IT SEZ Commercial Parks, Sector 62 Link Road)
+  5. **Region 4: Sector 143** (Futuristic Innovation Center with glowing cyber rings & Grand Championship Arena)
+- Elevated concrete **NCR Metro Viaduct Line** with twin tracks and viaduct columns
+- Iconic Indian green highway signage and streetlight system
+- Dynamic **Day / Sunset / Night** lighting controller
 
-## Phase 4 — Traffic System ✅
-- Shared road network data driving both asphalt rendering and AI pathing
-- Lane following with keep-left convention and lane offset calculations
-- Speed limits, per-car speed variance, and density-weighted road spawning
-- Forward collision avoidance (slows for cars ahead and yields to the player)
-- Solid collision boundaries (player cannot pass through traffic vehicles)
-- Derivation of physical intersections using parametric line-segment crossing
-- Two-phase traffic signal controllers cycling green/yellow/all-red clearance
-- Segment turning AI: vehicles turn smoothly onto intersecting roads
-- Iconic Indian vehicle types: Hatchback, Sedan, Auto-Rickshaw (3-Wheeler), and Heavy Goods Truck
+## Phase 4 — Traffic Simulation & Indian Vehicles ✅
+- AI traffic follows lanes with keep-left conventions, per-road speed limits, speed variance, forward distance keeping, and yielding to the player
+- 2-Phase traffic signals (green/yellow/all-red) with physical signal poles
+- Seamless road-to-road turning at intersections
+- 4 distinct traffic vehicle models including Indian Auto-Rickshaws (3-Wheelers), Sedans, Hatchbacks, and Heavy Goods Trucks
+- Solid AABB collision geometry for all traffic
 
-## Phase 5 — Racing & Event Discovery ✅
-- Data-driven event architecture (`racing/events.js`) running any event definition
-- In-world interactive event markers with distance-fading beacons
-- Event discovery prompt with keyboard & touch triggers
-- Race countdown state holding car in place with procedural audio cues
-- Ordered checkpoint gates with radius triggers and dynamic visibility
-- Live race timer and checkpoint progression HUD
-- Multiple discoverable races across the district (Cyber District Sprint, Corporate Loop Dash, Noida Expressway Run)
-- Results modal calculating target-time bonuses, Cash, XP, and Reputation awards
+## Phase 5 — Racing & AI Rival Opponents ✅
+- AI rival opponents (`racing/aiOpponent.js`) that start alongside the player at countdown, navigate checkpoints, and avoid traffic
+- Live race position HUD (`POS 1 / 4`) and lap counter (`LAP 1 / 2`)
+- Multi-region race events:
+  - *Cyber District Sprint*
+  - *Corporate Mile Grand Prix*
+  - *Industrial Edge Drift Battle*
+  - *Old Market Traffic Run*
+  - *Yamuna Bridge Midnight Dash*
+  - *Sector 143 Innovation Grand Championship*
 
-## Phase 6 — Progression, Economy & Garage Showroom ✅
-- Persistent local progression save (Cash, XP, Reputation, Player Level)
-- Garage Showroom with multi-car lineup:
-  1. **Vantra RS** (Street Hatchback — Agile starter)
-  2. **Kaveri GT** (Sport Coupe — Aerodynamic speedster)
-  3. **Garuda RX** (Performance Muscle Sedan — High-torque drift machine)
-  4. **Indus Cruiser** (Urban SUV — High stability & mass)
-- Vehicle acquisition & active car selection
-- Custom Paint Palette (Cyber Orange, Noida Teal, Delhi Crimson, Gurugram Midnight, Aravalli Gold, Silver Frost, Stealth Black)
-- 5 Performance Upgrade categories (Engine Tune, Turbo, Street Tires, Sport Brakes, Suspension) modifying real vehicle physics stats
-- Drift Scoring System: Live drift angle and speed calculation with multiplier bonuses and bankable cash rewards
+## Phase 6 — Vehicle Lineup, Garage & Economy ✅
+- 6 Original Fictional Vehicles:
+  1. **Vantra RS** (Street Hatchback)
+  2. **Kaveri GT** (Sport Coupe)
+  3. **Garuda RX** (Performance Muscle Sedan)
+  4. **Indus Cruiser** (Urban Performance SUV)
+  5. **Sherpa 4x4** (Rugged Off-Roader)
+  6. **Apex GT Hypercar** (Flagship Expressway Hypercar)
+- Garage Showroom with active car switching and 8 custom paint colorways
+- 5-Tier Performance Upgrades modifying real vehicle physics stats
+- Drift Scoring System with live angle calculation, multiplier bonuses, and bankable cash rewards
+- Persistent local progression save (Cash, XP, Reputation, Level)
 
-## Phase 7 — Audio & Immersion ✅
-- Web Audio API procedural sound synthesizer (zero external sound file downloads)
-- Dynamic engine roar and harmonics scaling with RPM & speed
-- Bandpass-filtered tire screech noise on drifts and hard braking
-- Collision impact thud synthesis
-- Countdown beeps and victory reward chimes
+## Phase 7 — Weather & Audio Immersion ✅
+- Dynamic Weather System (`world/weather.js`): Clear, Monsoon Rain (1,200 particles + wet road friction reduction), and NCR Dust Haze
+- Web Audio API procedural sound synthesizer (engine rumble/RPM harmonics, tire screech, collision thuds, countdown beeps, reward chimes)
 
 ## Phase 8 — Multi-Platform HUD & UI ✅
-- Real-time 2D Canvas Radar Minimap with road lines, player heading cone, traffic blips, event markers, and checkpoints
+- Real-time 2D Canvas Radar Minimap with 4-region district detection
 - High-contrast Speedometer, Gear indicator (D/R/N), and dynamic RPM bar
-- Floating Drift Score counter and multiplier HUD
-- Mobile on-screen touch controls with multi-touch support
-- Quick toggles: Day/Night lighting, Sound Mute, Touch controls toggle
-
----
-
-## Future Phases (Planned)
-- ⏳ Full Region 1 (Gurugram): Corporate Mile, Old Market, Golf Belt, Industrial Edge
-- ⏳ Region 2 (Delhi): Central District, Old City, Ring Road, Riverfront
-- ⏳ Region 3 (Noida): Sector Grid, Metro Corridor, Tech Park
-- ⏳ Region 4 (Sector 143): Technology Valley destination
-- ⏳ Weather effects (Rain, Wet road reflections, Haze)
-- ⏳ AI rival racing opponents
-- ⏳ Multiplayer rooms & position synchronization
+- Mobile virtual touch controls with multi-touch support

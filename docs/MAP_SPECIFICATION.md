@@ -1,48 +1,58 @@
-# NCR ESCAPE — Map Specification
+# NCR ESCAPE — Master Map Specification
 
 Fictional open driving world inspired by the road culture, architecture, and geography of the Indian National Capital Region (NCR).
 
 ---
 
-## 1. Regional Master Plan (Spec §3–5)
+## 1. Master Highway Route (Spec §3–6)
 
 ```
-GURUGRAM-INSPIRED REGION (Cyber City, Corporate Mile, Golf Course Belt)
+REGION 1: GURUGRAM
+  - Cyber District (Main Boulevard, Flyover, Metro Viaduct)
+  - Corporate Mile (North Highway Corridor, Tech Skyscraper District)
+  - Golf Course Belt (East Scenic Parkway, Green Belts, Tree-Lined Avenues)
+  - Industrial Edge (West Freight Logistics, Warehouses, Silos)
+  - Old Market (Dense Urban Bazaar, Transition to Delhi Gate)
       ↓
-DELHI-INSPIRED REGION (Central Core, Old Market, Ring Road, Riverfront)
+REGION 2: DELHI CENTRAL
+  - Delhi Central Vista Grand Boulevard
+  - India Gate-inspired Heritage Gateway Arch & Red Sandstone Pavilions
+  - Ring Road Highway Orbital Artery
       ↓
-NOIDA-INSPIRED REGION (Sector Grid, Expressway, Tech Park)
+YAMUNA RIVER CROSSING
+  - Reflective River Yamuna Water Channel
+  - Elevated Cable-Stayed Expressway Bridge with twin 42m suspension pylons
       ↓
-SECTOR 143 TECHNOLOGY VALLEY (First Major Career Destination)
+REGION 3: NOIDA
+  - 6-Lane Noida-Greater Noida Expressway (Speed-run corridor)
+  - Sector Grid & IT SEZ Tech Parks (Sectors 62-142)
       ↓
-FUTURE EXPANSIONS (Greater Noida, Faridabad, Ghaziabad)
+REGION 4: SECTOR 143 TECHNOLOGY VALLEY
+  - Futuristic Sector 143 Innovation Center with glowing cyber rings
+  - Elite Street Racing Championship Finale Arena
 ```
 
 ---
 
-## 2. Playable Slice: Cyber District (Region 1)
+## 2. Road Network Hierarchy
 
-### Road Hierarchy
-| Road Segment | Type | Lanes | Speed Limit | Gameplay Purpose |
+| Road ID | District | Lanes | Speed Limit | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
-| **Main Boulevard** | Highway | 4 (2 per dir) | 94 km/h | High-speed drag runs, long-distance corridor |
-| **Corporate Loop** | Urban | 2 (1 per dir) | 54 km/h | Technical 90-degree cornering, traffic navigation |
-| **Service Lane** | Service | 1 lane | 32 km/h | Urban shortcut avoiding the central intersection |
-| **The Flyover** | Elevated Highway | 2 lanes | 108 km/h | Overpass speed challenge with vertical clearance |
-| **Central Junction** | Intersection | 4-Way | Signal Controlled | Decision point for sprints and race routes |
-
-### NCR Visual Identity & Roadside Props
-- **Elevated Metro Viaduct Line**: Elevated concrete track structure with twin rails and viaduct columns running alongside Main Boulevard.
-- **Overhead Highway Gantries**: Iconic Indian green highway signs with route markings ("CYBER CITY / NH-48", "NOIDA EXPWY / SECTOR 143").
-- **Streetlight Illumination**: Highway and urban lamp posts with real-time illumination.
-- **Corporate High-Rises**: Architectural towers featuring glowing neon crown trims for night racing.
-
-### Race Routes & Event Discovery Points
-1. **Cyber District Sprint** (Marker at x: 6, z: -150) — Point-to-point blast up Main Boulevard through the Corporate Loop to the Service Lane.
-2. **Corporate Loop Dash** (Marker at x: -140, z: 40) — Technical sprint across the Corporate Loop into the central junction.
-3. **Noida Expressway Run** (Marker at x: -6, z: 180) — High-speed run down the southern highway artery.
+| `main-boulevard` | Cyber District | 4 (2 per dir) | 94 km/h | Central highway artery |
+| `corporate-loop` | Cyber District | 2 (1 per dir) | 58 km/h | Technical urban connector |
+| `service-lane` | Cyber District | 1 lane | 36 km/h | Narrow alley shortcut |
+| `flyover-ramp` | Cyber District | 2 lanes (elevated) | 115 km/h | High-speed overpass |
+| `corporate-mile` | Corporate Mile | 4 (2 per dir) | 100 km/h | High-speed skyscraper corridor |
+| `golf-belt-east/north`| Golf Course Belt | 2 (1 per dir) | 80 km/h | Smooth sweeping turns |
+| `industrial-haul-road`| Industrial Edge | 2 (1 per dir) | 58 km/h | Drifting freight route |
+| `old-market-avenue` | Old Market | 4 (2 per dir) | 65 km/h | Heavy bazaar traffic weaving |
+| `delhi-ring-road` | Delhi Central | 4 (2 per dir) | 108 km/h | Fast orbital highway |
+| `delhi-central-vista` | Delhi Central | 6 (3 per dir) | 100 km/h | Grand ceremonial boulevard |
+| `yamuna-bridge` | Yamuna River | 6 (3 per dir, elevated) | 126 km/h | Cable-stayed river drag strip |
+| `noida-expressway-main`| Noida Expressway | 6 (3 per dir) | 130 km/h | 6-Lane maximum speed highway |
+| `sector-143-boulevard` | Sector 143 | 6 (3 per dir) | 122 km/h | High-tech destination boulevard |
 
 ---
 
-## 3. Data-Driven Expansion Strategy
-All roads, junctions, exit points, and event markers are stored in structured data (`roads/network.js`, `racing/events.js`). Adding Delhi, Noida, and Sector 143 districts simply requires adding new segment records with interconnected coordinate endpoints (`exits: []`), requiring zero modifications to the rendering engine or traffic AI.
+## 3. Dynamic Radar Minimap Integration
+The radar minimap (`public/js/ui/minimap.js`) continually monitors player coordinates, updates road geometry in real-time, displays traffic blips and race checkpoints, and identifies the active district dynamically.
