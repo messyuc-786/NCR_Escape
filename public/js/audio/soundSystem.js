@@ -48,6 +48,51 @@ export const SOUND_PLAYLISTS = [
     ]
   },
   {
+    id: '2010s-explosions',
+    title: '2010s Bollywood Party Explosions',
+    category: '2010s HITS',
+    badge: 'PARTY BLAST',
+    color: '#ff2d55',
+    tempo: 130,
+    tracks: [
+      { id: 'kala-chashma', title: 'Kala Chashma (Punjabi Bass Drop)', artist: 'Amar Arshi, Badshah & Neha Kakkar', era: '2016', style: 'dance' },
+      { id: 'subha-hone-na-de', title: 'Subha Hone Na De (Night Expressway)', artist: 'Mika Singh & Shefali Alvares', era: '2011', style: 'club' },
+      { id: 'badtameez-dil', title: 'Badtameez Dil (Brass Section Groove)', artist: 'Benny Dayal & Pritam', era: '2013', style: 'brass' },
+      { id: 'kar-gayi-chull', title: 'Kar Gayi Chull (Desi House Kick)', artist: 'Badshah & Fazilpuria', era: '2016', style: 'house' },
+      { id: 'chittiyaan', title: 'Chittiyaan Kalaiyaan (Electro Dhol)', artist: 'Meet Bros & Kanika Kapoor', era: '2015', style: 'dhol' },
+    ]
+  },
+  {
+    id: '2020s-bops',
+    title: '2020s Latest Trending Hits',
+    category: '2020s BOPS',
+    badge: 'TRENDING NOW',
+    color: '#00d4aa',
+    tempo: 126,
+    tracks: [
+      { id: 'tauba-tauba', title: 'Tauba Tauba (Karan Aujla Flow)', artist: 'Karan Aujla & Vicky Kaushal', era: '2024', style: 'modern-flow' },
+      { id: 'kesariya', title: 'Kesariya (Expressway Sunset Riff)', artist: 'Arijit Singh & Pritam', era: '2022', style: 'romantic' },
+      { id: 'jhoome-pathaan', title: 'Jhoome Jo Pathaan (Spanish Guitar Kick)', artist: 'Arijit Singh & Vishal-Shekhar', era: '2023', style: 'spanish-kick' },
+      { id: 'what-jhumka', title: 'What Jhumka? (Bassline Bounce)', artist: 'Arijit Singh & Jonita Gandhi', era: '2023', style: 'bounce' },
+      { id: 'apna-bana-le', title: 'Apna Bana Le (Midnight Highway)', artist: 'Arijit Singh & Sachin-Jigar', era: '2022', style: 'acoustic' },
+    ]
+  },
+  {
+    id: 'haryanvi-power',
+    title: 'Haryanvi Power & Ragni Beats',
+    category: 'HARYANVI HITS',
+    badge: 'HARYANA POWER',
+    color: '#fbbf24',
+    tempo: 134,
+    tracks: [
+      { id: '52-gaj', title: '52 Gaj Ka Daman (Desi Folk Bass)', artist: 'Renuka Panwar & Aman Jaji', era: '2020', style: 'haryanvi-folk' },
+      { id: 'gypsy', title: 'Gypsy (Balam Thanedhar GT Road)', artist: 'GD Kaur & Dinesh Golapuria', era: '2022', style: 'gypsy-bass' },
+      { id: 'bahu-kale-ki', title: 'Bahu Kale Ki (Heavy Dholak Slap)', artist: 'Ajay Hooda & Gajender Phogat', era: '2018', style: 'dholak-slap' },
+      { id: 'solid-body', title: 'Solid Body (High-Octane Ragni)', artist: 'Raju Punjabi & Sheenam Katholic', era: '2015', style: 'ragni-bass' },
+      { id: 'systumm', title: 'Systummm Hang (NCR Heavy Sub)', artist: 'Desi Hood Crew', era: '2024', style: 'sub-bass' },
+    ]
+  },
+  {
     id: 'latest-ncr',
     title: 'Latest NCR Street & Desi Drill',
     category: 'LATEST HITS',

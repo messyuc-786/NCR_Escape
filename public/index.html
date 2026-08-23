@@ -37,9 +37,11 @@
       <div id="drift-score">DRIFT <strong>+0</strong> <span class="d-mult">x1.0</span></div>
     </div>
 
-    <!-- Near Miss Notification -->
+    <!-- Near Miss & Traffic Combo Notification -->
     <div id="nearmiss-hud" class="hidden">
-      <div id="nearmiss-text">⚡ NEAR MISS +₹50</div>
+      <div id="nearmiss-badge">⚡ NEAR MISS</div>
+      <div id="nearmiss-text">+₹100</div>
+      <div id="nearmiss-combo" class="nearmiss-combo hidden">COMBO ×2</div>
     </div>
 
     <!-- Speed Trap Radar Notification -->
@@ -369,47 +371,120 @@
       </div>
     </div>
 
-    <!-- Cinematic Premium Title Screen Overlay (z-index: 100) -->
-    <div id="intro-overlay" class="title-screen-overlay">
-      <div class="title-screen-backdrop"></div>
-      <div class="title-screen-content">
-        <!-- Top Brand Header -->
-        <header class="title-hero-header">
-          <h1 class="title-main-logo">
-            <span class="logo-ncr">NCR</span><span class="logo-escape">ESCAPE</span>
-          </h1>
-          <div class="title-tagline">OPEN-WORLD INDIAN STREET DRIVING & RACING</div>
-          <div class="title-route">
-            <span class="route-point">GURUGRAM</span>
-            <span class="route-arrow">→</span>
-            <span class="route-point">DELHI</span>
-            <span class="route-arrow">→</span>
-            <span class="route-point">NOIDA</span>
+    <!-- Authentic Mockup Redesigned Title Screen (z-index: 100) -->
+    <div id="intro-overlay" class="title-screen-overlay mockup-styled">
+      <!-- Quick Action Buttons (Top Right) -->
+      <div class="title-top-actions">
+        <button id="btn-quick-settings" class="quick-icon-btn" title="Settings">⚙️</button>
+        <button id="btn-quick-exit" class="quick-icon-btn" title="Exit Game">🔌</button>
+      </div>
+
+      <div class="title-screen-content asymmetric-layout">
+        <!-- Main Interactive Left Panel -->
+        <div class="title-left-panel">
+          <!-- Logo & Brand Header -->
+          <header class="title-hero-header align-left">
+            <h1 class="title-main-logo brush-style">
+              <span class="logo-ncr">NCR</span><span class="logo-escape">ESCAPE</span>
+            </h1>
+            <div class="title-tagline cyan-glow">BEAT THE TRAFFIC. OWN THE NIGHT.</div>
+            <div class="title-route">
+              <span class="route-point">OPEN-WORLD INDIAN STREET DRIVING & RACING</span>
+            </div>
+            <div class="title-sub-route">
+              GURUGRAM <span class="bullet">•</span> DELHI <span class="bullet">•</span> NOIDA
+            </div>
+          </header>
+
+          <!-- Main Arcade DRIVE Button -->
+          <div class="title-actions-container align-left">
+            <button id="start-btn" class="title-primary-cta arcade-style" title="Launch NCR ESCAPE Drive">
+              <span class="cta-shimmer"></span>
+              <span class="cta-text">▶ DRIVE</span>
+              <span class="cta-icon-wireframe">🏎️</span>
+            </button>
           </div>
-        </header>
 
-        <!-- Center Showcase Spacer -->
-        <div class="title-center-spacer"></div>
-
-        <!-- Primary CTA & Secondary Action Buttons -->
-        <div class="title-actions-container">
-          <button id="start-btn" class="title-primary-cta" title="Launch NCR ESCAPE">
-            <span class="cta-shimmer"></span>
-            <span class="cta-text">ENTER WORLD</span>
-            <span class="cta-icon">🏎️</span>
-          </button>
-
-          <div class="title-secondary-actions">
-            <button id="btn-how-to-play" class="title-sub-btn">📖 HOW TO PLAY</button>
-            <button id="btn-settings-open" class="title-sub-btn">⚙️ SETTINGS</button>
+          <!-- Secondary Vertical Menu -->
+          <div class="title-vertical-menu">
+            <button id="btn-menu-garage" class="menu-item-link">
+              <span class="menu-icon">🏎️</span> GARAGE
+            </button>
+            <button id="btn-menu-map" class="menu-item-link">
+              <span class="menu-icon">🗺️</span> WORLD MAP
+            </button>
+            <button id="btn-menu-radio" class="menu-item-link">
+              <span class="menu-icon">📻</span> RADIO
+            </button>
+            <button id="btn-how-to-play" class="menu-item-link">
+              <span class="menu-icon">📖</span> HOW TO PLAY
+            </button>
+            <button id="btn-settings-open" class="menu-item-link">
+              <span class="menu-icon">⚙️</span> SETTINGS
+            </button>
           </div>
         </div>
 
-        <!-- Subtle Minimal Footer Branding -->
-        <footer class="title-footer">
-          <span>NCR ESCAPE • OPEN-WORLD STREET RACING</span>
-          <span class="footer-copy">© 2026 NCR ESCAPE</span>
-        </footer>
+        <!-- Bottom Widgets Bar -->
+        <div class="title-bottom-widgets">
+          <!-- Bottom Left: Cassette Player Widget -->
+          <div id="title-cassette-widget" class="cassette-radio-deck">
+            <div class="cassette-body">
+              <div class="cassette-label-stripe"></div>
+              <div class="cassette-window">
+                <div class="cassette-reel reel-left animate-spin"></div>
+                <div class="cassette-reel reel-right animate-spin"></div>
+              </div>
+            </div>
+            <div class="deck-info">
+              <div class="deck-label">NCR RADIO</div>
+              <div class="deck-track-title" id="deck-track-title">Tujhe Dekha Toh</div>
+              <div class="deck-track-sub" id="deck-track-sub">90s / 2000s VIBES</div>
+              <div class="deck-controls">
+                <button id="deck-play-btn" class="deck-control-btn">▶</button>
+                <div class="deck-visualizer">
+                  <div class="bar bar-1"></div>
+                  <div class="bar bar-2"></div>
+                  <div class="bar bar-3"></div>
+                  <div class="bar bar-4"></div>
+                  <div class="bar bar-5"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Right: Location Info Widget -->
+          <div id="title-location-widget" class="location-status-card">
+            <div class="loc-row">
+              <span class="loc-icon">📍</span>
+              <div class="loc-val-group">
+                <div class="loc-label">LOCATION</div>
+                <div class="loc-value" id="loc-val-district">GURUGRAM - CYBER CITY</div>
+              </div>
+            </div>
+            <div class="loc-row">
+              <span class="loc-icon">⏳</span>
+              <div class="loc-val-group">
+                <div class="loc-label">TIME</div>
+                <div class="loc-value" id="loc-val-time">23:47</div>
+              </div>
+            </div>
+            <div class="loc-row">
+              <span class="loc-icon">🌤️</span>
+              <div class="loc-val-group">
+                <div class="loc-label">WEATHER</div>
+                <div class="loc-value" id="loc-val-weather">CLEAR</div>
+              </div>
+            </div>
+            <div class="loc-row">
+              <span class="loc-icon">🛣️</span>
+              <div class="loc-val-group">
+                <div class="loc-label">ROAD</div>
+                <div class="loc-value" id="loc-val-road">NCR EXPRESSWAY</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -22,6 +22,7 @@ import { Progression } from '../progression/progression.js';
 import { AchievementSystem } from '../progression/achievementSystem.js';
 import { GameUI } from '../ui/gameUI.js';
 import { audioEngine } from '../audio/audioEngine.js';
+import { PedestrianSystem } from '../world/pedestrianSystem.js';
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -146,6 +147,7 @@ function rebuildCarMesh() {
 }
 
 const traffic = new TrafficSystem(scene);
+const pedestrians = new PedestrianSystem(scene);
 const minimap = new Minimap('minimap-canvas', 'minimap-label');
 const multiplayer = new MultiplayerSystem(scene);
 
@@ -305,32 +307,66 @@ snapChaseCamera(camera, carState);
 traffic.seed(carState.x, carState.z);
 traffic.update(0.016, carState.x, carState.z);
 
-// --- Near-Miss Traffic Bonus Detection ---------------------------------------
+// --- Arcade Near-Miss Traffic Bonus & Slalom Combo Detection -----------------
 let lastNearMissTime = 0;
+let nearMissComboCount = 0;
+const nearmissBadge = document.getElementById('nearmiss-badge');
+const nearmissText = document.getElementById('nearmiss-text');
+const nearmissCombo = document.getElementById('nearmiss-combo');
 
 function checkNearMisses(state, trafficPositions) {
   const kmh = Math.abs(state.speed) * 3.6;
-  if (kmh < 58) return;
+  if (kmh < 40) return;
 
   const now = performance.now();
-  if (now - lastNearMissTime < 1500) return;
+  if (now - lastNearMissTime > 3800) {
+    nearMissComboCount = 0;
+  }
 
   for (const t of trafficPositions) {
     if (t.x === undefined) continue;
     const dist = Math.hypot(state.x - t.x, state.z - t.z);
-    if (dist > 2.2 && dist < 3.6) {
+    if (dist > 1.8 && dist < 3.8) {
+      if (now - lastNearMissTime < 800) return; // debounce same vehicle
+
       lastNearMissTime = now;
-      state.nitro = Math.min(100, state.nitro + 18);
-      progression.awardDrift(1250);
+      nearMissComboCount++;
+      state.nitro = Math.min(100, state.nitro + 22); // Instant nitro refill reward
+
+      let baseCash = dist < 2.7 ? 250 : 100;
+      let label = dist < 2.7 ? '🔥 CLOSE CALL!' : '⚡ NEAR MISS';
+      let bonusCash = baseCash;
+
+      if (nearMissComboCount === 2) {
+        bonusCash = 300;
+      } else if (nearMissComboCount === 3) {
+        bonusCash = 600;
+      } else if (nearMissComboCount >= 4) {
+        bonusCash = 1500;
+        label = '🏎️ TRAFFIC SLALOM!';
+      }
+
+      progression.awardDrift(bonusCash);
       achievements.recordNearMiss();
       ui.updateWallet();
+      audioEngine.playChime();
 
       if (nearmissHud) {
+        if (nearmissBadge) nearmissBadge.textContent = label;
+        if (nearmissText) nearmissText.textContent = `+₹${bonusCash}`;
+        if (nearmissCombo) {
+          if (nearMissComboCount >= 2) {
+            nearmissCombo.textContent = `COMBO ×${nearMissComboCount}`;
+            nearmissCombo.classList.remove('hidden');
+          } else {
+            nearmissCombo.classList.add('hidden');
+          }
+        }
         nearmissHud.classList.remove('hidden');
         if (nearmissTimeout) clearTimeout(nearmissTimeout);
         nearmissTimeout = setTimeout(() => {
           nearmissHud.classList.add('hidden');
-        }, 1200);
+        }, 1400);
       }
       break;
     }
@@ -471,6 +507,7 @@ window.__DEBUG_RACE = () => race.getDebugState();
 window.__DEBUG_POLICE = () => police.getDebugState();
 window.__DEBUG_PROGRESSION = () => ({ ...progression.data, level: progression.level });
 window.__DEBUG_ACHIEVEMENTS = () => achievements.getUnlockedList();
+window.__DEBUG_PEDESTRIANS = () => pedestrians.getDebugState();
 window.__DEBUG_VEHICLE = () => ({ ...vehicle });
 window.__DEBUG_TELEPORT = (x, z, heading = 0) => {
   carState.x = x;
@@ -485,6 +522,7 @@ function resetCar() {
   carMesh.position.set(carState.x, 0, carState.z);
   snapChaseCamera(camera, carState);
   traffic.seed(carState.x, carState.z);
+  pedestrians.seed(carState.x, carState.z);
   driftScore = 0;
   driftMultiplier = 1.0;
   driftDuration = 0;
@@ -566,6 +604,7 @@ function animate(now) {
     achievements.recordDistrict(minimap.getDistrictName(carState.x, carState.z));
 
     traffic.update(dt, carState.x, carState.z);
+    pedestrians.update(dt, carState.x, carState.z, carState.speed);
     race.update(dt, carState.x, carState.z, interactPressed, traffic.getPositions());
     weather.update(dt, carState.x, carState.z);
     timeCycle.update(dt);
@@ -674,6 +713,10 @@ function animate(now) {
     camera.position.y = 1.35 + Math.cos(titleTime * 0.8) * 0.1;
     camera.position.z = carState.z + 5.8 + Math.cos(titleTime) * 0.3;
     camera.lookAt(carState.x - 0.2, 0.7, carState.z);
+
+    // Tick title UI elements in real-time
+    updateTitleRadioUI();
+    updateTitleLocationUI();
   }
 
   renderer.render(scene, camera);
@@ -757,7 +800,7 @@ if (settingsCamToggle) {
   });
 }
 
-// Enter World Primary CTA Click Handler
+// ▶ DRIVE Primary CTA Click Handler
 if (startBtn) {
   startBtn.addEventListener('click', () => {
     if (introOverlay) introOverlay.classList.add('hidden');
@@ -773,8 +816,128 @@ if (startBtn) {
     }
 
     snapChaseCamera(camera, carState);
+    pedestrians.seed(carState.x, carState.z);
     audioEngine.unlock();
     running = true;
+  });
+}
+
+// Title UI Radio Widget State Updater
+const titleCassette = document.getElementById('title-cassette-widget');
+const deckPlayBtn = document.getElementById('deck-play-btn');
+const deckTrackTitle = document.getElementById('deck-track-title');
+const deckTrackSub = document.getElementById('deck-track-sub');
+const reels = document.querySelectorAll('.cassette-reel');
+
+function updateTitleRadioUI() {
+  if (!titleCassette) return;
+  const track = soundSystem.getCurrentTrack();
+  if (track) {
+    if (deckTrackTitle) deckTrackTitle.textContent = track.title;
+    if (deckTrackSub) deckTrackSub.textContent = `${track.artist} (${track.era})`;
+  }
+  const isPlaying = soundSystem.isPlaying;
+  if (isPlaying) {
+    titleCassette.classList.add('playing');
+    if (deckPlayBtn) deckPlayBtn.textContent = '⏸';
+    reels.forEach(r => r.style.animationPlayState = 'running');
+  } else {
+    titleCassette.classList.remove('playing');
+    if (deckPlayBtn) deckPlayBtn.textContent = '▶';
+    reels.forEach(r => r.style.animationPlayState = 'paused');
+  }
+}
+
+// Title UI Location Widget State Updater
+let lastLocationUpdateTime = 0;
+function updateTitleLocationUI() {
+  const now = performance.now();
+  if (now - lastLocationUpdateTime < 1000) return;
+  lastLocationUpdateTime = now;
+
+  const districtVal = document.getElementById('loc-val-district');
+  const timeVal = document.getElementById('loc-val-time');
+  const weatherVal = document.getElementById('loc-val-weather');
+  const roadVal = document.getElementById('loc-val-road');
+
+  if (districtVal) {
+    const dName = minimap.getDistrictName(carState.x, carState.z);
+    districtVal.textContent = dName;
+    if (roadVal) {
+      if (dName.includes('EXPRESSWAY')) {
+        roadVal.textContent = 'NOIDA EXPRESSWAY';
+      } else if (dName.includes('BRIDGE') || dName.includes('CROSSING')) {
+        roadVal.textContent = 'YAMUNA BRIDGE FLYOVER';
+      } else if (dName.includes('DELHI')) {
+        roadVal.textContent = 'DELHI GT ROAD';
+      } else {
+        roadVal.textContent = 'NCR EXPRESSWAY';
+      }
+    }
+  }
+
+  if (timeVal) {
+    const hours = Math.floor(timeCycle.timeOfDay * 24);
+    const minutes = Math.floor((timeCycle.timeOfDay * 24 % 1) * 60);
+    timeVal.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  if (weatherVal) {
+    weatherVal.textContent = weather.currentWeather;
+  }
+}
+
+
+
+
+
+// Title Screen Quick Menu & In-Car Radio Deck
+const deckPlayBtnWidget = document.getElementById('deck-play-btn');
+const btnMenuGarage = document.getElementById('btn-menu-garage');
+const btnMenuMap = document.getElementById('btn-menu-map');
+const btnMenuRadio = document.getElementById('btn-menu-radio');
+const btnQuickSettings = document.getElementById('btn-quick-settings');
+const btnQuickExit = document.getElementById('btn-quick-exit');
+
+if (deckPlayBtnWidget) {
+  deckPlayBtnWidget.addEventListener('click', () => {
+    audioEngine.unlock();
+    soundSystem.toggle();
+    updateTitleRadioUI();
+  });
+}
+
+if (btnMenuRadio) {
+  btnMenuRadio.addEventListener('click', () => {
+    audioEngine.unlock();
+    soundSystem.toggle();
+    updateTitleRadioUI();
+  });
+}
+
+if (btnMenuGarage) {
+  btnMenuGarage.addEventListener('click', () => {
+    ui.openGarage();
+  });
+}
+
+if (btnMenuMap) {
+  btnMenuMap.addEventListener('click', () => {
+    worldMap.open(carState);
+  });
+}
+
+if (btnQuickSettings && modalSettings) {
+  btnQuickSettings.addEventListener('click', () => {
+    modalSettings.classList.remove('hidden');
+  });
+}
+
+if (btnQuickExit) {
+  btnQuickExit.addEventListener('click', () => {
+    if (confirm('Are you sure you want to shut down?')) {
+      window.close();
+    }
   });
 }
 
@@ -782,3 +945,5 @@ window.addEventListener('touchstart', () => audioEngine.unlock(), { once: true, 
 window.addEventListener('click', () => audioEngine.unlock(), { once: true, passive: true });
 
 requestAnimationFrame(animate);
+
+
