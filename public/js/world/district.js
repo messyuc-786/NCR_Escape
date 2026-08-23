@@ -1,13 +1,13 @@
 import * as THREE from '../vendor/three.module.js';
 import { roadSegments } from '../roads/network.js';
 
-const ASPHALT = 0x2b2f38;
-const CURB = 0x50565f;
-const GROUND = 0x0f2a1c;
-const GOLF_GRASS = 0x144023;
-const YAMUNA_WATER = 0x142c42;
-const METRO_COLOR = 0x8a929e;
-const RED_SANDSTONE = 0x8b3a2b;
+const ASPHALT = 0x242831;
+const CURB = 0x4a525d;
+const GROUND = 0x112b1c;
+const GOLF_GRASS = 0x1a4e2b;
+const YAMUNA_WATER = 0x0e283e;
+const METRO_COLOR = 0x7c8592;
+const RED_SANDSTONE = 0x943d2c;
 
 export const LIGHTING_MODES = {
   DAY: 'day',
@@ -21,17 +21,52 @@ export const WEATHER_MODES = {
   HAZE: 'haze',
 };
 
+// Procedural Window Grid Canvas Texture Generator
+function createWindowTexture(litColor = '#ffea9f', unlitColor = '#151d28', rows = 16, cols = 8) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = unlitColor;
+  ctx.fillRect(0, 0, 128, 256);
+
+  const padX = 128 / cols;
+  const padY = 256 / rows;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (Math.random() > 0.35) {
+        ctx.fillStyle = Math.random() > 0.3 ? litColor : '#88c9ff';
+        ctx.fillRect(c * padX + 2, r * padY + 2, padX - 4, padY - 4);
+      }
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  return texture;
+}
+
+const windowTexDay = createWindowTexture('#ffe8a3', '#1e293b');
+const windowTexWarm = createWindowTexture('#ffd275', '#16202c');
+const windowTexCyber = createWindowTexture('#00d4aa', '#0f172a');
+
 /**
- * Builds the complete 4-Region NCR World:
- * Gurugram (Cyber/Corporate/Golf/Industrial/Market) -> Delhi Central -> Yamuna River Bridge -> Noida Expressway -> Sector 143 Tech Valley.
+ * Builds the complete organic 4-Region NCR World with authentic Indian street culture,
+ * lush vegetation, Gulmohar trees, Chai stalls, roadside Dhabas, Metro murals, and Aravalli mountain horizon.
  */
 export function buildDistrict(scene) {
   const colliders = [];
 
-  // 1. Main Ground Planes (Gurugram + Delhi + Noida + Sector 143)
+  // 1. Distant Aravalli Mountain Ridge Horizon & Sky
+  buildDistantHorizon(scene);
+  buildStarrySky(scene);
+
+  // 2. Main Ground Planes (Gurugram + Delhi + Noida + Sector 143)
   const groundNorth = new THREE.Mesh(
-    new THREE.PlaneGeometry(1600, 1600),
-    new THREE.MeshStandardMaterial({ color: GROUND, roughness: 1 })
+    new THREE.PlaneGeometry(1800, 1800),
+    new THREE.MeshStandardMaterial({ color: GROUND, roughness: 0.95 })
   );
   groundNorth.rotation.x = -Math.PI / 2;
   groundNorth.position.set(0, 0, 0);
@@ -39,8 +74,8 @@ export function buildDistrict(scene) {
   scene.add(groundNorth);
 
   const groundSouth = new THREE.Mesh(
-    new THREE.PlaneGeometry(1600, 1600),
-    new THREE.MeshStandardMaterial({ color: 0x0d2116, roughness: 1 })
+    new THREE.PlaneGeometry(1800, 1800),
+    new THREE.MeshStandardMaterial({ color: 0x0f2417, roughness: 0.95 })
   );
   groundSouth.rotation.x = -Math.PI / 2;
   groundSouth.position.set(0, 0, -1400);
@@ -49,47 +84,50 @@ export function buildDistrict(scene) {
 
   // Golf Course Green Belt Patch (East)
   const golfGrass = new THREE.Mesh(
-    new THREE.PlaneGeometry(350, 400),
-    new THREE.MeshStandardMaterial({ color: GOLF_GRASS, roughness: 0.9 })
+    new THREE.PlaneGeometry(380, 420),
+    new THREE.MeshStandardMaterial({ color: GOLF_GRASS, roughness: 0.85 })
   );
   golfGrass.rotation.x = -Math.PI / 2;
   golfGrass.position.set(280, 0.02, 190);
   golfGrass.receiveShadow = true;
   scene.add(golfGrass);
 
-  // 2. Yamuna River Channel (z: -760 to -1060)
+  // 3. Yamuna River Channel & Water Specular Mesh (z: -760 to -1060)
   const yamunaRiver = new THREE.Mesh(
-    new THREE.PlaneGeometry(1600, 300),
+    new THREE.PlaneGeometry(1800, 320),
     new THREE.MeshStandardMaterial({
       color: YAMUNA_WATER,
       roughness: 0.1,
-      metalness: 0.8,
+      metalness: 0.85,
     })
   );
   yamunaRiver.rotation.x = -Math.PI / 2;
   yamunaRiver.position.set(0, 0.01, -910);
   scene.add(yamunaRiver);
 
-  // 3. Road Network Meshes
+  // 4. Road Network Meshes
   for (const seg of roadSegments) {
     buildRoadSegment(scene, seg, colliders);
   }
 
-  // 4. District Buildings & Landmarks
+  // 5. District Architecture & Detailed Windowed Facades
   buildAllDistrictBuildings(scene, colliders);
   buildDelhiMonuments(scene, colliders);
   buildYamunaCableStayedBridge(scene);
   buildNoidaTechParks(scene, colliders);
   buildSector143InnovationCenter(scene, colliders);
 
-  // 5. Props: Metro line, Gantries, Streetlights, Trees, Silos
+  // 6. Authentic Indian Street Culture & Roadside Details
+  buildIndianStreetCulture(scene, colliders);
+
+  // 7. Props: Metro Viaduct with Art Murals, Gantries, Streetlights, Organic Trees
   buildMetroViaduct(scene);
   buildHighwaySigns(scene);
   buildStreetlights(scene);
-  buildGolfTrees(scene);
+  buildLushIndianTrees(scene);
   buildIndustrialSilos(scene, colliders);
 
-  // 6. World Boundaries
+  // 8. World Boundaries
   const boundX = 750;
   const minZ = -1900;
   const maxZ = 650;
@@ -98,13 +136,13 @@ export function buildDistrict(scene) {
   colliders.push({ minX: -boundX, maxX: boundX, minZ: maxZ - 3, maxZ });
   colliders.push({ minX: -boundX, maxX: boundX, minZ, maxZ: minZ + 3 });
 
-  // 7. Dynamic Lighting Controller
-  const hemi = new THREE.HemisphereLight(0xa8c0ff, 0x4a4436, 1.15);
+  // 9. Dynamic Lighting Controller
+  const hemi = new THREE.HemisphereLight(0xb2d0ff, 0x4f4939, 1.2);
   scene.add(hemi);
-  const ambient = new THREE.AmbientLight(0x8899bb, 0.65);
+  const ambient = new THREE.AmbientLight(0x8fa3c7, 0.7);
   scene.add(ambient);
-  const sun = new THREE.DirectionalLight(0xffd9a8, 1.5);
-  sun.position.set(120, 220, -80);
+  const sun = new THREE.DirectionalLight(0xffe2b8, 1.6);
+  sun.position.set(130, 240, -90);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.left = -500;
@@ -112,42 +150,42 @@ export function buildDistrict(scene) {
   sun.shadow.camera.top = 500;
   sun.shadow.camera.bottom = -500;
   scene.add(sun);
-  scene.fog = new THREE.Fog(0x2a3550, 350, 1100);
+  scene.fog = new THREE.Fog(0x354466, 320, 1150);
 
   let currentLighting = LIGHTING_MODES.DAY;
 
   function setDayNight(mode) {
     currentLighting = mode;
     if (mode === LIGHTING_MODES.NIGHT) {
-      scene.background = new THREE.Color(0x090d17);
-      scene.fog.color = new THREE.Color(0x090d17);
-      hemi.color.setHex(0x1a243b);
-      hemi.groundColor.setHex(0x0d1117);
-      hemi.intensity = 0.5;
-      ambient.color.setHex(0x222d42);
-      ambient.intensity = 0.4;
-      sun.color.setHex(0x405580);
+      scene.background = new THREE.Color(0x0a0f1d);
+      scene.fog.color = new THREE.Color(0x0a0f1d);
+      hemi.color.setHex(0x1e2c4d);
+      hemi.groundColor.setHex(0x0c121c);
+      hemi.intensity = 0.55;
+      ambient.color.setHex(0x283854);
+      ambient.intensity = 0.45;
+      sun.color.setHex(0x486499);
       sun.intensity = 0.4;
     } else if (mode === LIGHTING_MODES.SUNSET) {
-      scene.background = new THREE.Color(0x3d2338);
-      scene.fog.color = new THREE.Color(0x3d2338);
-      hemi.color.setHex(0xff7a59);
-      hemi.groundColor.setHex(0x2e1b28);
-      hemi.intensity = 0.9;
-      ambient.color.setHex(0x8a4b62);
-      ambient.intensity = 0.6;
-      sun.color.setHex(0xffaa44);
-      sun.intensity = 1.3;
-    } else {
-      scene.background = new THREE.Color(0x2a3550);
-      scene.fog.color = new THREE.Color(0x2a3550);
-      hemi.color.setHex(0xa8c0ff);
-      hemi.groundColor.setHex(0x4a4436);
-      hemi.intensity = 1.15;
-      ambient.color.setHex(0x8899bb);
+      scene.background = new THREE.Color(0x4a2638);
+      scene.fog.color = new THREE.Color(0x4a2638);
+      hemi.color.setHex(0xff835a);
+      hemi.groundColor.setHex(0x331c28);
+      hemi.intensity = 0.95;
+      ambient.color.setHex(0x995368);
       ambient.intensity = 0.65;
-      sun.color.setHex(0xffd9a8);
-      sun.intensity = 1.5;
+      sun.color.setHex(0xffb04a);
+      sun.intensity = 1.4;
+    } else {
+      scene.background = new THREE.Color(0x354466);
+      scene.fog.color = new THREE.Color(0x354466);
+      hemi.color.setHex(0xb2d0ff);
+      hemi.groundColor.setHex(0x4f4939);
+      hemi.intensity = 1.2;
+      ambient.color.setHex(0x8fa3c7);
+      ambient.intensity = 0.7;
+      sun.color.setHex(0xffe2b8);
+      sun.intensity = 1.6;
     }
   }
 
@@ -158,6 +196,61 @@ export function buildDistrict(scene) {
   };
 }
 
+// --- Distant Aravalli Mountain Horizon ----------------------------------------
+function buildDistantHorizon(scene) {
+  const mtnMat = new THREE.MeshStandardMaterial({
+    color: 0x1f2937,
+    roughness: 0.95,
+    flatShading: true,
+  });
+
+  const numPeaks = 36;
+  const radius = 820;
+
+  for (let i = 0; i < numPeaks; i++) {
+    const angle = (i / numPeaks) * Math.PI * 2;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius - 600;
+    const height = 40 + Math.random() * 65;
+    const width = 110 + Math.random() * 80;
+
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(width, height, 5), mtnMat);
+    cone.position.set(x, height / 2 - 5, z);
+    cone.rotation.y = Math.random() * Math.PI;
+    scene.add(cone);
+  }
+}
+
+// --- Starry Night Sky Dome ---------------------------------------------------
+function buildStarrySky(scene) {
+  const starCount = 350;
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = new Float32Array(starCount * 3);
+
+  for (let i = 0; i < starCount; i++) {
+    const u = Math.random();
+    const v = Math.random();
+    const theta = u * 2.0 * Math.PI;
+    const phi = Math.acos(2.0 * v - 1.0) * 0.5; // Upper dome
+    const r = 900;
+
+    starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    starPos[i * 3 + 1] = Math.abs(r * Math.cos(phi)) + 80;
+    starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta) - 600;
+  }
+
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  const starMat = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 2.2,
+    transparent: true,
+    opacity: 0.85,
+  });
+  const stars = new THREE.Points(starGeo, starMat);
+  scene.add(stars);
+}
+
+// --- Road Segment Construction ----------------------------------------------
 function buildRoadSegment(scene, seg, colliders) {
   const dx = seg.to.x - seg.from.x;
   const dz = seg.to.z - seg.from.z;
@@ -178,97 +271,131 @@ function buildRoadSegment(scene, seg, colliders) {
   road.rotation.x = -Math.PI / 2;
   road.rotation.z = -angle;
   road.position.set(midX, 0.05 + lift, midZ);
-  road.receiveShadow = true;
   scene.add(road);
 
-  // Dashed lane dividers
-  if (seg.lanes >= 2) {
-    const dashCount = Math.floor(length / 8);
-    const dashMat = new THREE.MeshStandardMaterial({
-      color: 0xf5f5f5,
-      roughness: 0.5,
-      polygonOffset: true,
-      polygonOffsetFactor: -6,
-      polygonOffsetUnits: -6,
-    });
-    for (let i = 0; i < dashCount; i++) {
-      const t = (i + 0.5) / dashCount;
-      const px = seg.from.x + dx * t;
-      const pz = seg.from.z + dz * t;
-      const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 4.0), dashMat);
-      dash.rotation.x = -Math.PI / 2;
-      dash.rotation.z = -angle;
-      dash.position.set(px, 0.07 + lift, pz);
-      scene.add(dash);
-    }
-  }
+  // Sidewalk Curbs (Left & Right)
+  const curbMat = new THREE.MeshStandardMaterial({ color: CURB, roughness: 0.9 });
+  const curbThickness = 0.8;
+  const curbHeight = 0.25;
 
-  // Curbs / Guardrails
-  const curbMat = new THREE.MeshStandardMaterial({ color: CURB });
-  for (const side of [-1, 1]) {
-    const offset = (seg.width / 2 + 0.3) * side;
-    const curb = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.3, length), curbMat);
-    curb.position.set(
-      midX + Math.cos(angle) * offset,
-      0.15 + lift,
-      midZ - Math.sin(angle) * offset
-    );
-    curb.rotation.y = angle;
-    scene.add(curb);
+  const perpX = Math.cos(angle) * (seg.width / 2 + curbThickness / 2);
+  const perpZ = -Math.sin(angle) * (seg.width / 2 + curbThickness / 2);
+
+  const curbL = new THREE.Mesh(new THREE.BoxGeometry(curbThickness, curbHeight, length), curbMat);
+  curbL.position.set(midX - perpX, curbHeight / 2 + lift, midZ - perpZ);
+  curbL.rotation.y = angle;
+  scene.add(curbL);
+
+  const curbR = new THREE.Mesh(new THREE.BoxGeometry(curbThickness, curbHeight, length), curbMat);
+  curbR.position.set(midX + perpX, curbHeight / 2 + lift, midZ + perpZ);
+  curbR.rotation.y = angle;
+  scene.add(curbR);
+
+  // Road Markings (Solid Outer White Lines & Broken Yellow Median)
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const yellowLineMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+
+  const lineLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.2, length), lineMat);
+  lineLeft.rotation.x = -Math.PI / 2;
+  lineLeft.rotation.z = -angle;
+  lineLeft.position.set(midX - perpX * 0.88, 0.07 + lift, midZ - perpZ * 0.88);
+  scene.add(lineLeft);
+
+  const lineRight = new THREE.Mesh(new THREE.PlaneGeometry(0.2, length), lineMat);
+  lineRight.rotation.x = -Math.PI / 2;
+  lineRight.rotation.z = -angle;
+  lineRight.position.set(midX + perpX * 0.88, 0.07 + lift, midZ + perpZ * 0.88);
+  scene.add(lineRight);
+
+  // Center Dashed Yellow Median
+  const dashCount = Math.floor(length / 9);
+  for (let i = 0; i < dashCount; i++) {
+    const t = (i + 0.5) / dashCount - 0.5;
+    const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 4.5), yellowLineMat);
+    dash.rotation.x = -Math.PI / 2;
+    dash.rotation.z = -angle;
+    dash.position.set(midX + dx * t, 0.07 + lift, midZ + dz * t);
+    scene.add(dash);
   }
 }
 
+// --- District Architecture with Glowing Window Grids & Rooftop Details -------
 function buildAllDistrictBuildings(scene, colliders) {
   const buildingSpecs = [
-    // --- Cyber District ---
-    { x: 40, z: -100, w: 22, h: 42, d: 22, color: 0x1c2536, neon: 0x00d4aa },
-    { x: -40, z: -60, w: 18, h: 55, d: 18, color: 0x24304a, neon: 0xff7a18 },
-    { x: 45, z: -10, w: 20, h: 32, d: 20, color: 0x1a2230, neon: 0x38ef7d },
-    { x: -110, z: 40, w: 20, h: 45, d: 26, color: 0x2b3550, neon: 0x00d4aa },
-    { x: 110, z: 40, w: 26, h: 62, d: 20, color: 0x1c2536, neon: 0xff2d55 },
-    { x: -40, z: 130, w: 24, h: 36, d: 24, color: 0x24304a, neon: 0xf5a623 },
-    { x: 45, z: 150, w: 22, h: 50, d: 22, color: 0x1a2230, neon: 0x00d4aa },
+    // --- Cyber City Towers (Gurugram) ---
+    { x: -50, z: -150, w: 26, h: 68, d: 24, color: 0x162232, neon: 0x00d4aa, type: 'glass' },
+    { x: 50, z: -170, w: 28, h: 78, d: 26, color: 0x1a283c, neon: 0x4aa8ff, type: 'cyber' },
+    { x: -48, z: -50, w: 24, h: 58, d: 24, color: 0x182436, neon: 0x00d4aa, type: 'glass' },
+    { x: 48, z: -40, w: 26, h: 72, d: 28, color: 0x141f2e, neon: 0xff7a18, type: 'glass' },
+    { x: -45, z: 60, w: 20, h: 48, d: 20, color: 0x1e2d42, neon: 0x38ef7d, type: 'cyber' },
+    { x: 45, z: 150, w: 22, h: 52, d: 22, color: 0x1c293d, neon: 0x00d4aa, type: 'glass' },
 
     // --- Corporate Mile ---
-    { x: 45, z: 270, w: 28, h: 76, d: 24, color: 0x18243b, neon: 0x00d4aa },
-    { x: -45, z: 310, w: 26, h: 84, d: 26, color: 0x141f33, neon: 0x4aa8ff },
-    { x: 48, z: 390, w: 30, h: 90, d: 30, color: 0x1e2c45, neon: 0xff7a18 },
-    { x: -48, z: 430, w: 28, h: 80, d: 28, color: 0x162238, neon: 0x00d4aa },
+    { x: 45, z: 270, w: 28, h: 82, d: 24, color: 0x18243b, neon: 0x00d4aa, type: 'cyber' },
+    { x: -45, z: 310, w: 26, h: 88, d: 26, color: 0x141f33, neon: 0x4aa8ff, type: 'glass' },
+    { x: 48, z: 390, w: 30, h: 94, d: 30, color: 0x1e2c45, neon: 0xff7a18, type: 'cyber' },
+    { x: -48, z: 430, w: 28, h: 84, d: 28, color: 0x162238, neon: 0x00d4aa, type: 'glass' },
 
-    // --- Golf Course Belt ---
-    { x: 260, z: 80, w: 24, h: 16, d: 24, color: 0x2d3a4f, neon: 0x38ef7d },
-    { x: 340, z: 120, w: 26, h: 18, d: 22, color: 0x33445c, neon: 0x38ef7d },
-    { x: 440, z: 180, w: 30, h: 22, d: 26, color: 0x2a384d, neon: 0x00d4aa },
+    // --- Golf Course Belt Residences ---
+    { x: 260, z: 80, w: 24, h: 18, d: 24, color: 0x2d3a4f, neon: 0x38ef7d, type: 'residence' },
+    { x: 340, z: 120, w: 26, h: 20, d: 22, color: 0x33445c, neon: 0x38ef7d, type: 'residence' },
+    { x: 440, z: 180, w: 30, h: 24, d: 26, color: 0x2a384d, neon: 0x00d4aa, type: 'residence' },
 
     // --- Industrial Edge ---
-    { x: -260, z: 80, w: 42, h: 18, d: 36, color: 0x3a3f4a, neon: 0xff7a18 },
-    { x: -420, z: 120, w: 48, h: 20, d: 40, color: 0x333842, neon: 0xf5a623 },
-    { x: -420, z: 220, w: 44, h: 18, d: 38, color: 0x3d434f, neon: 0xff7a18 },
+    { x: -260, z: 80, w: 42, h: 18, d: 36, color: 0x3a3f4a, neon: 0xff7a18, type: 'industrial' },
+    { x: -420, z: 120, w: 48, h: 20, d: 40, color: 0x333842, neon: 0xf5a623, type: 'industrial' },
+    { x: -420, z: 220, w: 44, h: 18, d: 38, color: 0x3d434f, neon: 0xff7a18, type: 'industrial' },
 
-    // --- Old Market ---
-    { x: 42, z: -290, w: 18, h: 24, d: 20, color: 0x4a3b32, neon: 0xffa040 },
-    { x: -42, z: -320, w: 16, h: 26, d: 18, color: 0x543e33, neon: 0xffdd55 },
-    { x: 44, z: -410, w: 20, h: 22, d: 22, color: 0x46372f, neon: 0xff7a18 },
-    { x: -44, z: -440, w: 18, h: 28, d: 20, color: 0x4e3c35, neon: 0xff5533 },
+    // --- Old Market & Residential Bazaar ---
+    { x: 42, z: -290, w: 18, h: 26, d: 20, color: 0x4a3b32, neon: 0xffa040, type: 'residence' },
+    { x: -42, z: -320, w: 16, h: 28, d: 18, color: 0x543e33, neon: 0xffdd55, type: 'residence' },
+    { x: 44, z: -410, w: 20, h: 24, d: 22, color: 0x46372f, neon: 0xff7a18, type: 'residence' },
+    { x: -44, z: -440, w: 18, h: 30, d: 20, color: 0x4e3c35, neon: 0xff5533, type: 'residence' },
   ];
 
   buildingSpecs.forEach((b) => {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(b.w, b.h, b.d),
-      new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.65, metalness: 0.15 })
-    );
+    // Select Facade Texture
+    let facadeMat;
+    if (b.type === 'glass') {
+      facadeMat = new THREE.MeshStandardMaterial({
+        color: b.color,
+        map: windowTexDay,
+        roughness: 0.35,
+        metalness: 0.65,
+      });
+    } else if (b.type === 'cyber') {
+      facadeMat = new THREE.MeshStandardMaterial({
+        color: b.color,
+        map: windowTexCyber,
+        roughness: 0.45,
+        metalness: 0.55,
+      });
+    } else {
+      facadeMat = new THREE.MeshStandardMaterial({
+        color: b.color,
+        map: windowTexWarm,
+        roughness: 0.75,
+        metalness: 0.15,
+      });
+    }
+
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), facadeMat);
     mesh.position.set(b.x, b.h / 2, b.z);
     mesh.castShadow = true;
     scene.add(mesh);
 
+    // Glowing Rooftop Neon Frame
     const neonMat = new THREE.MeshStandardMaterial({
       color: b.neon,
       emissive: b.neon,
-      emissiveIntensity: 0.8,
+      emissiveIntensity: 0.85,
     });
-    const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.3, 0.6, b.d + 0.3), neonMat);
-    neonStrip.position.set(b.x, b.h + 0.3, b.z);
+    const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.4, 0.7, b.d + 0.4), neonMat);
+    neonStrip.position.set(b.x, b.h + 0.35, b.z);
     scene.add(neonStrip);
+
+    // Rooftop Props: Water Tank (Sintex) & AC Chillers
+    buildRooftopProps(scene, b);
 
     colliders.push({
       minX: b.x - b.w / 2,
@@ -279,6 +406,34 @@ function buildAllDistrictBuildings(scene, colliders) {
   });
 }
 
+function buildRooftopProps(scene, b) {
+  const tankMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 }); // Black Sintex tank
+  const acMat = new THREE.MeshStandardMaterial({ color: 0x8892a0, roughness: 0.6 });
+
+  // Black Water Tank
+  const tank = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 2.2, 8), tankMat);
+  tank.position.set(b.x - b.w * 0.25, b.h + 1.2, b.z - b.d * 0.25);
+  scene.add(tank);
+
+  // AC Chiller Unit
+  const chiller = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.5, 2.0), acMat);
+  chiller.position.set(b.x + b.w * 0.2, b.h + 0.8, b.z + b.d * 0.2);
+  scene.add(chiller);
+
+  // Rooftop Antenna Mast on tall towers
+  if (b.h > 65) {
+    const antennaMat = new THREE.MeshBasicMaterial({ color: 0xff3b30 });
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 12, 6), tankMat);
+    mast.position.set(b.x, b.h + 6, b.z);
+    scene.add(mast);
+
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.4, 6, 6), antennaMat);
+    beacon.position.set(b.x, b.h + 12.2, b.z);
+    scene.add(beacon);
+  }
+}
+
+// --- Delhi Monuments & Heritage Structures -----------------------------------
 function buildDelhiMonuments(scene, colliders) {
   // India Gate-inspired Heritage Arch at Delhi Central Vista (x: 0, z: -620)
   const archMat = new THREE.MeshStandardMaterial({ color: RED_SANDSTONE, roughness: 0.85 });
@@ -311,56 +466,64 @@ function buildDelhiMonuments(scene, colliders) {
   }
 }
 
+// --- Yamuna Cable-Stayed Bridge ---------------------------------------------
 function buildYamunaCableStayedBridge(scene) {
   const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x5a6578, roughness: 0.5 });
   const cableMat = new THREE.MeshStandardMaterial({ color: 0xc8d1dc, roughness: 0.3 });
 
   // Twin Bridge Cable Towers
   for (const z of [-840, -980]) {
-    const towerL = new THREE.Mesh(new THREE.BoxGeometry(2.5, 42, 3.5), bridgeMat);
-    towerL.position.set(-13, 21, z);
+    const towerL = new THREE.Mesh(new THREE.BoxGeometry(2.5, 44, 3.5), bridgeMat);
+    towerL.position.set(-13, 22, z);
     scene.add(towerL);
 
-    const towerR = new THREE.Mesh(new THREE.BoxGeometry(2.5, 42, 3.5), bridgeMat);
-    towerR.position.set(13, 21, z);
+    const towerR = new THREE.Mesh(new THREE.BoxGeometry(2.5, 44, 3.5), bridgeMat);
+    towerR.position.set(13, 22, z);
     scene.add(towerR);
 
-    const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(28, 2, 2.5), bridgeMat);
-    crossBeam.position.set(0, 36, z);
+    const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(28, 2.2, 2.5), bridgeMat);
+    crossBeam.position.set(0, 38, z);
     scene.add(crossBeam);
 
     // Diagonal Stay Cables
     for (let k = -40; k <= 40; k += 20) {
       if (k === 0) continue;
-      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 30), cableMat);
-      cable.position.set(k > 0 ? 8 : -8, 22, z + k * 0.8);
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 32), cableMat);
+      cable.position.set(k > 0 ? 8 : -8, 23, z + k * 0.8);
       cable.rotation.z = k > 0 ? 0.35 : -0.35;
       scene.add(cable);
     }
   }
 
-  // Under-bridge river pillars
-  for (let z = -780; z >= -1040; z -= 60) {
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.4, 8, 12), bridgeMat);
-    p.position.set(0, 4, z);
-    scene.add(p);
+  // Riverbank Ghat Stone Steps
+  const ghatMat = new THREE.MeshStandardMaterial({ color: 0x6e5d4f, roughness: 0.9 });
+  for (const z of [-755, -1065]) {
+    const ghat = new THREE.Mesh(new THREE.BoxGeometry(80, 1.2, 12), ghatMat);
+    ghat.position.set(0, 0.6, z);
+    scene.add(ghat);
   }
 }
 
+// --- Noida Expressway Tech Parks & Sector 143 ---------------------------------
 function buildNoidaTechParks(scene, colliders) {
   const noidaBuildings = [
-    { x: 50, z: -1120, w: 32, h: 72, d: 28, color: 0x1b2838, neon: 0x00d4aa },
-    { x: -50, z: -1180, w: 30, h: 80, d: 30, color: 0x152230, neon: 0x4aa8ff },
-    { x: 55, z: -1300, w: 34, h: 88, d: 32, color: 0x1e2c40, neon: 0xff7a18 },
-    { x: -55, z: -1360, w: 36, h: 94, d: 34, color: 0x182436, neon: 0x38ef7d },
-    { x: 180, z: -1240, w: 40, h: 65, d: 36, color: 0x223249, neon: 0xf5a623 },
-    { x: -180, z: -1240, w: 42, h: 68, d: 38, color: 0x1d2a3d, neon: 0x00d4aa },
+    { x: 50, z: -1120, w: 32, h: 76, d: 28, color: 0x1b2838, neon: 0x00d4aa },
+    { x: -50, z: -1180, w: 30, h: 84, d: 30, color: 0x152230, neon: 0x4aa8ff },
+    { x: 55, z: -1300, w: 34, h: 92, d: 32, color: 0x1e2c40, neon: 0xff7a18 },
+    { x: -55, z: -1360, w: 36, h: 98, d: 34, color: 0x182436, neon: 0x38ef7d },
+    { x: 180, z: -1240, w: 40, h: 68, d: 36, color: 0x223249, neon: 0xf5a623 },
+    { x: -180, z: -1240, w: 42, h: 70, d: 38, color: 0x1d2a3d, neon: 0x00d4aa },
   ];
 
   noidaBuildings.forEach((b) => {
     const mesh = new THREE.Mesh(
       new THREE.BoxGeometry(b.w, b.h, b.d),
-      new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.4, metalness: 0.3 })
+      new THREE.MeshStandardMaterial({
+        color: b.color,
+        map: windowTexDay,
+        roughness: 0.4,
+        metalness: 0.6,
+      })
     );
     mesh.position.set(b.x, b.h / 2, b.z);
     mesh.castShadow = true;
@@ -369,11 +532,13 @@ function buildNoidaTechParks(scene, colliders) {
     const neonMat = new THREE.MeshStandardMaterial({
       color: b.neon,
       emissive: b.neon,
-      emissiveIntensity: 0.9,
+      emissiveIntensity: 0.85,
     });
-    const strip = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.4, 0.8, b.d + 0.4), neonMat);
-    strip.position.set(b.x, b.h + 0.4, b.z);
-    scene.add(strip);
+    const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(b.w + 0.4, 0.7, b.d + 0.4), neonMat);
+    neonStrip.position.set(b.x, b.h + 0.35, b.z);
+    scene.add(neonStrip);
+
+    buildRooftopProps(scene, b);
 
     colliders.push({
       minX: b.x - b.w / 2,
@@ -385,58 +550,259 @@ function buildNoidaTechParks(scene, colliders) {
 }
 
 function buildSector143InnovationCenter(scene, colliders) {
-  // Futuristic Innovation Center Hub (x: 0, z: -1700)
-  const centerMat = new THREE.MeshStandardMaterial({ color: 0x0f1826, roughness: 0.3, metalness: 0.7 });
-  const ringMat = new THREE.MeshStandardMaterial({
-    color: 0x00d4aa,
-    emissive: 0x00d4aa,
-    emissiveIntensity: 1.0,
+  const centerMat = new THREE.MeshStandardMaterial({
+    color: 0x1a2638,
+    map: windowTexCyber,
+    roughness: 0.3,
+    metalness: 0.7,
   });
 
-  const mainDome = new THREE.Mesh(new THREE.CylinderGeometry(28, 34, 38, 24), centerMat);
-  mainDome.position.set(0, 19, -1700);
-  scene.add(mainDome);
+  const domeMat = new THREE.MeshStandardMaterial({
+    color: 0x00d4aa,
+    emissive: 0x00a880,
+    emissiveIntensity: 0.6,
+    roughness: 0.2,
+    metalness: 0.8,
+  });
 
-  const crownRing = new THREE.Mesh(new THREE.TorusGeometry(30, 1.2, 16, 48), ringMat);
-  crownRing.rotation.x = Math.PI / 2;
-  crownRing.position.set(0, 36, -1700);
-  scene.add(crownRing);
+  const hubGroup = new THREE.Group();
 
-  colliders.push({ minX: -32, maxX: 32, minZ: -1732, maxZ: -1668 });
+  const mainBase = new THREE.Mesh(new THREE.CylinderGeometry(28, 34, 18, 16), centerMat);
+  mainBase.position.set(0, 9, 0);
+  hubGroup.add(mainBase);
+
+  const glassDome = new THREE.Mesh(new THREE.SphereGeometry(18, 16, 12), domeMat);
+  glassDome.position.set(0, 18, 0);
+  hubGroup.add(glassDome);
+
+  hubGroup.position.set(0, 0, -1700);
+  scene.add(hubGroup);
+
+  colliders.push({ minX: -30, maxX: 30, minZ: -1730, maxZ: -1670 });
 }
 
-function buildGolfTrees(scene) {
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.9 });
-  const leavesMat = new THREE.MeshStandardMaterial({ color: 0x228b22, roughness: 0.8 });
-
-  const treePositions = [
-    { x: 210, z: 60 }, { x: 230, z: 110 }, { x: 290, z: 50 },
-    { x: 320, z: 90 }, { x: 350, z: 160 }, { x: 370, z: 220 },
-    { x: 410, z: 110 }, { x: 420, z: 260 }, { x: 360, z: 300 },
+// --- Authentic Indian Roadside Culture ---------------------------------------
+function buildIndianStreetCulture(scene, colliders) {
+  // 1. Roadside Chai Tapri (Tea Stalls)
+  const chaiLocations = [
+    { x: -16, z: -210 },
+    { x: 16, z: 70 },
+    { x: -18, z: -380 },
+    { x: 18, z: -1190 },
   ];
 
-  treePositions.forEach((pos) => {
-    const group = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 3.5, 8), trunkMat);
-    trunk.position.y = 1.75;
-    group.add(trunk);
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+  const tarpMat = new THREE.MeshStandardMaterial({ color: 0x0077b6, roughness: 0.7 }); // Blue Indian tarpaulin
+  const kettleMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.8 }); // Brass kettle
 
-    const leaves = new THREE.Mesh(new THREE.ConeGeometry(2.4, 5.0, 8), leavesMat);
-    leaves.position.y = 5.2;
-    group.add(leaves);
+  chaiLocations.forEach((loc) => {
+    const stall = new THREE.Group();
 
-    group.position.set(pos.x, 0, pos.z);
-    scene.add(group);
+    // Wooden Table
+    const table = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.1, 1.8), woodMat);
+    table.position.set(0, 0.55, 0);
+    stall.add(table);
+
+    // Blue Tarpaulin Canopy
+    const tarp = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.1, 2.6), tarpMat);
+    tarp.position.set(0, 2.6, 0);
+    stall.add(tarp);
+
+    // Canopy Poles
+    for (const px of [-1.8, 1.8]) {
+      for (const pz of [-1.1, 1.1]) {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 6), woodMat);
+        pole.position.set(px, 1.3, pz);
+        stall.add(pole);
+      }
+    }
+
+    // Brass Chai Kettle
+    const kettle = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.45, 8), kettleMat);
+    kettle.position.set(0.4, 1.32, 0);
+    stall.add(kettle);
+
+    // Wooden Bench
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 0.6), woodMat);
+    bench.position.set(0, 0.25, 1.6);
+    stall.add(bench);
+
+    stall.position.set(loc.x, 0, loc.z);
+    scene.add(stall);
+
+    colliders.push({ minX: loc.x - 2.5, maxX: loc.x + 2.5, minZ: loc.z - 2.0, maxZ: loc.z + 2.0 });
+  });
+
+  // 2. Green & Yellow Auto-Rickshaw Stand Props
+  const rickshawMatGreen = new THREE.MeshStandardMaterial({ color: 0x007f3f, roughness: 0.5 });
+  const rickshawMatYellow = new THREE.MeshStandardMaterial({ color: 0xffd000, roughness: 0.4 });
+  const rickshawBlack = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+
+  const rickshawSpots = [
+    { x: -14, z: -110, rot: 0.2 },
+    { x: 14, z: 210, rot: -0.15 },
+    { x: -15, z: -460, rot: 0.1 },
+    { x: 15, z: -1280, rot: -0.25 },
+  ];
+
+  rickshawSpots.forEach((r) => {
+    const auto = new THREE.Group();
+
+    // Lower Green Body
+    const bodyLower = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.9, 2.6), rickshawMatGreen);
+    bodyLower.position.set(0, 0.65, 0);
+    auto.add(bodyLower);
+
+    // Upper Yellow Hood Canopy
+    const bodyUpper = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 2.0), rickshawMatYellow);
+    bodyUpper.position.set(0, 1.45, -0.2);
+    auto.add(bodyUpper);
+
+    // Black Wheels
+    for (const wx of [-0.85, 0.85]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 10), rickshawBlack);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(wx, 0.32, 0.6);
+      auto.add(wheel);
+    }
+    const frontWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 10), rickshawBlack);
+    frontWheel.rotation.z = Math.PI / 2;
+    frontWheel.position.set(0, 0.32, -0.9);
+    auto.add(frontWheel);
+
+    auto.position.set(r.x, 0, r.z);
+    auto.rotation.y = r.rot;
+    scene.add(auto);
+
+    colliders.push({ minX: r.x - 1.2, maxX: r.x + 1.2, minZ: r.z - 1.6, maxZ: r.z + 1.6 });
+  });
+
+  // 3. Illuminated Street Transit Shelters (Bus Stops)
+  const busStops = [
+    { x: 13.5, z: -70 },
+    { x: -13.5, z: 180 },
+    { x: 14.5, z: -1320 },
+  ];
+
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
+  const adMat = new THREE.MeshStandardMaterial({ color: 0xff7a18, emissive: 0xff5500, emissiveIntensity: 0.7 });
+
+  busStops.forEach((b) => {
+    const stop = new THREE.Group();
+
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.15, 2.2), woodMat);
+    roof.position.set(0, 2.8, 0);
+    stop.add(roof);
+
+    const backGlass = new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.4, 0.08), glassMat);
+    backGlass.position.set(0, 1.4, -1.0);
+    stop.add(backGlass);
+
+    const adPanel = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.1), adMat);
+    adPanel.position.set(1.9, 1.4, 0);
+    stop.add(adPanel);
+
+    stop.position.set(b.x, 0, b.z);
+    scene.add(stop);
+
+    colliders.push({ minX: b.x - 2.4, maxX: b.x + 2.4, minZ: b.z - 1.5, maxZ: b.z + 1.5 });
   });
 }
 
+// --- Lush Organic Indian Trees & Gulmohar Blooms ----------------------------
+function buildLushIndianTrees(scene) {
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a3728, roughness: 0.9 });
+  const neemLeafMat = new THREE.MeshStandardMaterial({ color: 0x226b35, roughness: 0.8 }); // Lush Green Neem
+  const gulmoharFlowerMat = new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.7 }); // Orange-Red Gulmohar
+  const palmLeafMat = new THREE.MeshStandardMaterial({ color: 0x1f7a3f, roughness: 0.75 });
+
+  const treePositions = [
+    // Boulevard Trees (Central Median & Pavements)
+    { x: -11, z: -200, type: 'gulmohar' },
+    { x: 11, z: -160, type: 'neem' },
+    { x: -11, z: -100, type: 'neem' },
+    { x: 11, z: -30, type: 'gulmohar' },
+    { x: -11, z: 40, type: 'neem' },
+    { x: 11, z: 120, type: 'gulmohar' },
+    { x: -11, z: 200, type: 'neem' },
+    { x: 11, z: 280, type: 'gulmohar' },
+    { x: -11, z: 360, type: 'neem' },
+
+    // Delhi & Yamuna Approach Trees
+    { x: -13, z: -520, type: 'neem' },
+    { x: 13, z: -560, type: 'gulmohar' },
+    { x: -14, z: -700, type: 'palm' },
+    { x: 14, z: -730, type: 'palm' },
+
+    // Noida Expressway Green Buffer
+    { x: -15, z: -1120, type: 'palm' },
+    { x: 15, z: -1160, type: 'gulmohar' },
+    { x: -15, z: -1240, type: 'palm' },
+    { x: 15, z: -1280, type: 'neem' },
+    { x: -15, z: -1360, type: 'gulmohar' },
+    { x: 15, z: -1420, type: 'palm' },
+    { x: -14, z: -1520, type: 'neem' },
+    { x: 14, z: -1600, type: 'gulmohar' },
+
+    // Golf Course Cluster
+    { x: 230, z: 60, type: 'neem' },
+    { x: 270, z: 90, type: 'gulmohar' },
+    { x: 310, z: 140, type: 'neem' },
+    { x: 360, z: 170, type: 'gulmohar' },
+    { x: 410, z: 210, type: 'neem' },
+  ];
+
+  treePositions.forEach((tp) => {
+    const tree = new THREE.Group();
+
+    if (tp.type === 'palm') {
+      // Royal Palm Tree
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 9.5, 8), trunkMat);
+      trunk.position.y = 4.75;
+      trunk.rotation.z = 0.05;
+      tree.add(trunk);
+
+      for (let p = 0; p < 6; p++) {
+        const frondAngle = (p / 6) * Math.PI * 2;
+        const frond = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 0.8), palmLeafMat);
+        frond.position.set(Math.cos(frondAngle) * 1.2, 9.2, Math.sin(frondAngle) * 1.2);
+        frond.rotation.y = frondAngle;
+        frond.rotation.z = -0.35;
+        tree.add(frond);
+      }
+    } else {
+      // Broad Shade Tree (Neem / Gulmohar)
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 6.5, 8), trunkMat);
+      trunk.position.y = 3.25;
+      tree.add(trunk);
+
+      // Multi-Layer Organic Canopy
+      const leafMat = tp.type === 'gulmohar' ? gulmoharFlowerMat : neemLeafMat;
+      const canopy1 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.8, 1), leafMat);
+      canopy1.position.set(0, 7.2, 0);
+      tree.add(canopy1);
+
+      const canopy2 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 1), neemLeafMat);
+      canopy2.position.set(1.2, 6.5, -0.6);
+      tree.add(canopy2);
+
+      const canopy3 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.0, 1), leafMat);
+      canopy3.position.set(-1.0, 6.4, 0.8);
+      tree.add(canopy3);
+    }
+
+    tree.position.set(tp.x, 0, tp.z);
+    scene.add(tree);
+  });
+}
+
+// --- Industrial Storage Silos -----------------------------------------------
 function buildIndustrialSilos(scene, colliders) {
-  const siloMat = new THREE.MeshStandardMaterial({ color: 0x7c8594, roughness: 0.4, metalness: 0.6 });
+  const siloMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.6, metalness: 0.4 });
   const siloPositions = [
-    { x: -310, z: 120, r: 4, h: 16 },
-    { x: -310, z: 132, r: 4, h: 16 },
-    { x: -310, z: 200, r: 5, h: 18 },
-    { x: -310, z: 215, r: 5, h: 18 },
+    { x: -300, z: 120, r: 8, h: 26 },
+    { x: -330, z: 150, r: 9, h: 30 },
+    { x: -370, z: 180, r: 8, h: 28 },
   ];
 
   siloPositions.forEach((s) => {
@@ -454,6 +820,7 @@ function buildIndustrialSilos(scene, colliders) {
   });
 }
 
+// --- Metro Viaduct with Colorful Street Art Murals ---------------------------
 function buildMetroViaduct(scene) {
   const metroX = 18;
   const height = 11;
@@ -461,6 +828,7 @@ function buildMetroViaduct(scene) {
   const pillarSpacing = 40;
 
   const concreteMat = new THREE.MeshStandardMaterial({ color: METRO_COLOR, roughness: 0.8 });
+  const muralMat = new THREE.MeshStandardMaterial({ color: 0xff7a18, emissive: 0xd9480f, emissiveIntensity: 0.4 });
   const railMat = new THREE.MeshStandardMaterial({ color: 0x333b47, roughness: 0.5 });
 
   const deck = new THREE.Mesh(new THREE.BoxGeometry(5.5, 1.2, length), concreteMat);
@@ -477,9 +845,15 @@ function buildMetroViaduct(scene) {
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, height, 16), concreteMat);
     pillar.position.set(metroX, height / 2, z);
     scene.add(pillar);
+
+    // Colorful Delhi Metro Street Art Band around pillar base
+    const mural = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, 3.2, 16), muralMat);
+    mural.position.set(metroX, 1.6, z);
+    scene.add(mural);
   }
 }
 
+// --- Highway Gantries & Green Overhead Signs ---------------------------------
 function buildHighwaySigns(scene) {
   const signMat = new THREE.MeshStandardMaterial({ color: 0x007a33, roughness: 0.4 });
   const gantryMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6 });
@@ -518,12 +892,13 @@ function buildHighwaySigns(scene) {
   });
 }
 
+// --- Streetlamps with Warm Halogen Light Glow --------------------------------
 function buildStreetlights(scene) {
   const poleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
   const bulbMat = new THREE.MeshStandardMaterial({
-    color: 0xfff2cc,
-    emissive: 0xffeedd,
-    emissiveIntensity: 0.9,
+    color: 0xffea9f,
+    emissive: 0xffd275,
+    emissiveIntensity: 0.95,
   });
 
   const positions = [
