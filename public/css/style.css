@@ -140,6 +140,70 @@ html, body {
   to { transform: translateX(-50%) scale(1.04); }
 }
 
+/* ---------- Speed Trap Radar Flash Banner ---------- */
+#speedtrap-hud {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid #00d4aa;
+  padding: 12px 30px;
+  border-radius: 12px;
+  color: #fff;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 0 35px rgba(0, 212, 170, 0.6);
+  animation: flashCamera 0.2s ease-out;
+}
+
+#speedtrap-title { font-size: 11px; letter-spacing: 2.5px; color: #00d4aa; font-weight: 800; }
+#speedtrap-val { font-size: 36px; font-weight: 900; color: #fff; margin: 2px 0; }
+#speedtrap-val span { font-size: 16px; opacity: 0.6; }
+#speedtrap-reward { font-size: 13px; color: #ffd166; font-weight: 800; letter-spacing: 1px; }
+
+@keyframes flashCamera {
+  0% { transform: translateX(-50%) scale(0.9); opacity: 0; }
+  50% { transform: translateX(-50%) scale(1.08); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ---------- Police Pursuit & Heat Status HUD ---------- */
+#police-hud {
+  position: absolute;
+  top: 75px;
+  right: 24px;
+  background: rgba(220, 38, 38, 0.88);
+  border: 1px solid #ef4444;
+  padding: 8px 18px;
+  border-radius: 8px;
+  color: #fff;
+  text-align: center;
+  pointer-events: none;
+  z-index: 8;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+  animation: pulsePolice 0.5s alternate infinite ease-in-out;
+}
+
+.police-heat-stars {
+  font-size: 18px;
+  letter-spacing: 4px;
+  color: #ffd166;
+}
+
+#police-status {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+@keyframes pulsePolice {
+  from { opacity: 0.85; transform: scale(1); }
+  to { opacity: 1.0; transform: scale(1.04); }
+}
+
 /* ---------- Top Status Bar ---------- */
 #topbar {
   position: absolute;

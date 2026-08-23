@@ -68,6 +68,25 @@ export class Progression {
     this.save();
   }
 
+  awardSpeedTrap(cash, rep = 25) {
+    this.data.cash += cash;
+    this.data.rep += rep;
+    this.data.xp += Math.round(cash * 0.4);
+    this.save();
+  }
+
+  awardPoliceEscape(cash, rep) {
+    this.data.cash += cash;
+    this.data.rep += rep;
+    this.data.xp += Math.round(cash * 0.5);
+    this.save();
+  }
+
+  deductBustFine(fine) {
+    this.data.cash = Math.max(0, this.data.cash - fine);
+    this.save();
+  }
+
   awardDrift(points) {
     if (points <= 0) return 0;
     const cashReward = Math.floor(points / 25);

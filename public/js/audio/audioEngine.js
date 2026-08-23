@@ -11,6 +11,9 @@ class AudioEngine {
     this.tireGain = null;
     this.tireNoise = null;
     this.tireFilter = null;
+    this.sirenOsc = null;
+    this.sirenGain = null;
+    this.sirenActive = false;
     this.enabled = true;
     this.isMuted = false;
     this.initialized = false;
@@ -28,6 +31,7 @@ class AudioEngine {
 
       this.setupEngineSynth();
       this.setupTireSynth();
+      this.setupSirenSynth();
       this.initialized = true;
     } catch {
       /* Web Audio not supported in environment */
@@ -49,7 +53,6 @@ class AudioEngine {
     this.engineGain.gain.setValueAtTime(0.08, this.ctx.currentTime);
     this.engineGain.connect(this.masterGain);
 
-    // Two oscillators for rich rumble & motor harmonics
     this.engineOsc1 = this.ctx.createOscillator();
     this.engineOsc1.type = 'sawtooth';
     this.engineOsc1.frequency.setValueAtTime(45, this.ctx.currentTime);
@@ -73,7 +76,6 @@ class AudioEngine {
 
   setupTireSynth() {
     if (!this.ctx) return;
-    // White noise generator for tire screech
     const bufferSize = this.ctx.sampleRate * 2;
     const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
@@ -100,6 +102,25 @@ class AudioEngine {
     whiteNoise.start();
   }
 
+  setupSirenSynth() {
+    if (!this.ctx) return;
+    this.sirenGain = this.ctx.createGain();
+    this.sirenGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+    this.sirenGain.connect(this.masterGain);
+
+    this.sirenOsc = this.ctx.createOscillator();
+    this.sirenOsc.type = 'sine';
+    this.sirenOsc.frequency.setValueAtTime(700, this.ctx.currentTime);
+    this.sirenOsc.connect(this.sirenGain);
+    this.sirenOsc.start();
+  }
+
+  setSiren(active) {
+    if (!this.initialized || !this.ctx || this.isMuted || !this.sirenGain) return;
+    this.sirenActive = active;
+    this.sirenGain.gain.setTargetAtTime(active ? 0.12 : 0.0001, this.ctx.currentTime, 0.1);
+  }
+
   update(speed, throttle, isDrifting, dt) {
     if (!this.initialized || !this.ctx || this.isMuted) return;
 
@@ -122,6 +143,34 @@ class AudioEngine {
       const screechVol = isDrifting && absSpeed > 5 ? Math.min(0.22, (absSpeed / 40) * 0.22) : 0.0001;
       this.tireGain.gain.setTargetAtTime(screechVol, this.ctx.currentTime, 0.04);
     }
+
+    // Modulate police siren wail
+    if (this.sirenActive && this.sirenOsc) {
+      const sirenFreq = 650 + Math.sin(performance.now() * 0.006) * 280;
+      this.sirenOsc.frequency.setValueAtTime(sirenFreq, this.ctx.currentTime);
+    }
+  }
+
+  playCameraShutter() {
+    if (!this.initialized || !this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.11);
+    } catch {}
   }
 
   playCollision(impactForce = 1) {
@@ -154,7 +203,7 @@ class AudioEngine {
       const gain = this.ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(isHigh ? 880 : 440, now); // A5 or A4
+      osc.frequency.setValueAtTime(isHigh ? 880 : 440, now);
 
       gain.gain.setValueAtTime(0.25, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
@@ -171,7 +220,7 @@ class AudioEngine {
     if (!this.initialized || !this.ctx || this.isMuted) return;
     try {
       const now = this.ctx.currentTime;
-      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 arpeggio
+      const notes = [523.25, 659.25, 783.99, 1046.5];
       notes.forEach((freq, i) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();

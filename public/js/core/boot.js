@@ -1,6 +1,8 @@
 import * as THREE from '/js/vendor/three.module.js';
 import { buildDistrict, LIGHTING_MODES } from '/js/world/district.js';
 import { WeatherSystem, WEATHER_TYPES } from '/js/world/weather.js';
+import { SpeedTrapSystem } from '/js/world/speedTraps.js';
+import { PoliceSystem } from '/js/traffic/policeSystem.js';
 import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
 import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
 import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
@@ -22,6 +24,14 @@ const weatherToggleBtn = document.getElementById('weather-toggle');
 const audioToggleBtn = document.getElementById('audio-toggle');
 const touchToggleBtn = document.getElementById('touch-toggle');
 const touchControls = document.getElementById('touch-controls');
+
+// Speed trap & Police HUD elements
+const speedtrapHud = document.getElementById('speedtrap-hud');
+const speedtrapVal = document.getElementById('speedtrap-val');
+const speedtrapReward = document.getElementById('speedtrap-reward');
+const policeHud = document.getElementById('police-hud');
+const policeStars = document.getElementById('police-stars');
+const policeStatus = document.getElementById('police-status');
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -95,6 +105,56 @@ ui.onResultsClosed = () => {
   race.dismissResults();
   paused = false;
 };
+
+// --- Police Pursuit & Heat System -------------------------------------------
+let speedtrapTimeout = null;
+const police = new PoliceSystem(
+  scene,
+  ({ fine }) => {
+    progression.deductBustFine(fine);
+    audioEngine.setSiren(false);
+    ui.updateWallet();
+    if (policeStatus) policeStatus.textContent = `BUSTED! ₹${fine} FINE DEDUCTED`;
+    setTimeout(() => {
+      if (policeHud) policeHud.classList.add('hidden');
+    }, 2500);
+  },
+  ({ heat, cash, rep }) => {
+    progression.awardPoliceEscape(cash, rep);
+    audioEngine.playChime();
+    audioEngine.setSiren(false);
+    ui.updateWallet();
+    if (policeStatus) policeStatus.textContent = `ESCAPED! +₹${cash} CASH`;
+    setTimeout(() => {
+      if (policeHud) policeHud.classList.add('hidden');
+    }, 2500);
+  }
+);
+
+// --- Speed Trap Radar System ------------------------------------------------
+const speedTraps = new SpeedTrapSystem(scene, (res) => {
+  audioEngine.playCameraShutter();
+  if (res.beatTarget) {
+    progression.awardSpeedTrap(res.reward);
+    ui.updateWallet();
+    police.addHeat(1);
+    audioEngine.setSiren(true);
+  }
+
+  if (speedtrapHud) {
+    speedtrapVal.innerHTML = `${res.speedKmh} <span>km/h</span>`;
+    speedtrapReward.textContent = res.beatTarget
+      ? `TARGET ${res.trap.targetKmh} km/h BEAT! +₹${res.reward}`
+      : `TARGET ${res.trap.targetKmh} km/h MISSED`;
+    speedtrapReward.style.color = res.beatTarget ? '#ffd166' : '#ff7a18';
+    speedtrapHud.classList.remove('hidden');
+
+    if (speedtrapTimeout) clearTimeout(speedtrapTimeout);
+    speedtrapTimeout = setTimeout(() => {
+      speedtrapHud.classList.add('hidden');
+    }, 2400);
+  }
+});
 
 let carState = createCarState(spawnPoint);
 carMesh.position.set(carState.x, 0, carState.z);
@@ -180,6 +240,7 @@ window.__DEBUG_TRAFFIC = () => traffic.getDebugState();
 window.__DEBUG_TRAFFIC_POSITIONS = () => traffic.getPositions();
 window.__DEBUG_INTERSECTIONS = () => traffic.getIntersectionState();
 window.__DEBUG_RACE = () => race.getDebugState();
+window.__DEBUG_POLICE = () => police.getDebugState();
 window.__DEBUG_PROGRESSION = () => ({ ...progression.data, level: progression.level });
 window.__DEBUG_VEHICLE = () => ({ ...vehicle });
 window.__DEBUG_TELEPORT = (x, z, heading = 0) => {
@@ -198,6 +259,9 @@ function resetCar() {
   driftScore = 0;
   driftMultiplier = 1.0;
   driftDuration = 0;
+  police.clearHeat();
+  audioEngine.setSiren(false);
+  if (policeHud) policeHud.classList.add('hidden');
 }
 
 function onResize() {
@@ -219,10 +283,30 @@ function animate(now) {
     if (input.reset) resetCar();
 
     const interactPressed = consumePress('KeyE');
+    const kmh = Math.abs(carState.speed) * 3.6;
 
     traffic.update(dt, carState.x, carState.z);
     race.update(dt, carState.x, carState.z, interactPressed, traffic.getPositions());
     weather.update(dt, carState.x, carState.z);
+    speedTraps.update(dt, carState.x, carState.z, kmh);
+    police.update(dt, carState.x, carState.z, kmh);
+
+    // Update Police Pursuit HUD
+    if (police.heat > 0 && policeHud) {
+      policeHud.classList.remove('hidden');
+      if (policeStars) {
+        policeStars.textContent = '★'.repeat(police.heat) + '☆'.repeat(3 - police.heat);
+      }
+      if (policeStatus) {
+        if (police.bustProgress > 0.5) {
+          policeStatus.textContent = `BUST IN PROGRESS: ${Math.round((police.bustProgress / 3.0) * 100)}%`;
+        } else if (police.escapeCooldown > 0.5) {
+          policeStatus.textContent = `ESCAPING... ${Math.round((police.escapeCooldown / 5.0) * 100)}%`;
+        } else {
+          policeStatus.textContent = `PURSUIT — HEAT ${police.heat}`;
+        }
+      }
+    }
 
     // Audio cue during countdown
     if (race.state === RACE_STATE.COUNTDOWN) {
@@ -236,7 +320,7 @@ function animate(now) {
     }
 
     const frozen = race.state === RACE_STATE.COUNTDOWN;
-    const frameColliders = colliders.concat(traffic.getColliders());
+    const frameColliders = colliders.concat(traffic.getColliders()).concat(police.getColliders());
 
     if (frozen) {
       carState.speed = 0;
@@ -260,9 +344,13 @@ function animate(now) {
       frameColliders
     );
 
-    // Impact sound check on sudden deceleration from collision
+    // Impact sound check and police heat trigger on severe collision
     if (Math.abs(speedBeforeStep) > 10 && Math.abs(carState.speed) < Math.abs(speedBeforeStep) * 0.7) {
       audioEngine.playCollision(1.0);
+      if (Math.abs(speedBeforeStep) > 18) {
+        police.addHeat(1);
+        audioEngine.setSiren(true);
+      }
     }
 
     const isDrifting = updateDriftScore(dt, carState, input.handbrake);
