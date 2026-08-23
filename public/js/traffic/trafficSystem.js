@@ -113,6 +113,7 @@ export class TrafficSystem {
       halfW: Math.max(type.body.w, type.cabin.w) / 2,
       halfD: type.body.d / 2,
     };
+    car.visualLane = car.lane;
     this.assignRoute(car, seg);
     return car;
   }
@@ -122,10 +123,21 @@ export class TrafficSystem {
     car.seg = seg;
     car.dir = Math.random() < 0.5 ? 1 : -1;
     car.lane = Math.floor(Math.random() * seg.lanes);
+    car.visualLane = car.lane;
     car.t = t;
-    // Per-car speed variance so traffic isn't a uniform convoy (spec §13 "vary vehicle speeds")
-    const variance = 0.85 + Math.random() * 0.3;
-    car.targetSpeed = seg.speedLimit * car.type.speedScale * variance;
+    
+    // Type-based realistic speed clamps: SLOW (25-40 km/h), NORMAL (40-65 km/h), FAST (65-90 km/h)
+    let minKmh = 40;
+    let maxKmh = 65;
+    if (car.type.id === 'three-wheeler' || car.type.id === 'goods-truck') {
+      minKmh = 25;
+      maxKmh = 40;
+    } else if (car.type.id === 'city-sedan') {
+      minKmh = 65;
+      maxKmh = 90;
+    }
+    const targetKmh = minKmh + Math.random() * (maxKmh - minKmh);
+    car.targetSpeed = targetKmh / 3.6;
     car.speed = car.targetSpeed;
     car.halfW = Math.max(car.type.body.w, car.type.cabin.w) / 2;
     car.halfD = car.type.body.d / 2;
@@ -157,55 +169,121 @@ export class TrafficSystem {
    */
   turnOnto(car, junction) {
     const next = junction.otherSeg;
-    // Pick the travel direction on the new road; either is a legal turn at a crossroads.
     const dir = Math.random() < 0.5 ? 1 : -1;
     const t = tAlong(next, junction.ix.x, junction.ix.z, dir);
 
-    // Refuse a turn that would immediately dump the car off the end of the new road.
     if (t > 0.97) return false;
 
     car.seg = next;
     car.dir = dir;
     car.lane = Math.floor(Math.random() * next.lanes);
+    car.visualLane = car.lane;
     car.t = t;
-    const variance = 0.85 + Math.random() * 0.3;
-    car.targetSpeed = next.speedLimit * car.type.speedScale * variance;
+    
+    let minKmh = 40;
+    let maxKmh = 65;
+    if (car.type.id === 'three-wheeler' || car.type.id === 'goods-truck') {
+      minKmh = 25;
+      maxKmh = 40;
+    } else if (car.type.id === 'city-sedan') {
+      minKmh = 65;
+      maxKmh = 90;
+    }
+    const targetKmh = minKmh + Math.random() * (maxKmh - minKmh);
+    car.targetSpeed = targetKmh / 3.6;
     this.refreshJunctions(car);
     return true;
   }
 
   /** Respawns a car somewhere valid but off-screen relative to the player. */
-  respawn(car, playerX, playerZ) {
-    for (let attempt = 0; attempt < 8; attempt++) {
+  respawn(car, playerX, playerZ, playerHeading = 0, playerSpeed = 0) {
+    const speedFactor = Math.max(0, playerSpeed * 0.8);
+    const minAheadDist = 65 + speedFactor; // Pushed further ahead at higher speeds
+    const minBehindDist = 35;
+
+    for (let attempt = 0; attempt < 16; attempt++) {
       const seg = this.pickSegment();
       const t = Math.random();
       const dir = Math.random() < 0.5 ? 1 : -1;
       const lane = Math.floor(Math.random() * seg.lanes);
       const p = sampleLane(seg, t, dir, lane);
-      const dist = Math.hypot(p.x - playerX, p.z - playerZ);
-      if (dist > SPAWN_MIN_DISTANCE && dist < SPAWN_MAX_DISTANCE) {
-        this.assignRoute(car, seg, t);
-        car.dir = dir;
-        car.lane = lane;
-        // assignRoute picked its own direction; junction t-values are direction-relative,
-        // so they must be recomputed against the direction actually used here.
-        this.refreshJunctions(car);
-        return;
+      
+      const toSpawnX = p.x - playerX;
+      const toSpawnZ = p.z - playerZ;
+      const dist = Math.hypot(toSpawnX, toSpawnZ);
+      
+      const dot = Math.sin(playerHeading) * toSpawnX + Math.cos(playerHeading) * toSpawnZ;
+      const minAllowed = dot > 0 ? minAheadDist : minBehindDist;
+
+      if (dist > minAllowed && dist < SPAWN_MAX_DISTANCE) {
+        // Double-check no close overlap with existing active cars
+        let overlapping = false;
+        for (const other of this.cars) {
+          if (other === car || other.x === undefined) continue;
+          if (Math.hypot(p.x - other.x, p.z - other.z) < 8.0) {
+            overlapping = true;
+            break;
+          }
+        }
+
+        if (!overlapping) {
+          this.assignRoute(car, seg, t);
+          car.dir = dir;
+          car.lane = lane;
+          car.visualLane = lane;
+          this.refreshJunctions(car);
+          return;
+        }
       }
     }
-    // Couldn't find a good slot this frame — leave it where it is and retry next frame.
   }
 
-  update(dt, playerX, playerZ) {
+  update(dt, playerX, playerZ, playerHeading = 0, playerSpeed = 0) {
     this.intersections.update(dt);
 
-    for (const car of this.cars) {
-      const sample = sampleLane(car.seg, car.t, car.dir, car.lane);
+    // Difficulty density multiplier based on elapsed time inside TrafficRun
+    let activeLimit = MAX_TRAFFIC;
+    if (window.trafficRun && window.trafficRun.active) {
+      const elapsed = window.trafficRun.elapsedTime || 0;
+      let densityMult = 1.0;
+      if (elapsed < 30) {
+        densityMult = 0.45; // EASY
+      } else if (elapsed < 90) {
+        densityMult = 0.70; // NORMAL
+      } else if (elapsed < 180) {
+        densityMult = 0.95; // BUSY
+      } else {
+        densityMult = 1.20; // INTENSE
+      }
+      activeLimit = Math.floor(MAX_TRAFFIC * densityMult);
+    }
+
+    for (let idx = 0; idx < this.cars.length; idx++) {
+      const car = this.cars[idx];
+      const isActive = idx < activeLimit;
+      car.mesh.visible = isActive;
+      if (!isActive) {
+        car.x = undefined;
+        car.z = undefined;
+        car.mesh.position.set(99999, 99999, 99999);
+        continue;
+      }
+
+      // Smooth visual lane changes interpolation
+      if (car.visualLane === undefined) {
+        car.visualLane = car.lane;
+      }
+      if (car.visualLane !== car.lane) {
+        const step = Math.sign(car.lane - car.visualLane) * Math.min(Math.abs(car.lane - car.visualLane), dt * 1.5);
+        car.visualLane += step;
+      }
+
+      const sample = sampleLane(car.seg, car.t, car.dir, car.visualLane);
 
       // --- Forward avoidance: find nearest car ahead in the same segment/dir/lane ---
       let gap = Infinity;
       for (const other of this.cars) {
-        if (other === car) continue;
+        if (other === car || other.x === undefined) continue;
         if (other.seg !== car.seg || other.dir !== car.dir || other.lane !== car.lane) continue;
         const delta = (other.t - car.t) * sample.length;
         if (delta > 0 && delta < gap) gap = delta;
@@ -218,13 +296,40 @@ export class TrafficSystem {
         desired = car.targetSpeed * ((gap - MIN_GAP) / (FOLLOW_DISTANCE - MIN_GAP));
       }
 
-      // Also yield to the player if they're right in front in this lane
+      // Yield to the player if they're right in front in this lane
       const toPlayerX = playerX - sample.x;
       const toPlayerZ = playerZ - sample.z;
       const forwardDot = Math.sin(sample.heading) * toPlayerX + Math.cos(sample.heading) * toPlayerZ;
       const lateral = Math.abs(Math.cos(sample.heading) * toPlayerX - Math.sin(sample.heading) * toPlayerZ);
       if (forwardDot > 0 && forwardDot < FOLLOW_DISTANCE && lateral < 2.6) {
         desired = Math.min(desired, Math.max(0, car.targetSpeed * ((forwardDot - MIN_GAP) / FOLLOW_DISTANCE)));
+      }
+
+      // Occasional random lane change AI rules (Step 4 Lane Behavior)
+      if (Math.random() < 0.005 && car.speed > 5) {
+        const seg = car.seg;
+        if (seg.lanes > 1) {
+          const adjacentLanes = [];
+          if (car.lane > 0) adjacentLanes.push(car.lane - 1);
+          if (car.lane < seg.lanes - 1) adjacentLanes.push(car.lane + 1);
+
+          if (adjacentLanes.length > 0) {
+            const nextLane = adjacentLanes[Math.floor(Math.random() * adjacentLanes.length)];
+            let laneClear = true;
+            for (const other of this.cars) {
+              if (other === car || other.x === undefined) continue;
+              if (other.seg === car.seg && other.dir === car.dir && other.lane === nextLane) {
+                if (Math.abs(other.t - car.t) < 0.05) {
+                  laneClear = false;
+                  break;
+                }
+              }
+            }
+            if (laneClear) {
+              car.lane = nextLane;
+            }
+          }
+        }
       }
 
       // --- Traffic lights: find the nearest upcoming junction on this segment ---
@@ -254,41 +359,34 @@ export class TrafficSystem {
               );
             }
           } else if (car.t >= nextJunction.t - nextJunction.halfT && !car.turnDecided) {
-            // Entering the box on a clear light: commit once to straight-through or a turn,
-            // so the decision doesn't flip-flop every frame while inside the junction.
             car.turnDecided = true;
             if (Math.random() < TURN_CHANCE) {
               this.turnOnto(car, nextJunction);
-              continue; // seg/t just changed; resume from the top next frame
+              continue;
             }
           }
         }
       }
 
       if (!atStopLine) {
-        // Clear the "already decided this junction" flag once we're well past any box, so
-        // the next junction ahead gets a fresh decision.
         if (!nextJunction || car.t > (nextJunction.t + nextJunction.halfT)) {
           car.turnDecided = false;
         }
       }
 
-      // Smooth accel/brake toward the desired speed
       const rate = desired < car.speed ? 14 : 5;
       car.speed += (desired - car.speed) * Math.min(1, dt * rate);
       if (car.speed < 0.01) car.speed = 0;
 
-      // Advance along the lane
       car.t += (car.speed * dt) / sample.length;
 
-      // Reached the end of its road, or drifted far from the player -> recycle
       const distToPlayer = Math.hypot(sample.x - playerX, sample.z - playerZ);
       if (car.t >= 1 || distToPlayer > DESPAWN_DISTANCE) {
-        this.respawn(car, playerX, playerZ);
+        this.respawn(car, playerX, playerZ, playerHeading, playerSpeed);
         continue;
       }
 
-      const pos = sampleLane(car.seg, car.t, car.dir, car.lane);
+      const pos = sampleLane(car.seg, car.t, car.dir, car.visualLane);
       car.mesh.position.set(pos.x, 0, pos.z);
       car.mesh.rotation.y = pos.heading;
       car.x = pos.x;
@@ -301,8 +399,6 @@ export class TrafficSystem {
     const out = [];
     for (const car of this.cars) {
       if (car.x === undefined) continue;
-      // Axis-aligned approximation of an oriented box; padded to the larger extent so the
-      // player can't slip through a car that's angled relative to the axes.
       const r = Math.max(car.halfW, car.halfD * 0.72);
       out.push({ minX: car.x - r, maxX: car.x + r, minZ: car.z - r, maxZ: car.z + r });
     }
@@ -337,6 +433,7 @@ export class TrafficSystem {
         segId: c.seg.id,
         halfW: c.halfW,
         halfD: c.halfD,
+        typeId: c.type.id,
       }));
   }
 }

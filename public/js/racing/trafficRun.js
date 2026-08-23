@@ -45,6 +45,8 @@ export class TrafficRunSystem {
     this.lastX = playerX;
     this.lastZ = playerZ;
     this.comboTimer = 0;
+    this.elapsedTime = 0;
+    this.tutorialShown = false;
     this.hasCrashedThisRun = false;
 
     // Show traffic run HUD indicator and End Run button
@@ -54,6 +56,26 @@ export class TrafficRunSystem {
 
   update(dt, playerX, playerZ, currentKmh) {
     if (!this.active) return;
+
+    this.elapsedTime += dt;
+
+    // First-run tutorial tip check (Step 2 QA pass)
+    if (this.elapsedTime > 5.0 && this.nearMisses === 0 && !this.tutorialShown) {
+      this.tutorialShown = true;
+      const nearmissHud = document.getElementById('nearmiss-hud');
+      const nearmissBadge = document.getElementById('nearmiss-badge');
+      const nearmissText = document.getElementById('nearmiss-text');
+      if (nearmissHud && nearmissBadge && nearmissText) {
+        nearmissBadge.textContent = '💡 TRAFFIC RUN';
+        nearmissText.textContent = 'PASS CLOSE TO MOVING CARS TO SCORE NEAR MISSES!';
+        nearmissHud.classList.remove('hidden');
+        setTimeout(() => {
+          if (this.nearMisses === 0) {
+            nearmissHud.classList.add('hidden');
+          }
+        }, 5000);
+      }
+    }
 
     // 1. Update distance
     const distStep = Math.hypot(playerX - this.lastX, playerZ - this.lastZ);
@@ -159,9 +181,14 @@ export class TrafficRunSystem {
   updateComboHUD() {
     const nearmissCombo = document.getElementById('nearmiss-combo');
     if (nearmissCombo) {
+      nearmissCombo.classList.remove('combo-high-3', 'combo-high-4', 'combo-high-5');
       if (this.combo >= 2) {
         nearmissCombo.textContent = `COMBO ×${this.combo}`;
         nearmissCombo.classList.remove('hidden');
+
+        if (this.combo === 3) nearmissCombo.classList.add('combo-high-3');
+        else if (this.combo === 4) nearmissCombo.classList.add('combo-high-4');
+        else if (this.combo === 5) nearmissCombo.classList.add('combo-high-5');
         
         // Add active pop animation
         nearmissCombo.classList.remove('combo-animate');
@@ -172,7 +199,7 @@ export class TrafficRunSystem {
         const radBadge = document.getElementById('ss-track-badge');
         if (this.combo === 5 && radBadge) {
           radBadge.textContent = '🔥 HOT RUN';
-          radBadge.style.color = '#ff7a18';
+          radBadge.style.color = '#ff0054';
         }
       } else {
         nearmissCombo.classList.add('hidden');

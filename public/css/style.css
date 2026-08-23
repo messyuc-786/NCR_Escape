@@ -1986,3 +1986,18 @@ html, body {
 .combo-animate {
   animation: comboPop 0.2s ease-out;
 }
+
+/* High combo tier visual effects */
+.combo-high-3 {
+  color: #ffb703 !important;
+  text-shadow: 0 0 10px #ffb703, 0 0 20px #ffb703;
+}
+.combo-high-4 {
+  color: #fb8500 !important;
+  text-shadow: 0 0 12px #fb8500, 0 0 24px #fb8500;
+}
+.combo-high-5 {
+  color: #ff0054 !important;
+  text-shadow: 0 0 15px #ff0054, 0 0 30px #ff0054, 0 0 45px #ff0054;
+  animation: comboPop 0.25s infinite alternate !important;
+}

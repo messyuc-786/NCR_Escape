@@ -257,6 +257,7 @@ ui.onResultsClosed = () => {
 
 // --- Traffic Run ---
 const trafficRun = new TrafficRunSystem();
+window.trafficRun = trafficRun;
 
 // --- Police Pursuit & Heat System -------------------------------------------
 let speedtrapTimeout = null;
@@ -316,7 +317,7 @@ let carState = createCarState(spawnPoint);
 carMesh.position.set(carState.x, 0, carState.z);
 snapChaseCamera(camera, carState);
 traffic.seed(carState.x, carState.z);
-traffic.update(0.016, carState.x, carState.z);
+traffic.update(0.016, carState.x, carState.z, carState.heading, carState.speed);
 // --- Arcade Near-Miss Traffic Bonus & Slalom Combo Detection -----------------
 let lastNearMissTime = 0;
 let nearMissComboCount = 0;
@@ -326,7 +327,7 @@ const nearmissText = document.getElementById('nearmiss-text');
 const nearmissCombo = document.getElementById('nearmiss-combo');
 
 function checkNearMisses(state, trafficPositions) {
-  const kmh = Math.abs(state.speed) * 3.6;
+  const kmh = state.speed * 3.6; // Enforce forward velocity only to block reversing exploits
   if (kmh < 40) {
     return;
   }
@@ -374,19 +375,23 @@ function checkNearMisses(state, trafficPositions) {
       // Register this vehicle so we don't count it again until the pass completes
       activeNearMisses.add(t.id);
 
-      // Determine level
+      // Determine level (Step 4 & Step 7 Large vehicle overrides)
       let baseScore = 100;
       let label = '⚡ NEAR MISS';
-      let chimeTone = false; // normal whoosh
+      let chimeTone = false;
+      const isTruck = t.typeId === 'goods-truck';
 
       if (clearance <= 0.35 && kmh > 100) {
         baseScore = 500;
-        label = '🏎️ INSANE PASS!';
-        chimeTone = true; // intense sound
+        label = isTruck ? '🚨 INSANE TRUCK PASS!' : '🏎️ INSANE PASS!';
+        chimeTone = true;
       } else if (clearance <= 0.85) {
         baseScore = 250;
-        label = '🔥 CLOSE CALL!';
+        label = isTruck ? '🚛 CLOSE TRUCK PASS!' : '🔥 CLOSE CALL!';
         chimeTone = true;
+      } else if (isTruck) {
+        baseScore = 150;
+        label = '🚛 HEAVY OVERTAKE';
       }
 
       // Check Drift synergy
@@ -739,7 +744,7 @@ function animate(now) {
     achievements.recordSpeed(kmh);
     achievements.recordDistrict(minimap.getDistrictName(carState.x, carState.z));
 
-    traffic.update(dt, carState.x, carState.z);
+    traffic.update(dt, carState.x, carState.z, carState.heading, carState.speed);
     pedestrians.update(dt, carState.x, carState.z, carState.speed);
     race.update(dt, carState.x, carState.z, interactPressed, traffic.getPositions());
     weather.update(dt, carState.x, carState.z);
@@ -812,7 +817,7 @@ function animate(now) {
       nitroFlameL.visible = carState.isBoosting;
       nitroFlameR.visible = carState.isBoosting;
     }
-    const targetFov = carState.isBoosting ? 67 : 60;
+    const targetFov = 60 + Math.min(15, (kmh / 180) * 10) + (carState.isBoosting ? 8 : 0);
     camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 6);
     camera.updateProjectionMatrix();
 
