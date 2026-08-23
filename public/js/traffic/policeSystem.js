@@ -1,4 +1,4 @@
-import * as THREE from '/js/vendor/three.module.js';
+import * as THREE from '../vendor/three.module.js';
 
 // Police Pursuit & Heat Level System for NCR ESCAPE (spec §16).
 // Controls Heat Levels (1-3 stars), PCR police cruiser AI pursuit, escape cooldowns, and bust penalties.

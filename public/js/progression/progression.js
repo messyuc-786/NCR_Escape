@@ -1,4 +1,4 @@
-import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS } from '/js/vehicles/vehicle.js';
+import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS } from '../vehicles/vehicle.js';
 
 // Phase 6 Progression & Economy (spec §15-17).
 // Cash, XP, Reputation, Level, Garage Vehicles, Custom Paint, and Performance Upgrades.

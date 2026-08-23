@@ -1,5 +1,5 @@
-import { roadSegments } from '/js/roads/network.js';
-import { raceEvents } from '/js/racing/events.js';
+import { roadSegments } from '../roads/network.js';
+import { raceEvents } from '../racing/events.js';
 
 // Real-time 2D Canvas Radar Minimap for NCR ESCAPE (spec §18).
 // Tracks road network across all 4 NCR regions, player orientation, AI traffic, AI opponents, and live district name.

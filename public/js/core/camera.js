@@ -1,4 +1,4 @@
-import * as THREE from '/js/vendor/three.module.js';
+import * as THREE from '../vendor/three.module.js';
 
 // Camera Modes for NCR ESCAPE (spec §18).
 export const CAMERA_MODES = {

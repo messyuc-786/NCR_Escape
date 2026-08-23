@@ -1,7 +1,7 @@
-import { RACE_STATE } from '/js/racing/raceSystem.js';
-import { UPGRADES } from '/js/progression/progression.js';
-import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS, AVAILABLE_NEONS } from '/js/vehicles/vehicle.js';
-import { ACHIEVEMENTS } from '/js/progression/achievementSystem.js';
+import { RACE_STATE } from '../racing/raceSystem.js';
+import { UPGRADES } from '../progression/progression.js';
+import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS, AVAILABLE_NEONS } from '../vehicles/vehicle.js';
+import { ACHIEVEMENTS } from '../progression/achievementSystem.js';
 
 // Game UI Controller for NCR ESCAPE (spec §17-18).
 // Manages Garage car selection, paint customizer, underglow neons, performance upgrades, achievements, and results.

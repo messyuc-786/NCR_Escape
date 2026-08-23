@@ -1,4 +1,4 @@
-import * as THREE from '/js/vendor/three.module.js';
+import * as THREE from '../vendor/three.module.js';
 
 // Speed Trap Radar System for NCR ESCAPE (spec §15).
 // Detects high-speed expressway runs, flashes radar camera, and awards speed bonuses.

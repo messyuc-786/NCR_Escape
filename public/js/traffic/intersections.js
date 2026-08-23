@@ -1,5 +1,5 @@
-import * as THREE from '/js/vendor/three.module.js';
-import { getIntersections, axisOf, getDrivableSegments } from '/js/roads/network.js';
+import * as THREE from '../vendor/three.module.js';
+import { getIntersections, axisOf, getDrivableSegments } from '../roads/network.js';
 
 // Phase 4b — intersection right-of-way.
 //

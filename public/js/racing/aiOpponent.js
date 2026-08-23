@@ -1,5 +1,5 @@
-import * as THREE from '/js/vendor/three.module.js';
-import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
+import * as THREE from '../vendor/three.module.js';
+import { buildVehicleMesh, VEHICLE_CATALOGUE } from '../vehicles/vehicle.js';
 
 // AI Rival Racing Opponent for NCR ESCAPE (spec §13, §14).
 // Competes on the race track against the player, navigating checkpoints and avoiding traffic.

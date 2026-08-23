@@ -1,4 +1,4 @@
-import * as THREE from '/js/vendor/three.module.js';
+import * as THREE from '../vendor/three.module.js';
 
 // Original fictional civilian vehicle types for AI traffic. No real manufacturer names,
 // logos, or copyrighted designs — simple low-poly silhouettes only.

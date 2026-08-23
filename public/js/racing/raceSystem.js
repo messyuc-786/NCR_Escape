@@ -1,6 +1,6 @@
-import * as THREE from '/js/vendor/three.module.js';
-import { raceEvents, EVENT_TYPES } from '/js/racing/events.js';
-import { AIOpponent } from '/js/racing/aiOpponent.js';
+import * as THREE from '../vendor/three.module.js';
+import { raceEvents, EVENT_TYPES } from './events.js';
+import { AIOpponent } from './aiOpponent.js';
 
 // Reusable Race Framework for NCR ESCAPE (spec §13-15).
 // Supports Sprints, Multi-Lap Circuits, AI Opponents, Checkpoints, and Live Position Tracking.

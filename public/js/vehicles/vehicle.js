@@ -1,4 +1,4 @@
-import * as THREE from '/js/vendor/three.module.js';
+import * as THREE from '../vendor/three.module.js';
 
 // Original fictional vehicle lineup for NCR ESCAPE (spec §9).
 // No copyrighted designs, real manufacturer names, or logos.

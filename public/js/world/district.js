@@ -1,5 +1,5 @@
-import * as THREE from '/js/vendor/three.module.js';
-import { roadSegments } from '/js/roads/network.js';
+import * as THREE from '../vendor/three.module.js';
+import { roadSegments } from '../roads/network.js';
 
 const ASPHALT = 0x2b2f38;
 const CURB = 0x50565f;

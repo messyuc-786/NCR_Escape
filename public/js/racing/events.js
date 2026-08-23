@@ -130,6 +130,28 @@ export const raceEvents = [
 
   // --- Region 3 & 4: Noida Expressway & Sector 143 Tech Finale ---
   {
+    id: 'noida-traffic-rush',
+    label: 'Noida Expressway Traffic Rush',
+    type: EVENT_TYPES.TIME_TRIAL,
+    difficulty: 'Reflex Rush',
+    description: 'Survive dense high-speed traffic on the 8-lane Noida Expressway. Near-misses grant +3s bonus time and combo multipliers!',
+    marker: { x: 0, z: -1150, radius: 12 },
+    laps: 1,
+    checkpoints: [
+      { x: 0, z: -1250, radius: 24 },
+      { x: 0, z: -1380, radius: 24 },
+      { x: 0, z: -1520, radius: 24 },
+      { x: 0, z: -1680, radius: 24 },
+    ],
+    targetTime: 38,
+    reward: { cash: 3500, xp: 650, rep: 250 },
+    bonusReward: { cash: 1800, xp: 350, rep: 120 },
+    opponents: [
+      { name: 'Sameer (Expressway Rush)', vehicleId: 'apex-gt', color: 0x00ffff },
+      { name: 'Naveen (Speed Runner)', vehicleId: 'garuda-rx', color: 0xff3b30 },
+    ],
+  },
+  {
     id: 'sector-143-championship',
     label: 'Sector 143 Innovation Grand Championship',
     type: EVENT_TYPES.CIRCUIT,

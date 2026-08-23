@@ -1,12 +1,12 @@
 // Service Worker for NCR ESCAPE (spec §18, PWA).
 const CACHE_NAME = 'ncr-escape-v1';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/core/boot.js',
-  '/js/vendor/three.module.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/style.css',
+  './js/core/boot.js',
+  './js/vendor/three.module.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (e) => {

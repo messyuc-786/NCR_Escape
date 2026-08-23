@@ -1,6 +1,6 @@
-import { roadSegments } from '/js/roads/network.js';
-import { raceEvents } from '/js/racing/events.js';
-import { SPEED_TRAPS } from '/js/world/speedTraps.js';
+import { roadSegments } from '../roads/network.js';
+import { raceEvents } from '../racing/events.js';
+import { SPEED_TRAPS } from '../world/speedTraps.js';
 
 // Full-Screen GPS Interactive World Map for NCR ESCAPE (spec §18, §22).
 // Renders all 4 NCR regions, district boundaries, speed traps, race events, and player teleport/GPS.

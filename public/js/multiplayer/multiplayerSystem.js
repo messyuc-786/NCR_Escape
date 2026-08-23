@@ -1,5 +1,5 @@
-import * as THREE from '/js/vendor/three.module.js';
-import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
+import * as THREE from '../vendor/three.module.js';
+import { buildVehicleMesh, VEHICLE_CATALOGUE } from '../vehicles/vehicle.js';
 
 // Real-Time Multiplayer Client for NCR ESCAPE (spec §19).
 // Synchronizes remote players in free-roam with smooth interpolation and custom paint models.

@@ -1,31 +1,32 @@
-import * as THREE from '/js/vendor/three.module.js';
-import { buildDistrict, LIGHTING_MODES } from '/js/world/district.js';
-import { WeatherSystem, WEATHER_TYPES } from '/js/world/weather.js';
-import { SpeedTrapSystem } from '/js/world/speedTraps.js';
-import { PoliceSystem } from '/js/traffic/policeSystem.js';
-import { SoundSystem } from '/js/audio/soundSystem.js';
-import { SoundSystemUI } from '/js/ui/soundSystemUI.js';
-import { MultiplayerSystem } from '/js/multiplayer/multiplayerSystem.js';
-import { PhotoMode } from '/js/core/photoMode.js';
-import { WorldMap } from '/js/ui/worldMap.js';
-import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
-import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
-import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
-import { createChaseCamera, updateChaseCamera, snapChaseCamera, cycleCameraMode } from '/js/core/camera.js';
-import { updateHUD } from '/js/ui/hud.js';
-import { Minimap } from '/js/ui/minimap.js';
-import { spawnPoint } from '/js/roads/network.js';
-import { TrafficSystem } from '/js/traffic/trafficSystem.js';
-import { RaceSystem, RACE_STATE } from '/js/racing/raceSystem.js';
-import { Progression } from '/js/progression/progression.js';
-import { AchievementSystem } from '/js/progression/achievementSystem.js';
-import { GameUI } from '/js/ui/gameUI.js';
-import { audioEngine } from '/js/audio/audioEngine.js';
+import * as THREE from '../vendor/three.module.js';
+import { buildDistrict, LIGHTING_MODES } from '../world/district.js';
+import { WeatherSystem, WEATHER_TYPES } from '../world/weather.js';
+import { TimeCycleSystem } from '../world/timeCycle.js';
+import { SpeedTrapSystem } from '../world/speedTraps.js';
+import { PoliceSystem } from '../traffic/policeSystem.js';
+import { SoundSystem } from '../audio/soundSystem.js';
+import { SoundSystemUI } from '../ui/soundSystemUI.js';
+import { MultiplayerSystem } from '../multiplayer/multiplayerSystem.js';
+import { PhotoMode } from './photoMode.js';
+import { WorldMap } from '../ui/worldMap.js';
+import { buildVehicleMesh, VEHICLE_CATALOGUE } from '../vehicles/vehicle.js';
+import { createCarState, stepCarPhysics } from '../physics/carPhysics.js';
+import { readInput, consumePress, initTouchControls } from './input.js';
+import { createChaseCamera, updateChaseCamera, snapChaseCamera, cycleCameraMode } from './camera.js';
+import { updateHUD } from '../ui/hud.js';
+import { Minimap } from '../ui/minimap.js';
+import { spawnPoint } from '../roads/network.js';
+import { TrafficSystem } from '../traffic/trafficSystem.js';
+import { RaceSystem, RACE_STATE } from '../racing/raceSystem.js';
+import { Progression } from '../progression/progression.js';
+import { AchievementSystem } from '../progression/achievementSystem.js';
+import { GameUI } from '../ui/gameUI.js';
+import { audioEngine } from '../audio/audioEngine.js';
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
 
@@ -63,6 +64,7 @@ scene.background = new THREE.Color(0x2a3550);
 const camera = createChaseCamera(window.innerWidth / window.innerHeight);
 const { colliders, setDayNight, getCurrentMode } = buildDistrict(scene);
 const weather = new WeatherSystem(scene);
+const timeCycle = new TimeCycleSystem(scene, setDayNight);
 const soundSystem = new SoundSystem(audioEngine);
 
 let paused = false;
@@ -430,10 +432,8 @@ if (cameraToggleBtn) {
 
 if (modeToggleBtn) {
   modeToggleBtn.addEventListener('click', () => {
-    const cur = getCurrentMode();
-    const next = cur === LIGHTING_MODES.DAY ? LIGHTING_MODES.SUNSET : cur === LIGHTING_MODES.SUNSET ? LIGHTING_MODES.NIGHT : LIGHTING_MODES.DAY;
-    setDayNight(next);
-    modeToggleBtn.textContent = next === LIGHTING_MODES.DAY ? '☀️ DAY' : next === LIGHTING_MODES.SUNSET ? '🌅 SUNSET' : '🌙 NIGHT';
+    const label = timeCycle.cycleMode();
+    modeToggleBtn.textContent = label;
   });
 }
 
@@ -568,6 +568,7 @@ function animate(now) {
     traffic.update(dt, carState.x, carState.z);
     race.update(dt, carState.x, carState.z, interactPressed, traffic.getPositions());
     weather.update(dt, carState.x, carState.z);
+    timeCycle.update(dt);
     speedTraps.update(dt, carState.x, carState.z, kmh);
     police.update(dt, carState.x, carState.z, kmh);
     multiplayer.update(dt, carState, activeCarDef, progression.data.selectedPaint);

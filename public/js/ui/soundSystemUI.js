@@ -1,4 +1,4 @@
-import { SOUND_PLAYLISTS } from '/js/audio/soundSystem.js';
+import { SOUND_PLAYLISTS } from '../audio/soundSystem.js';
 
 // In-Car Sound System & Subwoofer Speaker UI for NCR ESCAPE.
 // Features tactile media player controls, animated subwoofer bass cone, RGB equalizer, and playlist browsing.

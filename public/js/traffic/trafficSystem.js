@@ -1,6 +1,6 @@
-import { getDrivableSegments, sampleLane, tAlong, segmentLength } from '/js/roads/network.js';
-import { pickTrafficType, buildTrafficMesh } from '/js/vehicles/trafficVehicle.js';
-import { IntersectionController } from '/js/traffic/intersections.js';
+import { getDrivableSegments, sampleLane, tAlong, segmentLength } from '../roads/network.js';
+import { pickTrafficType, buildTrafficMesh } from '../vehicles/trafficVehicle.js';
+import { IntersectionController } from './intersections.js';
 
 // Phase 4 + 4b traffic AI. Reads road data from roads/network.js — the same file
 // world/district.js uses to build the road meshes — so lanes always line up with the painted

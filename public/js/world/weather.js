@@ -1,4 +1,4 @@
-import * as THREE from '/js/vendor/three.module.js';
+import * as THREE from '../vendor/three.module.js';
 
 // Dynamic Weather & Atmospheric Particle System for NCR ESCAPE (spec §21).
 // Manages Monsoon Rain particles, road slickness friction, and atmospheric dust haze.
