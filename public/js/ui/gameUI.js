@@ -1,20 +1,21 @@
 import { RACE_STATE } from '/js/racing/raceSystem.js';
 import { UPGRADES } from '/js/progression/progression.js';
-import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS } from '/js/vehicles/vehicle.js';
+import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS, AVAILABLE_NEONS } from '/js/vehicles/vehicle.js';
 import { ACHIEVEMENTS } from '/js/progression/achievementSystem.js';
 
 // Game UI Controller for NCR ESCAPE (spec §17-18).
-// Manages Garage car selection, paint customizer, performance upgrades, achievements, event HUD, live position & laps, and results.
+// Manages Garage car selection, paint customizer, underglow neons, performance upgrades, achievements, and results.
 
 const el = (id) => document.getElementById(id);
 
 export class GameUI {
-  constructor(progression, onBuyUpgrade, onSelectVehicle, onSelectPaint, onCloseGarage) {
+  constructor(progression, onBuyUpgrade, onSelectVehicle, onSelectPaint, onSelectNeon, onCloseGarage) {
     this.progression = progression;
     this.onBuyUpgrade = onBuyUpgrade;
     this.onSelectVehicle = onSelectVehicle;
     this.onSelectPaint = onSelectPaint;
-    this.onCloseGarage = onCloseGarage;
+    this.onSelectNeon = typeof onSelectNeon === 'function' ? onSelectNeon : null;
+    this.onCloseGarage = typeof onSelectNeon === 'function' ? onCloseGarage : onSelectNeon;
 
     this.prompt = el('event-prompt');
     this.countdown = el('countdown');
@@ -178,6 +179,18 @@ export class GameUI {
       `;
     }).join('');
 
+    // 2b. Underglow Ground Neons Palette
+    const currentNeon = p.data.selectedNeon;
+    const neonSwatches = AVAILABLE_NEONS.map((neon) => {
+      const isCur = (currentNeon === neon.hex) || (currentNeon === null && neon.hex === null);
+      const bg = neon.hex !== null ? `#${neon.hex.toString(16).padStart(6, '0')}` : '#1e293b';
+      return `
+        <button class="paint-swatch neon-swatch ${isCur ? 'active' : ''}" data-neon="${neon.hex !== null ? neon.hex : 'none'}" style="background-color: ${bg}; box-shadow: ${neon.hex !== null ? `0 0 10px ${bg}` : 'none'};" title="${neon.name}">
+          ${neon.hex === null ? '✕' : ''}
+        </button>
+      `;
+    }).join('');
+
     // 3. Performance Upgrades List
     const rows = Object.entries(UPGRADES).map(([key, def]) => {
       const lvl = p.data.upgrades[key] || 0;
@@ -222,8 +235,11 @@ export class GameUI {
         <div class="garage-section-title">VEHICLE LINEUP</div>
         <div class="garage-car-grid">${vehicleCards}</div>
 
-        <div class="garage-section-title">CUSTOM PAINT</div>
+        <div class="garage-section-title">CUSTOM BODY PAINT</div>
         <div class="garage-paint-palette">${paintSwatches}</div>
+
+        <div class="garage-section-title">UNDERGLOW GROUND NEONS</div>
+        <div class="garage-paint-palette">${neonSwatches}</div>
 
         <div class="garage-section-title">PERFORMANCE TUNING — ${currentCar.name}</div>
         <div class="garage-upgrade-list">${rows}</div>
@@ -266,6 +282,16 @@ export class GameUI {
           const hex = parseInt(sw.dataset.color, 10);
           p.selectPaint(hex);
           if (this.onSelectPaint) this.onSelectPaint(hex);
+          this.renderGarage();
+        });
+      });
+
+      targetEl.querySelectorAll('.paint-swatch[data-neon]').forEach((sw) => {
+        sw.addEventListener('click', () => {
+          const raw = sw.dataset.neon;
+          const hex = raw === 'none' ? null : parseInt(raw, 10);
+          p.selectNeon(hex);
+          if (this.onSelectNeon) this.onSelectNeon(hex);
           this.renderGarage();
         });
       });

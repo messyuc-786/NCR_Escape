@@ -116,7 +116,7 @@ function createExhaustFlames() {
   return { flameL, flameR, bfFlame };
 }
 
-let carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint);
+let carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint, progression.data.selectedNeon);
 const exFlames = createExhaustFlames();
 nitroFlameL = exFlames.flameL;
 nitroFlameR = exFlames.flameR;
@@ -130,7 +130,7 @@ function rebuildCarMesh() {
   scene.remove(carMesh);
   activeCarDef = progression.getSelectedVehicle();
   vehicle = progression.applyUpgrades(activeCarDef);
-  carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint);
+  carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint, progression.data.selectedNeon);
   const newEx = createExhaustFlames();
   nitroFlameL = newEx.flameL;
   nitroFlameR = newEx.flameR;
@@ -212,6 +212,10 @@ const ui = new GameUI(
   },
   (paintHex) => {
     progression.selectPaint(paintHex);
+    rebuildCarMesh();
+  },
+  (neonHex) => {
+    progression.selectNeon(neonHex);
     rebuildCarMesh();
   },
   () => { paused = false; }

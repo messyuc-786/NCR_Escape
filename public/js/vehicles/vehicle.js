@@ -122,10 +122,21 @@ export const AVAILABLE_PAINTS = [
   { id: 'purple', name: 'Sector 143 Neon Violet', hex: 0x8a2be2 },
 ];
 
+export const AVAILABLE_NEONS = [
+  { id: 'none', name: 'No Underglow', hex: null },
+  { id: 'teal', name: 'Electric Teal', hex: 0x00ffff },
+  { id: 'magenta', name: 'Hot Magenta', hex: 0xff007f },
+  { id: 'green', name: 'Acid Green', hex: 0x39ff14 },
+  { id: 'gold', name: 'Amber Gold', hex: 0xffd166 },
+  { id: 'purple', name: 'Cyber Violet', hex: 0x9d00ff },
+  { id: 'ice', name: 'Ice Blue', hex: 0x38bdf8 },
+  { id: 'red', name: 'Inferno Red', hex: 0xff3b30 },
+];
+
 /**
- * Builds a 3D procedural vehicle mesh according to model geometry and custom paint.
+ * Builds a 3D procedural vehicle mesh according to model geometry, custom paint, and underglow neons.
  */
-export function buildVehicleMesh(vehicleDef = VANTRA_RS, customColor = null) {
+export function buildVehicleMesh(vehicleDef = VANTRA_RS, customColor = null, customNeon = null) {
   const group = new THREE.Group();
   const colorHex = customColor !== null ? customColor : (vehicleDef.defaultColor || 0xff7a18);
 
@@ -230,6 +241,21 @@ export function buildVehicleMesh(vehicleDef = VANTRA_RS, customColor = null) {
   const tail = new THREE.Mesh(new THREE.BoxGeometry(bodyWidth * 0.88, 0.10, 0.08), tailLightMat);
   tail.position.set(0, bodyHeight + 0.08, -bodyLength / 2 - 0.01);
   group.add(tail);
+
+  // Underglow Ground Neon
+  if (customNeon !== null && customNeon !== undefined) {
+    const neonGeo = new THREE.PlaneGeometry(bodyWidth * 1.15, bodyLength * 0.9);
+    neonGeo.rotateX(-Math.PI / 2);
+    const neonMat = new THREE.MeshBasicMaterial({
+      color: customNeon,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide
+    });
+    const neonMesh = new THREE.Mesh(neonGeo, neonMat);
+    neonMesh.position.set(0, 0.04, 0);
+    group.add(neonMesh);
+  }
 
   // Wheels
   const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.28, 16);

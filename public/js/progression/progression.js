@@ -21,6 +21,7 @@ const DEFAULT_SAVE = {
   selectedVehicleId: 'vantra-rs',
   unlockedVehicles: ['vantra-rs'],
   selectedPaint: null,
+  selectedNeon: null,
   completedEvents: [],
   upgrades: { engine: 0, turbo: 0, tires: 0, brakes: 0, handling: 0 },
 };
@@ -141,6 +142,11 @@ export class Progression {
 
   selectPaint(colorHex) {
     this.data.selectedPaint = colorHex;
+    this.save();
+  }
+
+  selectNeon(neonHex) {
+    this.data.selectedNeon = neonHex;
     this.save();
   }
 
