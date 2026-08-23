@@ -37,6 +37,16 @@
       <div id="drift-score">DRIFT <strong>+0</strong> <span class="d-mult">x1.0</span></div>
     </div>
 
+    <!-- Traffic Run Stats HUD -->
+    <div id="traffic-hud" class="hidden">
+      <div class="traffic-hud-card">
+        <div class="tr-label">⚡ TRAFFIC RUN</div>
+        <div class="tr-stat">SCORE: <span id="hud-traffic-score" style="color: #ff7a18; font-weight: 900;">0</span></div>
+        <div class="tr-stat">DIST: <span id="hud-traffic-dist">0.0 KM</span></div>
+        <button id="btn-end-run" class="tr-end-btn">🏁 END RUN</button>
+      </div>
+    </div>
+
     <!-- Near Miss & Traffic Combo Notification -->
     <div id="nearmiss-hud" class="hidden">
       <div id="nearmiss-badge">⚡ NEAR MISS</div>
@@ -118,6 +128,48 @@
         <div class="results-time" id="results-time">Time: 0.00s</div>
         <div class="results-rewards" id="results-rewards"></div>
         <button id="results-close" class="primary-btn">CONTINUE CRUISE</button>
+      </div>
+    </div>
+
+    <!-- Traffic Run Results Overlay -->
+    <div id="traffic-results-overlay" class="modal-overlay hidden">
+      <div class="modal-card results-card" style="max-width: 420px;">
+        <div class="results-badge" style="background: #ff7a18; color: #000; font-weight: 900; letter-spacing: 1px; padding: 14px 20px; text-align: center;">TRAFFIC RUN COMPLETE</div>
+        
+        <div style="padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; width: 100%;">
+          <div class="results-stats-list" style="margin-bottom: 22px; text-align: left; display: flex; flex-direction: column; gap: 12px; width: 100%;">
+            <div class="stat-row" style="display: flex; justify-content: space-between; font-size: 19px; font-weight: 800; border-bottom: 1px dashed rgba(255,122,24,0.3); padding-bottom: 6px;">
+              <span>SCORE</span>
+              <span id="traffic-res-score" style="color: #ff7a18;">0</span>
+            </div>
+            <div class="stat-row" style="display: flex; justify-content: space-between; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 6px;">
+              <span>BEST SCORE</span>
+              <span id="traffic-res-best" style="color: #ffffff;">0</span>
+            </div>
+            <div class="stat-row" style="display: flex; justify-content: space-between; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 6px;">
+              <span>DISTANCE</span>
+              <span id="traffic-res-distance">0.0 KM</span>
+            </div>
+            <div class="stat-row" style="display: flex; justify-content: space-between; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 6px;">
+              <span>TOP SPEED</span>
+              <span id="traffic-res-topspeed">0 KM/H</span>
+            </div>
+            <div class="stat-row" style="display: flex; justify-content: space-between; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 6px;">
+              <span>NEAR MISSES</span>
+              <span id="traffic-res-nearmisses">0</span>
+            </div>
+            <div class="stat-row" style="display: flex; justify-content: space-between; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 6px;">
+              <span>BEST COMBO</span>
+              <span id="traffic-res-bestcombo" style="color: #00d4aa; font-weight: bold;">×1</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+            <button id="traffic-res-btn-drive" class="primary-btn" style="background: #ff7a18; color: #03050a; font-weight: 900; margin-top: 0;">PLAY AGAIN</button>
+            <button id="traffic-res-btn-garage" class="primary-btn" style="background: rgba(255,255,255,0.08); color: #fff; margin-top: 0;">GARAGE</button>
+            <button id="traffic-res-btn-menu" class="primary-btn" style="background: rgba(255,255,255,0.08); color: #fff; margin-top: 0;">MAIN MENU</button>
+          </div>
+        </div>
       </div>
     </div>
 

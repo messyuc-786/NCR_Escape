@@ -343,6 +343,46 @@ class AudioEngine {
     } catch {}
   }
 
+  playNearMissWhoosh(isCloseCall = false) {
+    if (!this.initialized || !this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      // White noise buffer source
+      const bufferSize = this.ctx.sampleRate * 0.4;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      
+      // Dynamic whoosh frequency sweep: starts higher, drops lower
+      const startFreq = isCloseCall ? 450 : 650;
+      const endFreq = isCloseCall ? 200 : 350;
+      filter.frequency.setValueAtTime(startFreq, now);
+      filter.frequency.exponentialRampToValueAtTime(endFreq, now + 0.35);
+      filter.Q.setValueAtTime(3.0, now);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.001, now);
+      // Fast attack, slower decay
+      gain.gain.linearRampToValueAtTime(isCloseCall ? 0.32 : 0.18, now + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+
+      noise.start(now);
+      noise.stop(now + 0.4);
+    } catch {}
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.masterGain && this.ctx) {

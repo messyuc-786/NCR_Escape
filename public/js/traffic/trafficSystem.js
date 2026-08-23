@@ -329,7 +329,8 @@ export class TrafficSystem {
   getPositions() {
     return this.cars
       .filter((c) => c.x !== undefined)
-      .map((c) => ({
+      .map((c, index) => ({
+        id: index,
         x: c.x,
         z: c.z,
         speed: c.speed,

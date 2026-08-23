@@ -23,6 +23,7 @@ import { AchievementSystem } from '../progression/achievementSystem.js';
 import { GameUI } from '../ui/gameUI.js';
 import { audioEngine } from '../audio/audioEngine.js';
 import { PedestrianSystem } from '../world/pedestrianSystem.js';
+import { TrafficRunSystem } from '../racing/trafficRun.js';
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -222,7 +223,14 @@ const ui = new GameUI(
     progression.selectNeon(neonHex);
     rebuildCarMesh();
   },
-  () => { paused = false; }
+  () => {
+    paused = false;
+    if (trafficRunResultsActive) {
+      const resultsOverlay = document.getElementById('traffic-results-overlay');
+      if (resultsOverlay) resultsOverlay.classList.remove('hidden');
+      paused = true;
+    }
+  }
 );
 
 ui.updateWallet();
@@ -246,6 +254,9 @@ ui.onResultsClosed = () => {
   race.dismissResults();
   paused = false;
 };
+
+// --- Traffic Run ---
+const trafficRun = new TrafficRunSystem();
 
 // --- Police Pursuit & Heat System -------------------------------------------
 let speedtrapTimeout = null;
@@ -306,58 +317,144 @@ carMesh.position.set(carState.x, 0, carState.z);
 snapChaseCamera(camera, carState);
 traffic.seed(carState.x, carState.z);
 traffic.update(0.016, carState.x, carState.z);
-
 // --- Arcade Near-Miss Traffic Bonus & Slalom Combo Detection -----------------
 let lastNearMissTime = 0;
 let nearMissComboCount = 0;
+const activeNearMisses = new Set();
 const nearmissBadge = document.getElementById('nearmiss-badge');
 const nearmissText = document.getElementById('nearmiss-text');
 const nearmissCombo = document.getElementById('nearmiss-combo');
 
 function checkNearMisses(state, trafficPositions) {
   const kmh = Math.abs(state.speed) * 3.6;
-  if (kmh < 40) return;
+  if (kmh < 40) {
+    return;
+  }
 
-  const now = performance.now();
-  if (now - lastNearMissTime > 3800) {
-    nearMissComboCount = 0;
+  // Clean up far away near-missed vehicles so they can be near-missed again
+  for (const id of activeNearMisses) {
+    const t = trafficPositions.find((p) => p.id === id);
+    if (!t || Math.hypot(state.x - t.x, state.z - t.z) > 25) {
+      activeNearMisses.delete(id);
+    }
   }
 
   for (const t of trafficPositions) {
-    if (t.x === undefined) continue;
-    const dist = Math.hypot(state.x - t.x, state.z - t.z);
-    if (dist > 1.8 && dist < 3.8) {
-      if (now - lastNearMissTime < 800) return; // debounce same vehicle
+    if (t.x === undefined || t.id === undefined) continue;
+    if (activeNearMisses.has(t.id)) continue;
 
-      lastNearMissTime = now;
-      nearMissComboCount++;
-      state.nitro = Math.min(100, state.nitro + 22); // Instant nitro refill reward
+    // Both vehicles must be moving (traffic speed > 1.5 m/s or 5.4 km/h)
+    if (t.speed < 1.5) continue;
 
-      let baseCash = dist < 2.7 ? 250 : 100;
-      let label = dist < 2.7 ? '🔥 CLOSE CALL!' : '⚡ NEAR MISS';
-      let bonusCash = baseCash;
+    // Check separation relative to player's heading
+    const dx = state.x - t.x;
+    const dz = state.z - t.z;
 
-      if (nearMissComboCount === 2) {
-        bonusCash = 300;
-      } else if (nearMissComboCount === 3) {
-        bonusCash = 600;
-      } else if (nearMissComboCount >= 4) {
-        bonusCash = 1500;
-        label = '🏎️ TRAFFIC SLALOM!';
+    const playerCos = Math.cos(state.heading);
+    const playerSin = Math.sin(state.heading);
+
+    // Project relative coordinates to player local coordinate system
+    const dLong = dx * playerSin + dz * playerCos;
+    const dLat = dx * playerCos - dz * playerSin;
+
+    // Dimensions
+    const halfW = 1.0; // Player half width
+    const halfD = 2.15; // Player half length
+    const tHalfW = t.halfW || 0.9;
+    const tHalfD = t.halfD || 2.0;
+
+    // Side-by-side overlap test
+    const overlapLong = halfD + tHalfD + 0.6; // side-by-side longitudinal threshold
+    const minLat = halfW + tHalfW; // physical side-by-side collision threshold
+
+    // Near-miss check
+    if (Math.abs(dLong) <= overlapLong && Math.abs(dLat) >= minLat && Math.abs(dLat) <= minLat + 1.85) {
+      const clearance = Math.abs(dLat) - minLat;
+
+      // Register this vehicle so we don't count it again until the pass completes
+      activeNearMisses.add(t.id);
+
+      // Determine level
+      let baseScore = 100;
+      let label = '⚡ NEAR MISS';
+      let chimeTone = false; // normal whoosh
+
+      if (clearance <= 0.35 && kmh > 100) {
+        baseScore = 500;
+        label = '🏎️ INSANE PASS!';
+        chimeTone = true; // intense sound
+      } else if (clearance <= 0.85) {
+        baseScore = 250;
+        label = '🔥 CLOSE CALL!';
+        chimeTone = true;
       }
 
+      // Check Drift synergy
+      const isDrifting = Math.abs(state.driftYaw) > 0.15 && kmh > 24;
+      if (isDrifting) {
+        baseScore += 250;
+        label = '🌀 DRIFT PASS!';
+        chimeTone = true;
+      }
+
+      // Speed multiplier
+      const speedMult = 1 + (kmh - 40) / 100;
+      const finalBaseScore = Math.round(baseScore * speedMult);
+
+      // Nitro Synergy
+      const nitroRefill = clearance <= 0.35 ? 20 : (clearance <= 0.85 ? 10 : 5);
+      state.nitro = Math.min(100, state.nitro + nitroRefill);
+
+      // Award points and get updated combo
+      let bonusCash = finalBaseScore;
+      let currentCombo = 1;
+
+      if (trafficRun.active) {
+        const trResult = trafficRun.registerNearMiss(finalBaseScore, label);
+        if (trResult) {
+          bonusCash = trResult.finalScore;
+          currentCombo = trResult.combo;
+          
+          if (currentCombo >= 4) {
+            label = '🏎️ TRAFFIC SLALOM!';
+            trafficRun.addScore(500);
+            bonusCash += 500 * currentCombo;
+          }
+        }
+      } else {
+        nearMissComboCount = (performance.now() - lastNearMissTime < 3800) ? Math.min(5, nearMissComboCount + 1) : 1;
+        currentCombo = nearMissComboCount;
+        bonusCash = finalBaseScore * currentCombo;
+        if (currentCombo >= 4) {
+          label = '🏎️ TRAFFIC SLALOM!';
+          bonusCash += 500 * currentCombo;
+        }
+      }
+
+      lastNearMissTime = performance.now();
+
+      // Economy rewards
       progression.awardDrift(bonusCash);
       achievements.recordNearMiss();
       ui.updateWallet();
-      audioEngine.playChime();
 
+      // Procedural Audio
+      audioEngine.playNearMissWhoosh(chimeTone);
+      if (currentCombo >= 2) {
+        audioEngine.playChime();
+      }
+
+      // HUD Notifications
       if (nearmissHud) {
         if (nearmissBadge) nearmissBadge.textContent = label;
-        if (nearmissText) nearmissText.textContent = `+₹${bonusCash}`;
+        if (nearmissText) nearmissText.textContent = `+₹${bonusCash.toLocaleString()}`;
         if (nearmissCombo) {
-          if (nearMissComboCount >= 2) {
-            nearmissCombo.textContent = `COMBO ×${nearMissComboCount}`;
+          if (currentCombo >= 2) {
+            nearmissCombo.textContent = `COMBO ×${currentCombo}`;
             nearmissCombo.classList.remove('hidden');
+            nearmissCombo.classList.remove('combo-animate');
+            void nearmissCombo.offsetWidth;
+            nearmissCombo.classList.add('combo-animate');
           } else {
             nearmissCombo.classList.add('hidden');
           }
@@ -366,7 +463,7 @@ function checkNearMisses(state, trafficPositions) {
         if (nearmissTimeout) clearTimeout(nearmissTimeout);
         nearmissTimeout = setTimeout(() => {
           nearmissHud.classList.add('hidden');
-        }, 1400);
+        }, 1500);
       }
       break;
     }
@@ -651,6 +748,7 @@ function animate(now) {
     police.update(dt, carState.x, carState.z, kmh);
     multiplayer.update(dt, carState, activeCarDef, progression.data.selectedPaint);
     checkNearMisses(carState, traffic.getPositions());
+    trafficRun.update(dt, carState.x, carState.z, kmh);
     updateRadarDetector(carState, speedTraps.traps, police.policeUnits);
 
     // Update Police Pursuit HUD
@@ -721,6 +819,7 @@ function animate(now) {
     // Impact sound check and police heat trigger on severe collision
     if (Math.abs(speedBeforeStep) > 10 && Math.abs(carState.speed) < Math.abs(speedBeforeStep) * 0.7) {
       audioEngine.playCollision(1.0);
+      trafficRun.registerCrash();
       if (Math.abs(speedBeforeStep) > 18) {
         police.addHeat(1);
         audioEngine.setSiren(true);
@@ -857,6 +956,10 @@ if (startBtn) {
     snapChaseCamera(camera, carState);
     pedestrians.seed(carState.x, carState.z);
     audioEngine.unlock();
+
+    resetCar();
+    trafficRun.start(carState.x, carState.z);
+
     running = true;
   });
 }
@@ -979,7 +1082,81 @@ if (btnQuickExit) {
     }
   });
 }
+// --- Traffic Run State and UI Integration ---
+let trafficRunResultsActive = false;
 
+function endTrafficRun() {
+  const stats = trafficRun.end();
+  trafficRunResultsActive = true;
+
+  const resScore = document.getElementById('traffic-res-score');
+  const resBest = document.getElementById('traffic-res-best');
+  const resDistance = document.getElementById('traffic-res-distance');
+  const resTopSpeed = document.getElementById('traffic-res-topspeed');
+  const resNearMisses = document.getElementById('traffic-res-nearmisses');
+  const resBestCombo = document.getElementById('traffic-res-bestcombo');
+
+  if (resScore) resScore.textContent = stats.score.toLocaleString();
+  if (resBest) resBest.textContent = stats.best.toLocaleString();
+  if (resDistance) resDistance.textContent = `${stats.distance} KM`;
+  if (resTopSpeed) resTopSpeed.textContent = `${stats.topSpeed} KM/H`;
+  if (resNearMisses) resNearMisses.textContent = stats.nearMisses;
+  if (resBestCombo) resBestCombo.textContent = `×${stats.bestCombo}`;
+
+  const resultsOverlay = document.getElementById('traffic-results-overlay');
+  if (resultsOverlay) resultsOverlay.classList.remove('hidden');
+
+  paused = true;
+}
+
+const btnEndRun = document.getElementById('btn-end-run');
+if (btnEndRun) {
+  btnEndRun.addEventListener('click', () => {
+    endTrafficRun();
+  });
+}
+
+const resBtnDrive = document.getElementById('traffic-res-btn-drive');
+if (resBtnDrive) {
+  resBtnDrive.addEventListener('click', () => {
+    const resultsOverlay = document.getElementById('traffic-results-overlay');
+    if (resultsOverlay) resultsOverlay.classList.add('hidden');
+    trafficRunResultsActive = false;
+
+    resetCar();
+    trafficRun.start(carState.x, carState.z);
+    paused = false;
+  });
+}
+
+const resBtnGarage = document.getElementById('traffic-res-btn-garage');
+if (resBtnGarage) {
+  resBtnGarage.addEventListener('click', () => {
+    const resultsOverlay = document.getElementById('traffic-results-overlay');
+    if (resultsOverlay) resultsOverlay.classList.add('hidden');
+    ui.openGarage();
+  });
+}
+
+const resBtnMenu = document.getElementById('traffic-res-btn-menu');
+if (resBtnMenu) {
+  resBtnMenu.addEventListener('click', () => {
+    const resultsOverlay = document.getElementById('traffic-results-overlay');
+    if (resultsOverlay) resultsOverlay.classList.add('hidden');
+    trafficRunResultsActive = false;
+
+    // Hide gameplay HUD
+    if (hudElement) hudElement.classList.add('hidden');
+    if (topbarElement) topbarElement.classList.add('hidden');
+    if (minimapContainer) minimapContainer.classList.add('hidden');
+    if (touchControls) touchControls.classList.add('hidden');
+
+    // Show title screen
+    if (introOverlay) introOverlay.classList.remove('hidden');
+    running = false;
+    paused = false;
+  });
+}
 window.addEventListener('click', () => audioEngine.unlock(), { once: true, passive: true });
 
 resizeTitleScreen();

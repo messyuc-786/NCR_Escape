@@ -1911,3 +1911,78 @@ html, body {
 .ss-vol-grp input[type="range"] {
   width: 70px;
 }
+
+/* ---------- Traffic Run Mode HUD Widget ---------- */
+#traffic-hud {
+  position: absolute;
+  top: 195px;
+  left: 20px;
+  background: rgba(3, 5, 10, 0.88);
+  border: 1px solid #ff7a18;
+  border-radius: 8px;
+  padding: 12px;
+  color: #ffffff;
+  z-index: 6;
+  font-family: monospace;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.6), 0 0 10px rgba(255, 122, 24, 0.2);
+  width: 140px;
+  pointer-events: auto;
+}
+
+.traffic-hud-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tr-label {
+  color: #ff7a18;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(255, 122, 24, 0.3);
+  padding-bottom: 4px;
+  text-align: center;
+}
+
+.tr-stat {
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  justify-content: space-between;
+}
+
+.tr-end-btn {
+  background: #ff7a18;
+  color: #03050a;
+  border: none;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 10px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.tr-end-btn:hover {
+  background: #ff9d4d;
+  transform: scale(1.03);
+}
+
+.tr-end-btn:active {
+  transform: scale(0.97);
+}
+
+/* Combo pop animation */
+@keyframes comboPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.combo-animate {
+  animation: comboPop 0.2s ease-out;
+}
