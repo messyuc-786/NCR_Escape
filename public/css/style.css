@@ -784,3 +784,94 @@ html, body {
   .touch-drift { width: 56px; height: 56px; }
   #touch-controls { padding: 14px; }
 }
+
+/* Photo Mode Controls */
+#photo-overlay {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  pointer-events: auto;
+}
+
+.photo-controls-bar {
+  background: rgba(10, 15, 29, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 14px 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-title {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #ff7a18;
+}
+
+.photo-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.photo-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+}
+
+.photo-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #ff7a18;
+}
+
+.photo-btn.primary {
+  background: linear-gradient(135deg, #ff7a18, #ff3b30);
+  border-color: transparent;
+  color: #000;
+  font-weight: 900;
+}
+
+.photo-btn.close {
+  background: rgba(255, 59, 48, 0.25);
+  border-color: rgba(255, 59, 48, 0.5);
+  color: #ff453a;
+}
+
+.photo-slider-grp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #a0aec0;
+}
+
+.photo-slider-grp input[type="range"] {
+  width: 70px;
+  accent-color: #ff7a18;
+  cursor: pointer;
+}
+
+.photo-hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}

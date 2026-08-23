@@ -5,6 +5,7 @@ import { SpeedTrapSystem } from '/js/world/speedTraps.js';
 import { PoliceSystem } from '/js/traffic/policeSystem.js';
 import { RadioSystem } from '/js/audio/radioSystem.js';
 import { MultiplayerSystem } from '/js/multiplayer/multiplayerSystem.js';
+import { PhotoMode } from '/js/core/photoMode.js';
 import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
 import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
 import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
@@ -25,7 +26,7 @@ const radioToggleBtn = document.getElementById('radio-toggle');
 const modeToggleBtn = document.getElementById('mode-toggle');
 const weatherToggleBtn = document.getElementById('weather-toggle');
 const audioToggleBtn = document.getElementById('audio-toggle');
-const touchToggleBtn = document.getElementById('touch-toggle');
+const photoOpenBtn = document.getElementById('photo-open');
 const touchControls = document.getElementById('touch-controls');
 const garageOpenBtn = document.getElementById('garage-open');
 
@@ -38,7 +39,7 @@ const policeStars = document.getElementById('police-stars');
 const policeStatus = document.getElementById('police-status');
 const nearmissHud = document.getElementById('nearmiss-hud');
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -107,6 +108,20 @@ const minimap = new Minimap('minimap-canvas', 'minimap-label');
 const multiplayer = new MultiplayerSystem(scene);
 
 let paused = false;
+
+// Photo Mode
+const photoMode = new PhotoMode(scene, camera, renderer, setDayNight, () => {
+  paused = false;
+  camera.fov = 60;
+  camera.updateProjectionMatrix();
+});
+
+if (photoOpenBtn) {
+  photoOpenBtn.addEventListener('click', () => {
+    paused = true;
+    photoMode.enter(carState);
+  });
+}
 
 const ui = new GameUI(
   progression,
@@ -214,16 +229,15 @@ function checkNearMisses(state, trafficPositions) {
   if (kmh < 58) return;
 
   const now = performance.now();
-  if (now - lastNearMissTime < 1500) return; // cooldown between near misses
+  if (now - lastNearMissTime < 1500) return;
 
   for (const t of trafficPositions) {
     if (t.x === undefined) continue;
     const dist = Math.hypot(state.x - t.x, state.z - t.z);
-    // Near miss window: close enough without colliding
     if (dist > 2.2 && dist < 3.6) {
       lastNearMissTime = now;
       state.nitro = Math.min(100, state.nitro + 18);
-      progression.awardDrift(1250); // grants +₹50 bonus
+      progression.awardDrift(1250);
       ui.updateWallet();
 
       if (nearmissHud) {
@@ -272,7 +286,7 @@ function updateDriftScore(dt, state, isHandbraking) {
   return isDrifting;
 }
 
-// --- Quick Toggles (Radio, Day/Night, Weather, Audio, Touch) ----------------
+// --- Quick Toggles (Radio, Day/Night, Weather, Audio) ------------------------
 if (radioToggleBtn) {
   radioToggleBtn.addEventListener('click', () => {
     const nextStn = radio.nextStation();
@@ -302,12 +316,6 @@ if (audioToggleBtn) {
   audioToggleBtn.addEventListener('click', () => {
     const isMuted = audioEngine.toggleMute();
     audioToggleBtn.textContent = isMuted ? '🔇 MUTED' : '🔊 SOUND';
-  });
-}
-
-if (touchToggleBtn && touchControls) {
-  touchToggleBtn.addEventListener('click', () => {
-    touchControls.classList.toggle('hidden');
   });
 }
 
@@ -362,6 +370,12 @@ function animate(now) {
   const dt = Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
+  if (photoMode.active) {
+    photoMode.update();
+    renderer.render(scene, camera);
+    return;
+  }
+
   if (running && !paused) {
     const input = readInput();
     if (input.reset) resetCar();
@@ -369,6 +383,12 @@ function animate(now) {
     if (consumePress('KeyM')) {
       const nextStn = radio.nextStation();
       if (radioToggleBtn) radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
+    }
+
+    if (consumePress('KeyP')) {
+      paused = true;
+      photoMode.enter(carState);
+      return;
     }
 
     const interactPressed = consumePress('KeyE');

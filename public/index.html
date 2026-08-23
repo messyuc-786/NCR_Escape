@@ -62,7 +62,7 @@
         <button id="mode-toggle" title="Toggle Day/Night Mode">☀️ DAY</button>
         <button id="weather-toggle" title="Toggle Weather Mode">☀️ CLEAR</button>
         <button id="audio-toggle" title="Toggle Audio">🔊 SOUND</button>
-        <button id="touch-toggle" title="Toggle Mobile Controls">📱 TOUCH</button>
+        <button id="photo-open" title="Open Photo Mode (P)">📸 PHOTO</button>
         <button id="garage-open">GARAGE</button>
       </div>
     </div>
@@ -142,6 +142,32 @@
           <button id="btn-brake" class="touch-btn touch-pedal pedal-brake" aria-label="Brake / Reverse">BRAKE</button>
           <button id="btn-gas" class="touch-btn touch-pedal pedal-gas" aria-label="Gas / Accelerate">GAS</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Interactive Photo Mode Overlay -->
+    <div id="photo-overlay" class="hidden">
+      <div class="photo-controls-bar">
+        <div class="photo-title">📸 PHOTO MODE</div>
+        <div class="photo-controls-row">
+          <button id="photo-filter-btn" class="photo-btn">FILTER: NATURAL</button>
+          <button id="photo-time-btn" class="photo-btn">TIME: DAY</button>
+          <div class="photo-slider-grp">
+            <label>FOV</label>
+            <input type="range" id="photo-fov" min="30" max="90" value="55" step="1">
+          </div>
+          <div class="photo-slider-grp">
+            <label>TILT</label>
+            <input type="range" id="photo-tilt" min="-25" max="25" value="0" step="1">
+          </div>
+          <div class="photo-slider-grp">
+            <label>DIST</label>
+            <input type="range" id="photo-dist" min="4" max="15" value="7.5" step="0.5">
+          </div>
+          <button id="photo-capture-btn" class="photo-btn primary">CAPTURE PNG</button>
+          <button id="photo-exit-btn" class="photo-btn close">EXIT</button>
+        </div>
+        <div class="photo-hint">Drag on screen to orbit camera around car</div>
       </div>
     </div>
 
