@@ -1,38 +1,58 @@
 # NCR ESCAPE — Open-World Indian Street Racing Game
 
-An original open-world Indian street-driving and racing experience inspired by the National Capital Region (NCR — Gurugram → Delhi → Noida → Sector 143).
+An original open-world Indian street-driving and racing experience inspired by the National Capital Region (NCR — **Gurugram → Delhi Central → Yamuna River Crossing → Noida Expressway → Sector 143**).
 
 This is a **completely independent project** built from the ground up with zero dependencies, assets, or code from any other project.
 
 ---
 
-## Highlights & Features
+## 🌟 Highlights & Key Features
 
 - **Multi-Platform Ready**: Fully playable on **Desktop (Computer)** with keyboard/gamepad and on **Mobile (Phones & Tablets)** with responsive virtual on-screen multi-touch controls.
-- **Living Open-World World Slice (Cyber District)**: 4-lane Main Boulevard, Corporate Loop, Service Lane shortcut, elevated Flyover overpass, elevated NCR Metro Viaduct line with columns and tracks, Indian green highway gantries ("CYBER CITY / NH-48", "NOIDA EXPWY / SECTOR 143"), and streetlights.
-- **Dynamic Day / Sunset / Night Lighting**: Real-time atmospheric lighting and neon high-rise highlights.
-- **Full AI Traffic Simulation**: Lane following, speed limits, forward obstacle avoidance, yielding to player, solid collisions, and 2-phase traffic lights with auto-rickshaws (3-wheelers), sedans, hatchbacks, and transport trucks.
-- **Original Vehicle Lineup & Customization**:
-  - **Vantra RS** (Street Hatchback — Agile starter)
-  - **Kaveri GT** (Sport Coupe — Aerodynamic speedster)
-  - **Garuda RX** (Performance Muscle Sedan — High-torque drift machine)
-  - **Indus Cruiser** (Urban SUV — Heavy, high stability)
-  - Custom Paint Palette (Cyber Orange, Noida Teal, Delhi Crimson, Gurugram Midnight Blue, etc.)
-  - 5-Tier Performance Upgrades modifying real vehicle physics stats (Engine, Turbo, Tires, Brakes, Handling).
-- **Drift Scoring & Combo System**: Live drift angle and speed calculation with dynamic multiplier bonuses and bankable cash rewards.
-- **Real-Time 2D Radar Minimap**: Renders road network, player orientation, traffic blips, event markers, and checkpoints in real-time.
-- **Web Audio API Procedural Sound Synthesizer**: Native engine rumble/pitch modulation, tire drift screech, crash impact thuds, countdown beeps, and victory chimes without external audio file dependencies.
-- **Full Career Loop**: Free Drive → Discover Events → Countdown → Race Through Traffic → Cash/XP/Rep Rewards → Garage Showroom → Upgrade Stats → Drive Again (persisted locally).
+- **Master 4-Region NCR Open World**:
+  - **Gurugram (Region 1)**: Cyber District high-rises, Corporate Mile, Golf Course Belt, Industrial Edge, and Old Market.
+  - **Delhi Central (Region 2)**: Central Vista Grand Boulevard, India Gate-inspired Heritage Gateway Arch, Sandstone Pavilions, and Ring Road.
+  - **Yamuna River Crossing**: Water channel with elevated **Cable-Stayed Expressway Bridge** with twin 42m suspension towers and stay cables.
+  - **Noida (Region 3)**: 6-Lane high-speed Expressway, IT SEZ Commercial Parks, and Sector 62 Link Road.
+  - **Sector 143 (Region 4)**: Futuristic Innovation Center with glowing cyber rings and Grand Championship Arena.
+  - Elevated concrete **NCR Metro Viaduct Line** with twin tracks and viaduct columns.
+- **6 Original Fictional Vehicles**:
+  1. **Vantra RS** (Street Hatchback — Agile starter)
+  2. **Kaveri GT** (Sport Coupe — Aerodynamic speedster)
+  3. **Garuda RX** (Performance Muscle Sedan — High-torque drift machine)
+  4. **Indus Cruiser** (Urban Performance SUV — Heavy, high stability)
+  5. **Sherpa 4x4** (Rugged Off-Roader — High clearance & suspension)
+  6. **Apex GT Hypercar** (Flagship Expressway Hypercar — 330+ km/h)
+- **Real-Time WebSocket Multiplayer Free-Roam**:
+  - Low-latency 20Hz world synchronization tick.
+  - Seamless remote player vehicle interpolation, custom paint models, and real-time minimap radar blips.
+- **Nitro Boost & Near-Miss Combos**:
+  - 1.55x acceleration surge with expanding top-speed cap, cyan exhaust flames, and high-speed camera FOV push (60° → 67°).
+  - High-speed traffic near-miss proximity detection with instant cash bonuses and Nitro refills.
+- **Police Pursuit & Heat System**:
+  - 1–3 Star Heat Level with pursuit AI, PCR Police Cruiser 3D models with animated red/blue roof strobe light bars, procedural police sirens, and Busted vs. Escaped dynamics.
+- **Speed Trap Radar Mini-Game**:
+  - Overhead radar gantries along expressways with camera shutter audio, HUD flash animation, and velocity bonuses.
+- **Synthesized In-Game Radio Stations**:
+  - *NCR Synthwave FM (98.4 FM)*, *Delhi Desi Bass (104.2 FM)*, *Cyber Chillout (91.1 FM)* — 100% procedural Web Audio without external audio files.
+- **Interactive Photo Mode & Filters**:
+  - Orbit camera, FOV & Dutch angle tilt sliders, time-of-day toggle, 5 cinematic color filters, and instant PNG screenshot downloads.
+- **Achievements & Milestones**:
+  - 9 driver milestone challenges with animated gold HUD toasts and Garage achievements showcase.
+- **Multi-Camera Perspectives**:
+  - Chase Far (Default), Chase Close (Action), and Hood / Bonnet Cam (First-Person simulation).
+- **Progressive Web App (PWA)**:
+  - Installable home-screen application for Android & iOS with offline service worker caching.
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Start the local game server
+# 2. Start the game server
 npm start
 ```
 
@@ -40,7 +60,7 @@ Open **http://localhost:3000** in any modern desktop or mobile browser.
 
 ---
 
-## Controls
+## 🎮 Controls
 
 ### Desktop (Computer)
 | Key | Action |
@@ -49,42 +69,45 @@ Open **http://localhost:3000** in any modern desktop or mobile browser.
 | `S` / `↓` | Brake / Reverse |
 | `A` / `←` | Steer Left |
 | `D` / `→` | Steer Right |
-| `SPACE` | Handbrake / Drift |
+| `SPACE` | Handbrake / Power Slide |
+| `SHIFT` / `N` | Nitro Boost |
+| `C` | Cycle Camera (Chase Far / Close / Hood) |
+| `P` | Open Photo Mode |
+| `M` | Cycle Radio Station |
 | `E` | Discover / Start Event |
 | `R` | Reset Car Position |
 | `G` | Toggle Garage Showroom |
-| `M` | Toggle Audio Mute |
-| `N` | Toggle Day / Sunset / Night Mode |
 
 ### Mobile (Phone / Tablet)
 - **Steering Buttons**: Left (◀) / Right (▶)
 - **Pedals**: Green Gas Pedal (Accelerate) / Red Brake Pedal (Brake / Reverse)
+- **Nitro Button**: `🚀 NITRO` Boost
 - **Drift Button**: Orange Handbrake for power-slides
-- **Top Actions**: Event trigger, Car Reset, Day/Night toggle, Sound toggle, and Garage Showroom
+- **Top Actions**: Radio, Day/Sunset/Night lighting, Weather (Clear/Rain/Haze), Camera view, Photo Mode, and Garage Showroom
 
 ---
 
-## Automated Test Suite
+## 🧪 Automated Test Suite
 
-All gameplay systems are validated with automated headless browser tests:
+All gameplay systems are tested and validated with Playwright:
 
 ```bash
 npm test
 ```
 
 Test Suites:
-1. `drive.smoke.js`: Forward acceleration, steering heading change, drift yaw, braking, reverse, solid collisions, zero console errors.
+1. `drive.smoke.js`: Forward acceleration, steering heading change, drift yaw, braking, reverse, nitro, collisions, zero console errors.
 2. `traffic.smoke.js`: Traffic spawning, lane boundaries, continuous movement, solid player collision, zero console errors.
 3. `intersections.smoke.js`: Derived line-segment junctions, non-overlapping traffic light phases, road-to-road turning, zero console errors.
 4. `loop.smoke.js`: Complete end-to-end game loop from start line -> event discovery -> countdown freeze -> checkpoint progression -> race finish -> cash/XP/rep rewards -> garage upgrade purchase -> physics stat modification -> reload persistence.
 
 ---
 
-## Project Documentation
+## 📚 Project Documentation
 
 Comprehensive architectural and design documents are located in `docs/`:
-- [`ROADMAP.md`](docs/ROADMAP.md): Project roadmap, completed milestones, and future phases.
-- [`GAME_DESIGN.md`](docs/GAME_DESIGN.md): Detailed game design, driving physics, vehicle roster, and economy.
+- [`ROADMAP.md`](docs/ROADMAP.md): Project roadmap, completed milestones, and development phases.
+- [`GAME_DESIGN.md`](docs/GAME_DESIGN.md): Detailed game design, vehicle roster, driving physics, and progression economy.
 - [`TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md): System architecture, stack details, data flow, and directory layout.
 - [`MAP_SPECIFICATION.md`](docs/MAP_SPECIFICATION.md): World structure, road hierarchy, props, and NCR expansion plan.
 - [`DEVELOPMENT_PHASES.md`](docs/DEVELOPMENT_PHASES.md): Phase criteria, validation procedures, and test results.
