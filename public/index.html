@@ -13,13 +13,13 @@
     <canvas id="game-canvas"></canvas>
 
     <!-- Minimap Radar -->
-    <div id="minimap-container">
+    <div id="minimap-container" class="hidden">
       <canvas id="minimap-canvas" width="140" height="140"></canvas>
       <div id="minimap-label">CYBER DISTRICT</div>
     </div>
 
     <!-- In-Game HUD -->
-    <div id="hud">
+    <div id="hud" class="hidden">
       <div class="hud-speedometer">
         <div id="hud-speed"><span id="speed-value">0</span><span class="unit">km/h</span></div>
         <div id="hud-gear">N</div>
@@ -75,7 +75,7 @@
     </div>
 
     <!-- Top Status Bar -->
-    <div id="topbar">
+    <div id="topbar" class="hidden">
       <div id="wallet"></div>
       <div class="topbar-actions">
         <button id="sound-toggle-btn" title="Open In-Car Sound System (B)">🔊 SOUND SYSTEM</button>
@@ -284,27 +284,132 @@
       </div>
     </div>
 
-    <!-- Intro / Launch Overlay -->
-    <div id="intro-overlay">
-      <div class="intro-card">
-        <div class="intro-logo">NCR<span>ESCAPE</span></div>
-        <p class="intro-sub">Open-World Indian Street Driving & Racing</p>
-        <p class="intro-district">Gurugram → Delhi → Noida Expressway Route</p>
-        
-        <div class="intro-controls-grid">
-          <div>
-            <strong>Desktop Controls</strong>
-            <span><strong>W / ↑</strong> Gas &nbsp; <strong>S / ↓</strong> Brake/Reverse</span>
-            <span><strong>A / D / ← →</strong> Steer &nbsp; <strong>SPACE</strong> Drift &nbsp; <strong>SHIFT/N</strong> Nitro</span>
-            <span><strong>H</strong> Horn &nbsp; <strong>B</strong> Sound System &nbsp; <strong>M</strong> Map &nbsp; <strong>C</strong> Camera &nbsp; <strong>E</strong> Event</span>
+    <!-- How To Play Modal Overlay -->
+    <div id="modal-how-to-play" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>📖 HOW TO PLAY — NCR ESCAPE</h2>
+          <button id="how-to-play-close" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="how-to-section">
+            <h3>⌨️ DESKTOP KEYBOARD CONTROLS</h3>
+            <div class="controls-key-grid">
+              <div class="key-item"><kbd>W</kbd> / <kbd>↑</kbd> <span>Accelerate / Gas</span></div>
+              <div class="key-item"><kbd>S</kbd> / <kbd>↓</kbd> <span>Brake / Reverse</span></div>
+              <div class="key-item"><kbd>A</kbd> / <kbd>D</kbd> <span>Steer Left / Right</span></div>
+              <div class="key-item"><kbd>SPACE</kbd> <span>Handbrake / Power Drift</span></div>
+              <div class="key-item"><kbd>SHIFT</kbd> / <kbd>N</kbd> <span>Nitro Turbo Boost</span></div>
+              <div class="key-item"><kbd>H</kbd> <span>Indian Multi-Tone Pressure Horn</span></div>
+              <div class="key-item"><kbd>B</kbd> <span>In-Car Sound System & Subwoofer</span></div>
+              <div class="key-item"><kbd>M</kbd> <span>GPS Tactical World Map</span></div>
+              <div class="key-item"><kbd>C</kbd> <span>Cycle Camera (Chase / Hood)</span></div>
+              <div class="key-item"><kbd>P</kbd> <span>Photo Mode & Cinematic Filters</span></div>
+              <div class="key-item"><kbd>G</kbd> <span>Garage & Custom Paint Shop</span></div>
+              <div class="key-item"><kbd>E</kbd> <span>Start Discovered Street Race</span></div>
+            </div>
           </div>
-          <div>
-            <strong>Phone / Tablet</strong>
-            <span>Virtual on-screen touch controls with multi-touch steering, pedals, horn, nitro & drift button</span>
+
+          <div class="how-to-section">
+            <h3>📱 MOBILE & TOUCH DEVICES</h3>
+            <p>Full on-screen multi-touch controls are provided automatically. Use left thumb for steering arrows, right thumb for GAS/BRAKE pedals, and tap dedicated action buttons for NITRO, DRIFT, and HORN.</p>
+          </div>
+
+          <div class="how-to-section">
+            <h3>🏆 GAMEPLAY OBJECTIVES</h3>
+            <ul class="how-to-list">
+              <li><strong>Open-World Free Roam:</strong> Cruise across 4 massive NCR regions (Gurugram Cyber City, Delhi Central Vista, Yamuna River Bridge, and Noida Expressway).</li>
+              <li><strong>Street Racing Events:</strong> Discover sprint and circuit races marked on your GPS radar to earn high Cash (₹) and Reputation (REP).</li>
+              <li><strong>Speed Trap Cameras:</strong> Blast through expressway radar cameras above target speeds for instant cash bonuses while watching your In-Car Radar Detector.</li>
+              <li><strong>Evade Police Pursuits:</strong> Break speed limits to trigger PCR police cruiser pursuits. Outrun the interceptors to escape bust penalties!</li>
+              <li><strong>Garage Upgrades:</strong> Unlock 5 vehicles, 8 custom gloss paints, 8 underglow ground neon kits, and stage-3 performance engine upgrades.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal Overlay -->
+    <div id="modal-settings" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>⚙️ GAME SETTINGS</h2>
+          <button id="settings-close" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-group">
+            <label>Audio & Sound Effects</label>
+            <div class="settings-row">
+              <span>Engine FX & Pressure Horn</span>
+              <button id="settings-audio-toggle" class="settings-btn">🔊 FX: ON</button>
+            </div>
+          </div>
+          <div class="settings-group">
+            <label>Atmosphere & Lighting Default</label>
+            <div class="settings-row">
+              <span>Time of Day</span>
+              <button id="settings-mode-toggle" class="settings-btn">☀️ DAY</button>
+            </div>
+          </div>
+          <div class="settings-group">
+            <label>Weather System</label>
+            <div class="settings-row">
+              <span>Weather Mode</span>
+              <button id="settings-weather-toggle" class="settings-btn">☀️ CLEAR</button>
+            </div>
+          </div>
+          <div class="settings-group">
+            <label>Driving Camera Angle</label>
+            <div class="settings-row">
+              <span>Default Camera</span>
+              <button id="settings-cam-toggle" class="settings-btn">🎥 Chase Far</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cinematic Premium Title Screen Overlay (z-index: 100) -->
+    <div id="intro-overlay" class="title-screen-overlay">
+      <div class="title-screen-backdrop"></div>
+      <div class="title-screen-content">
+        <!-- Top Brand Header -->
+        <header class="title-hero-header">
+          <h1 class="title-main-logo">
+            <span class="logo-ncr">NCR</span><span class="logo-escape">ESCAPE</span>
+          </h1>
+          <div class="title-tagline">OPEN-WORLD INDIAN STREET DRIVING & RACING</div>
+          <div class="title-route">
+            <span class="route-point">GURUGRAM</span>
+            <span class="route-arrow">→</span>
+            <span class="route-point">DELHI</span>
+            <span class="route-arrow">→</span>
+            <span class="route-point">NOIDA</span>
+          </div>
+        </header>
+
+        <!-- Center Showcase Spacer -->
+        <div class="title-center-spacer"></div>
+
+        <!-- Primary CTA & Secondary Action Buttons -->
+        <div class="title-actions-container">
+          <button id="start-btn" class="title-primary-cta" title="Launch NCR ESCAPE">
+            <span class="cta-shimmer"></span>
+            <span class="cta-text">ENTER WORLD</span>
+            <span class="cta-icon">🏎️</span>
+          </button>
+
+          <div class="title-secondary-actions">
+            <button id="btn-how-to-play" class="title-sub-btn">📖 HOW TO PLAY</button>
+            <button id="btn-settings-open" class="title-sub-btn">⚙️ SETTINGS</button>
           </div>
         </div>
 
-        <button id="start-btn" class="primary-btn">ENTER WORLD</button>
+        <!-- Subtle Minimal Footer Branding -->
+        <footer class="title-footer">
+          <span>NCR ESCAPE • OPEN-WORLD STREET RACING</span>
+          <span class="footer-copy">© 2026 NCR ESCAPE</span>
+        </footer>
       </div>
     </div>
   </div>

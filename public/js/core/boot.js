@@ -667,14 +667,112 @@ function animate(now) {
     minimap.update(carState, traffic, race, multiplayer);
     ui.updateRace(race);
     audioEngine.update(carState.speed, input.throttle, isDrifting, dt);
+  } else if (!running) {
+    // Subtle slow cinematic breathing / camera sway on the title screen
+    const titleTime = now * 0.0004;
+    camera.position.x = carState.x + 3.8 + Math.sin(titleTime) * 0.4;
+    camera.position.y = 1.35 + Math.cos(titleTime * 0.8) * 0.1;
+    camera.position.z = carState.z + 5.8 + Math.cos(titleTime) * 0.3;
+    camera.lookAt(carState.x - 0.2, 0.7, carState.z);
   }
 
   renderer.render(scene, camera);
 }
 
+// Initial Title Screen Showcase Camera Position
+camera.position.set(carState.x + 3.8, 1.35, carState.z + 5.8);
+camera.lookAt(carState.x - 0.2, 0.7, carState.z);
+
+// --- Title Screen & Modals Integration ---
+const modalHowToPlay = document.getElementById('modal-how-to-play');
+const btnHowToPlay = document.getElementById('btn-how-to-play');
+const howToPlayClose = document.getElementById('how-to-play-close');
+
+const modalSettings = document.getElementById('modal-settings');
+const btnSettingsOpen = document.getElementById('btn-settings-open');
+const settingsClose = document.getElementById('settings-close');
+
+const settingsAudioToggle = document.getElementById('settings-audio-toggle');
+const settingsModeToggle = document.getElementById('settings-mode-toggle');
+const settingsWeatherToggle = document.getElementById('settings-weather-toggle');
+const settingsCamToggle = document.getElementById('settings-cam-toggle');
+
+const hudElement = document.getElementById('hud');
+const topbarElement = document.getElementById('topbar');
+
+if (btnHowToPlay && modalHowToPlay) {
+  btnHowToPlay.addEventListener('click', () => {
+    modalHowToPlay.classList.remove('hidden');
+  });
+}
+if (howToPlayClose && modalHowToPlay) {
+  howToPlayClose.addEventListener('click', () => {
+    modalHowToPlay.classList.add('hidden');
+  });
+}
+
+if (btnSettingsOpen && modalSettings) {
+  btnSettingsOpen.addEventListener('click', () => {
+    modalSettings.classList.remove('hidden');
+  });
+}
+if (settingsClose && modalSettings) {
+  settingsClose.addEventListener('click', () => {
+    modalSettings.classList.add('hidden');
+  });
+}
+
+// Settings modal live toggles
+if (settingsAudioToggle) {
+  settingsAudioToggle.addEventListener('click', () => {
+    const isMuted = audioEngine.toggleMute();
+    settingsAudioToggle.textContent = isMuted ? '🔇 FX: OFF' : '🔊 FX: ON';
+    if (audioToggleBtn) audioToggleBtn.textContent = isMuted ? '🔇 FX: OFF' : '🔊 FX: ON';
+  });
+}
+
+if (settingsModeToggle) {
+  settingsModeToggle.addEventListener('click', () => {
+    const label = timeCycle.cycleMode();
+    settingsModeToggle.textContent = label;
+    if (modeToggleBtn) modeToggleBtn.textContent = label;
+  });
+}
+
+if (settingsWeatherToggle) {
+  settingsWeatherToggle.addEventListener('click', () => {
+    const cur = weather.currentWeather;
+    const next = cur === WEATHER_TYPES.CLEAR ? WEATHER_TYPES.RAIN : cur === WEATHER_TYPES.RAIN ? WEATHER_TYPES.HAZE : WEATHER_TYPES.CLEAR;
+    weather.setWeather(next);
+    settingsWeatherToggle.textContent = next === WEATHER_TYPES.CLEAR ? '☀️ CLEAR' : next === WEATHER_TYPES.RAIN ? '🌧️ RAIN' : '🌫️ HAZE';
+    if (weatherToggleBtn) weatherToggleBtn.textContent = next === WEATHER_TYPES.CLEAR ? '☀️ CLEAR' : next === WEATHER_TYPES.RAIN ? '🌧️ RAIN' : '🌫️ HAZE';
+  });
+}
+
+if (settingsCamToggle) {
+  settingsCamToggle.addEventListener('click', () => {
+    const nextCam = cycleCameraMode();
+    settingsCamToggle.textContent = `🎥 ${nextCam.name}`;
+    if (cameraToggleBtn) cameraToggleBtn.textContent = `🎥 ${nextCam.name}`;
+  });
+}
+
+// Enter World Primary CTA Click Handler
 if (startBtn) {
   startBtn.addEventListener('click', () => {
     if (introOverlay) introOverlay.classList.add('hidden');
+    if (modalHowToPlay) modalHowToPlay.classList.add('hidden');
+    if (modalSettings) modalSettings.classList.add('hidden');
+
+    // Reveal Gameplay HUD cleanly
+    if (hudElement) hudElement.classList.remove('hidden');
+    if (topbarElement) topbarElement.classList.remove('hidden');
+    if (minimapContainer) minimapContainer.classList.remove('hidden');
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      if (touchControls) touchControls.classList.remove('hidden');
+    }
+
+    snapChaseCamera(camera, carState);
     audioEngine.unlock();
     running = true;
   });
