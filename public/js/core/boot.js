@@ -66,7 +66,9 @@ scene.background = new THREE.Color(0x2a3550);
 const camera = createChaseCamera(window.innerWidth / window.innerHeight);
 const { colliders, setDayNight, getCurrentMode } = buildDistrict(scene);
 const weather = new WeatherSystem(scene);
+window.weather = weather;
 const timeCycle = new TimeCycleSystem(scene, setDayNight);
+window.timeCycle = timeCycle;
 const soundSystem = new SoundSystem(audioEngine);
 
 let paused = false;

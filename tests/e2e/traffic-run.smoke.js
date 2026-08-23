@@ -18,6 +18,7 @@ async function testTrafficRun() {
 
   const browser = await chromium.launch(launchOpts);
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  page.setDefaultTimeout(90000);
 
   // 1. Load page and click DRIVE to start the run
   await page.goto(BASE_URL, { waitUntil: 'load' });

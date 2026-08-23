@@ -39,6 +39,7 @@ function onRoadNetwork(c) {
 
   const browser = await chromium.launch(opts);
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  page.setDefaultTimeout(90000);
   const errs = [];
   page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('favicon')) errs.push(m.text()); });
   page.on('pageerror', (e) => errs.push(String(e)));

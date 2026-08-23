@@ -6,9 +6,12 @@ import { getIntersections, axisOf, getDrivableSegments } from '../roads/network.
 // Full 3-aspect overhead cantilever and curb mast signal heads with Red, Yellow, and Green
 // lenses, automated phase arbitrations, and synchronized cycle transitions.
 
-const GREEN_TIME = 9.0;
-const YELLOW_TIME = 2.0;
-const ALL_RED_TIME = 1.2;
+// Timings defined globally and centralized (Step 3)
+export const SIGNAL_TIMINGS = {
+  GREEN: 22.0,
+  YELLOW: 4.0,
+  ALL_RED: 1.5,
+};
 
 export const LIGHT = { GREEN: 'green', YELLOW: 'yellow', RED: 'red' };
 
@@ -32,18 +35,32 @@ export class IntersectionController {
     const segs = getDrivableSegments();
     this.axisBySeg = new Map(segs.map((s) => [s.id, axisOf(s)]));
 
+    // Calculate total cycle length
+    const cycleLength = SIGNAL_TIMINGS.GREEN + SIGNAL_TIMINGS.YELLOW + SIGNAL_TIMINGS.ALL_RED;
+
     for (const ix of this.intersections) {
       // Which axes actually meet here. If a junction has only one axis it stays green.
       ix.axes = [...new Set(ix.segIds.map((id) => this.axisBySeg.get(id)))];
       ix.greenAxis = ix.axes[0];
       ix.phase = LIGHT.GREEN;
-      // Stagger phases so every junction in the district doesn't flip in lockstep.
-      ix.timer = Math.random() * GREEN_TIME;
+
+      // Spatial cascade wave synchronization (Step 17)
+      // Cascades green states down the Z and X road coordinate lines
+      ix.timer = Math.abs(ix.x * 0.025 + ix.z * 0.025) % cycleLength;
+
       ix.signals = this.buildSignals(ix);
+
+      // Centralized PointLight for night/sunset glow illumination (Step 15)
+      if (ix.axes.length >= 2) {
+        const pLight = new THREE.PointLight(0xffffff, 0, 18.0, 1.2);
+        pLight.position.set(ix.x, 6.2, ix.z);
+        this.scene.add(pLight);
+        ix.pointLight = pLight;
+      }
     }
   }
 
-  /** Builds authentic 3-aspect cantilever overhead & curb signal heads for each approaching road. */
+  /** Builds authentic 3-aspect gantry cantilever overhead & curb signal heads for each approaching road. */
   buildSignals(ix) {
     const heads = [];
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x1e242d, roughness: 0.6, metalness: 0.8 });
@@ -73,7 +90,7 @@ export class IntersectionController {
         arm.position.set(-armLength / 2, 6.0, 0);
         group.add(arm);
 
-        // Helper to construct a 3-aspect housing with Red, Amber, Green lenses
+        // Helper to construct a 3-aspect housing with Red, Amber, Green lenses and night PointLight
         const createSignalHead = (posX, posY, posZ, scale = 1.0) => {
           const headGroup = new THREE.Group();
 
@@ -165,18 +182,42 @@ export class IntersectionController {
       if (ix.axes.length < 2) continue; // nothing to arbitrate
 
       ix.timer += dt;
-      if (ix.phase === LIGHT.GREEN && ix.timer >= GREEN_TIME) {
+      if (ix.phase === LIGHT.GREEN && ix.timer >= SIGNAL_TIMINGS.GREEN) {
         ix.phase = LIGHT.YELLOW;
         ix.timer = 0;
-      } else if (ix.phase === LIGHT.YELLOW && ix.timer >= YELLOW_TIME) {
+      } else if (ix.phase === LIGHT.YELLOW && ix.timer >= SIGNAL_TIMINGS.YELLOW) {
         ix.phase = LIGHT.RED; // all-red clearance
         ix.timer = 0;
-      } else if (ix.phase === LIGHT.RED && ix.timer >= ALL_RED_TIME) {
+      } else if (ix.phase === LIGHT.RED && ix.timer >= SIGNAL_TIMINGS.ALL_RED) {
         // Hand green to the other axis
         const idx = ix.axes.indexOf(ix.greenAxis);
         ix.greenAxis = ix.axes[(idx + 1) % ix.axes.length];
         ix.phase = LIGHT.GREEN;
         ix.timer = 0;
+      }
+
+      // Update central PointLight color and intensity based on active phase (Step 15)
+      if (ix.pointLight) {
+        let isDark = false;
+        if (window.timeCycle) {
+          const mode = window.timeCycle.mode;
+          const tod = window.timeCycle.timeOfDay;
+          const isAutoDark = mode === 'auto' && (tod < 0.15 || tod >= 0.45);
+          isDark = mode === 'night' || mode === 'sunset' || isAutoDark;
+        }
+
+        if (isDark) {
+          ix.pointLight.intensity = 2.5;
+          if (ix.phase === LIGHT.GREEN) {
+            ix.pointLight.color.setHex(ACTIVE_COLORS[LIGHT.GREEN]);
+          } else if (ix.phase === LIGHT.YELLOW) {
+            ix.pointLight.color.setHex(ACTIVE_COLORS[LIGHT.YELLOW]);
+          } else {
+            ix.pointLight.color.setHex(ACTIVE_COLORS[LIGHT.RED]);
+          }
+        } else {
+          ix.pointLight.intensity = 0; // turn off during daylight
+        }
       }
 
       for (const head of ix.signals) {
@@ -196,17 +237,17 @@ export class IntersectionController {
     // Red lens
     headObj.redLens.material.color.setHex(isRed ? ACTIVE_COLORS[LIGHT.RED] : INACTIVE_COLORS[LIGHT.RED]);
     headObj.redLens.material.emissive.setHex(isRed ? ACTIVE_COLORS[LIGHT.RED] : 0x000000);
-    headObj.redLens.material.emissiveIntensity = isRed ? 1.6 : 0;
+    headObj.redLens.material.emissiveIntensity = isRed ? 2.5 : 0;
 
     // Yellow lens
     headObj.yelLens.material.color.setHex(isYel ? ACTIVE_COLORS[LIGHT.YELLOW] : INACTIVE_COLORS[LIGHT.YELLOW]);
     headObj.yelLens.material.emissive.setHex(isYel ? ACTIVE_COLORS[LIGHT.YELLOW] : 0x000000);
-    headObj.yelLens.material.emissiveIntensity = isYel ? 1.6 : 0;
+    headObj.yelLens.material.emissiveIntensity = isYel ? 2.5 : 0;
 
     // Green lens
     headObj.grnLens.material.color.setHex(isGrn ? ACTIVE_COLORS[LIGHT.GREEN] : INACTIVE_COLORS[LIGHT.GREEN]);
     headObj.grnLens.material.emissive.setHex(isGrn ? ACTIVE_COLORS[LIGHT.GREEN] : 0x000000);
-    headObj.grnLens.material.emissiveIntensity = isGrn ? 1.6 : 0;
+    headObj.grnLens.material.emissiveIntensity = isGrn ? 2.5 : 0;
   }
 
   /** Light state an approaching car on `axis` sees at this junction. */

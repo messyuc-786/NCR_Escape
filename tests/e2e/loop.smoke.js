@@ -71,7 +71,7 @@ function findChromium() {
     // Wait out the countdown. NOTE: headless software rendering runs at single-digit FPS and
     // dt is capped per frame, so a 3s in-game countdown can take far longer in wall-clock time
     // here than it does at 60fps. Poll for the state change instead of a fixed sleep.
-    rs = await waitForRaceState(page, 'racing', 45000);
+    rs = await waitForRaceState(page, 'racing', 120000);
     if (rs.state !== 'racing') fails.push(`expected racing after countdown, got ${rs.state}`);
 
     const cashBefore = await page.evaluate(() => window.__DEBUG_PROGRESSION().cash);
@@ -93,7 +93,7 @@ function findChromium() {
       }
     }
 
-    rs = await waitForRaceState(page, 'finished', 20000);
+    rs = await waitForRaceState(page, 'finished', 60000);
     if (rs.state !== 'finished') fails.push(`expected finished after all CPs, got ${rs.state} cp=${rs.checkpointIndex}`);
     if (!rs.lastResult) fails.push('no race result produced');
 

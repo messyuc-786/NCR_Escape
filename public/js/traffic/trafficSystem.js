@@ -1,6 +1,6 @@
 import { getDrivableSegments, sampleLane, tAlong, segmentLength } from '../roads/network.js';
-import { pickTrafficType, buildTrafficMesh } from '../vehicles/trafficVehicle.js';
-import { IntersectionController } from './intersections.js';
+import { pickTrafficType, buildTrafficMesh, TRAFFIC_TYPES } from '../vehicles/trafficVehicle.js';
+import { IntersectionController, LIGHT } from './intersections.js';
 
 // Phase 4 + 4b traffic AI. Reads road data from roads/network.js — the same file
 // world/district.js uses to build the road meshes — so lanes always line up with the painted
@@ -95,9 +95,77 @@ export class TrafficSystem {
     return this.segments[this.segments.length - 1];
   }
 
+  pickTrafficTypeForSegment(seg) {
+    const isTruckAllowed = seg.traffic.allowTrucks;
+    const pool = TRAFFIC_TYPES.filter((t) => isTruckAllowed || !t.isTruck);
+    
+    // Default weights
+    const weights = {
+      'commuter-hatch': 0.4,
+      'city-sedan': 0.32,
+      'three-wheeler': 0.16,
+      'goods-truck': 0.12,
+    };
+    
+    const id = seg.id.toLowerCase();
+    
+    if (id.includes('main-boulevard') || id.includes('corporate') || id.includes('cyber') || id.includes('golf')) {
+      // Gurugram Cyber City: High sedans, SUVs/taxis, low autos, low trucks (Step 12)
+      weights['commuter-hatch'] = 0.35;
+      weights['city-sedan'] = 0.55;
+      weights['three-wheeler'] = 0.08;
+      weights['goods-truck'] = 0.02;
+    } else if (id.includes('delhi')) {
+      // Delhi: Higher variety, more auto-rickshaws and hatchbacks (Step 12)
+      weights['commuter-hatch'] = 0.45;
+      weights['city-sedan'] = 0.20;
+      weights['three-wheeler'] = 0.25;
+      weights['goods-truck'] = 0.10;
+    } else if (id.includes('yamuna')) {
+      // Yamuna: High trucks/buses, no auto-rickshaws, higher speeds (Step 12)
+      weights['commuter-hatch'] = 0.20;
+      weights['city-sedan'] = 0.25;
+      weights['three-wheeler'] = 0.00;
+      weights['goods-truck'] = 0.55;
+    } else if (id.includes('noida') || id.includes('expressway') || id.includes('sector-143')) {
+      // Noida/Expressway: High sedans, high speed trucks, low auto-rickshaws (Step 12)
+      weights['commuter-hatch'] = 0.30;
+      weights['city-sedan'] = 0.50;
+      weights['three-wheeler'] = 0.02;
+      weights['goods-truck'] = 0.18;
+    }
+
+    const filteredPool = pool.filter((t) => weights[t.id] > 0);
+    const total = filteredPool.reduce((sum, t) => sum + (weights[t.id] || 0), 0);
+    let r = Math.random() * total;
+    for (const t of filteredPool) {
+      r -= (weights[t.id] || 0);
+      if (r <= 0) return t;
+    }
+    return filteredPool[filteredPool.length - 1];
+  }
+
+  getActiveTimeMode() {
+    if (!window.timeCycle) return 'day';
+    if (window.timeCycle.mode === 'auto') {
+      const tod = window.timeCycle.timeOfDay;
+      if (tod >= 0.15 && tod < 0.45) return 'day';
+      if (tod >= 0.45 && tod < 0.65) return 'sunset';
+      return 'night';
+    }
+    return window.timeCycle.mode;
+  }
+
+  getActiveWeather() {
+    if (window.weather) {
+      return window.weather.currentWeather;
+    }
+    return 'clear';
+  }
+
   createCar() {
     const seg = this.pickSegment();
-    const type = pickTrafficType(seg.traffic.allowTrucks);
+    const type = this.pickTrafficTypeForSegment(seg);
     const mesh = buildTrafficMesh(type);
     this.scene.add(mesh);
 
@@ -241,7 +309,7 @@ export class TrafficSystem {
   update(dt, playerX, playerZ, playerHeading = 0, playerSpeed = 0) {
     this.intersections.update(dt);
 
-    // Difficulty density multiplier based on elapsed time inside TrafficRun
+    // 1. Difficulty density scaling based on elapsed time inside TrafficRun
     let activeLimit = MAX_TRAFFIC;
     if (window.trafficRun && window.trafficRun.active) {
       const elapsed = window.trafficRun.elapsedTime || 0;
@@ -257,6 +325,23 @@ export class TrafficSystem {
       }
       activeLimit = Math.floor(MAX_TRAFFIC * densityMult);
     }
+
+    // Time of day density/speed adjustments (Step 13)
+    let timeDensityMult = 1.0;
+    let timeSpeedMult = 1.0;
+    const timeMode = this.getActiveTimeMode();
+    if (timeMode === 'sunset') {
+      timeDensityMult = 1.2; // Evening rush hour
+    } else if (timeMode === 'night') {
+      timeDensityMult = 0.6; // Clearer roads at night
+      timeSpeedMult = 1.25;  // Higher cruising speeds at night!
+    }
+
+    activeLimit = Math.floor(activeLimit * timeDensityMult);
+
+    // Weather adjustments (Step 14)
+    const weatherMode = this.getActiveWeather();
+    const isRain = weatherMode === 'rain';
 
     for (let idx = 0; idx < this.cars.length; idx++) {
       const car = this.cars[idx];
@@ -280,6 +365,32 @@ export class TrafficSystem {
 
       const sample = sampleLane(car.seg, car.t, car.dir, car.visualLane);
 
+      // --- Vehicle type behavior overrides (Step 9) ---
+      let accelRate = 5.0;
+      let decelRate = isRain ? 8.0 : 14.0; // smoother braking in rain
+      let minGap = MIN_GAP;
+      let followDist = FOLLOW_DISTANCE;
+      let laneChangeChance = 0.005;
+
+      if (car.type.id === 'three-wheeler') {
+        accelRate = 3.0; // Slower acceleration
+      } else if (car.type.id === 'goods-truck') {
+        accelRate = 2.2; // Very slow acceleration
+        minGap = 9.0;    // Large following gap
+        followDist = 18.0;
+      } else if (car.type.id === 'city-sedan') {
+        accelRate = 6.5; // Faster acceleration
+        laneChangeChance = 0.012; // More aggressive lane weaving!
+      }
+
+      // Weather speed clamp (Step 14)
+      const adjustedTargetSpeed = car.targetSpeed * timeSpeedMult * (isRain ? 0.85 : 1.0);
+      if (isRain) {
+        minGap *= 1.25;
+        followDist *= 1.25;
+        laneChangeChance *= 0.5; // Cautious lane changes in rain
+      }
+
       // --- Forward avoidance: find nearest car ahead in the same segment/dir/lane ---
       let gap = Infinity;
       for (const other of this.cars) {
@@ -289,24 +400,24 @@ export class TrafficSystem {
         if (delta > 0 && delta < gap) gap = delta;
       }
 
-      let desired = car.targetSpeed;
-      if (gap < MIN_GAP) {
+      let desired = adjustedTargetSpeed;
+      if (gap < minGap) {
         desired = 0;
-      } else if (gap < FOLLOW_DISTANCE) {
-        desired = car.targetSpeed * ((gap - MIN_GAP) / (FOLLOW_DISTANCE - MIN_GAP));
+      } else if (gap < followDist) {
+        desired = adjustedTargetSpeed * ((gap - minGap) / (followDist - minGap));
       }
 
-      // Yield to the player if they're right in front in this lane
+      // Yield to the player if they're right in front in this lane (keeps safe distance queue, Step 7)
       const toPlayerX = playerX - sample.x;
       const toPlayerZ = playerZ - sample.z;
       const forwardDot = Math.sin(sample.heading) * toPlayerX + Math.cos(sample.heading) * toPlayerZ;
       const lateral = Math.abs(Math.cos(sample.heading) * toPlayerX - Math.sin(sample.heading) * toPlayerZ);
-      if (forwardDot > 0 && forwardDot < FOLLOW_DISTANCE && lateral < 2.6) {
-        desired = Math.min(desired, Math.max(0, car.targetSpeed * ((forwardDot - MIN_GAP) / FOLLOW_DISTANCE)));
+      if (forwardDot > 0 && forwardDot < followDist && lateral < 2.6) {
+        desired = Math.min(desired, Math.max(0, adjustedTargetSpeed * ((forwardDot - minGap) / followDist)));
       }
 
       // Occasional random lane change AI rules (Step 4 Lane Behavior)
-      if (Math.random() < 0.005 && car.speed > 5) {
+      if (Math.random() < laneChangeChance && car.speed > 5) {
         const seg = car.seg;
         if (seg.lanes > 1) {
           const adjacentLanes = [];
@@ -347,15 +458,35 @@ export class TrafficSystem {
       if (nextJunction) {
         const distToStop = (junctionAheadT - car.t) * len;
         const axis = this.intersections.axisForSegment(car.seg.id);
-        const clear = this.intersections.mayProceed(nextJunction.ix, axis);
+        
+        // Query the state machine phase (Step 4 AI response & Step 5 Yellow choices)
+        const state = this.intersections.stateFor(nextJunction.ix, axis);
+        let clear = true;
+        if (state === LIGHT.RED) {
+          clear = false;
+        } else if (state === LIGHT.YELLOW) {
+          // Yellow behavior decision index (Step 5)
+          if (car.yellowDecision === undefined) {
+            car.yellowDecision = 0.8 + Math.random() * 0.6; // Stretches safe distance threshold
+          }
+          const safeStopDistance = car.speed * 1.8 * car.yellowDecision;
+          if (distToStop > safeStopDistance) {
+            clear = false; // Prepare to stop
+          } else {
+            clear = true;  // Too close to stop safely, cross junction
+          }
+        } else {
+          // Green resets decision flag
+          car.yellowDecision = undefined;
+        }
 
         if (distToStop < LIGHT_LOOKAHEAD && distToStop > -2) {
           if (!clear) {
             atStopLine = true;
-            if (distToStop < FOLLOW_DISTANCE) {
+            if (distToStop < followDist) {
               desired = Math.min(
                 desired,
-                Math.max(0, car.targetSpeed * (distToStop / FOLLOW_DISTANCE))
+                Math.max(0, adjustedTargetSpeed * (distToStop / followDist))
               );
             }
           } else if (car.t >= nextJunction.t - nextJunction.halfT && !car.turnDecided) {
@@ -374,7 +505,21 @@ export class TrafficSystem {
         }
       }
 
-      const rate = desired < car.speed ? 14 : 5;
+      // --- Reaction timer release wave (Step 6 Reaction delay & Step 8 release wave) ---
+      if (desired > 0 && car.speed === 0) {
+        if (car.reactionTimer === undefined) {
+          car.reactionTimer = 0.15 + Math.random() * 0.35; // 0.15s to 0.50s delay
+        }
+        if (car.reactionTimer > 0) {
+          car.reactionTimer -= dt;
+          desired = 0; // Hold position
+        }
+      } else if (car.speed > 0.5) {
+        car.reactionTimer = undefined; // Reset when moving
+      }
+
+      // Smooth acceleration and deceleration limits (Step 4 & Step 9)
+      const rate = desired < car.speed ? decelRate : accelRate;
       car.speed += (desired - car.speed) * Math.min(1, dt * rate);
       if (car.speed < 0.01) car.speed = 0;
 
