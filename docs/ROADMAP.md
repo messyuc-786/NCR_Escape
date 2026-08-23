@@ -7,7 +7,7 @@ Status legend: ✅ Done & Automated-Tested · 🚧 In Progress · ⏳ Planned (F
 ---
 
 ## Phase 1 — Foundation ✅
-- Express server with static delivery and JSON save/status endpoints
+- Express server with static delivery, JSON save/status endpoints, and WebSocket support
 - Three.js WebGL engine (local vendored ES module — zero CDN dependency)
 - High-framerate game loop (`requestAnimationFrame`) with delta-time clamping
 - Dual-platform input system: Keyboard, Gamepad, and Multi-Touch virtual controls for smartphones/tablets
@@ -17,9 +17,10 @@ Status legend: ✅ Done & Automated-Tested · 🚧 In Progress · ⏳ Planned (F
 - Longitudinal acceleration and deceleration curves with top speed clamping
 - Speed-sensitive steering assist for arcade stability
 - Handbrake-initiated rear traction loss and drift yaw integration
+- Nitro Boost system (1.55x acceleration surge, speed cap expansion, cyan exhaust flame cones)
 - Braking vs. reverse logic with standstill detection
 - Axis-Aligned Bounding Box (AABB) static obstacle and building collision resolution
-- Multi-touch responsive phone controls (steer buttons, gas/brake pedals, drift button)
+- Multi-touch responsive phone controls (steer buttons, gas/brake pedals, nitro & drift buttons)
 
 ## Phase 3 — Master 4-Region NCR Open World ✅
 - Seamless connected route spanning over 2.4 km:
@@ -37,6 +38,7 @@ Status legend: ✅ Done & Automated-Tested · 🚧 In Progress · ⏳ Planned (F
 - 2-Phase traffic signals (green/yellow/all-red) with physical signal poles
 - Seamless road-to-road turning at intersections
 - 4 distinct traffic vehicle models including Indian Auto-Rickshaws (3-Wheelers), Sedans, Hatchbacks, and Heavy Goods Trucks
+- High-speed Near-Miss detection with instant bonus cash and Nitro refills
 - Solid AABB collision geometry for all traffic
 
 ## Phase 5 — Racing & AI Rival Opponents ✅
@@ -63,11 +65,19 @@ Status legend: ✅ Done & Automated-Tested · 🚧 In Progress · ⏳ Planned (F
 - Drift Scoring System with live angle calculation, multiplier bonuses, and bankable cash rewards
 - Persistent local progression save (Cash, XP, Reputation, Level)
 
-## Phase 7 — Weather & Audio Immersion ✅
-- Dynamic Weather System (`world/weather.js`): Clear, Monsoon Rain (1,200 particles + wet road friction reduction), and NCR Dust Haze
-- Web Audio API procedural sound synthesizer (engine rumble/RPM harmonics, tire screech, collision thuds, countdown beeps, reward chimes)
+## Phase 7 — Police Pursuit & Speed Trap Radars ✅
+- Dynamic **1–3 Star Heat System** triggered by speed traps and high-speed crashes
+- Indian PCR Police Cruiser AI with animated alternating red/blue roof strobe light bar
+- Busted fine penalties and Evaded escape cash/reputation rewards
+- Highway speed trap radar camera gantries with flash HUD and velocity bonuses
 
-## Phase 8 — Multi-Platform HUD & UI ✅
-- Real-time 2D Canvas Radar Minimap with 4-region district detection
-- High-contrast Speedometer, Gear indicator (D/R/N), and dynamic RPM bar
-- Mobile virtual touch controls with multi-touch support
+## Phase 8 — Audio Immersion & Radio Stations ✅
+- Web Audio API procedural sound synthesizer (engine rumble/RPM harmonics, tire screech, collision thuds, police sirens, countdown beeps, reward chimes)
+- In-Game Synthesized Radio Stations: *NCR Synthwave FM 98.4*, *Delhi Desi Bass 104.2*, *Cyber Chillout 91.1*
+- Dynamic Weather System (`world/weather.js`): Clear, Monsoon Rain (1,200 particles + wet road friction reduction), and NCR Dust Haze
+
+## Phase 9 — Real-Time Multiplayer Free-Roam ✅
+- WebSocket room server broadcasting 20Hz world state updates (`server/index.js`)
+- Client-side smooth position lerping and slerp angular interpolation (`multiplayer/multiplayerSystem.js`)
+- Dynamic 3D procedural vehicle mesh instantiation with custom paint colorways
+- Radar minimap synchronization with cyan online driver blips
