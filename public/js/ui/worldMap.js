@@ -221,7 +221,7 @@ export class WorldMap {
     const cx = ((e.clientX - rect.left) / rect.width) * this.canvas.width;
     const cy = ((e.clientY - rect.top) / rect.height) * this.canvas.height;
 
-    // Check if clicked near an event marker
+    // 1. Check if clicked near an event marker
     for (const ev of raceEvents) {
       const p = this.worldToCanvas(ev.marker.x, ev.marker.z);
       const dist = Math.hypot(cx - p.x, cy - p.y);
@@ -250,7 +250,47 @@ export class WorldMap {
       }
     }
 
-    // Otherwise show fast travel option to clicked coordinate
+    // 2. Check if clicked near a district region label
+    for (const d of DISTRICTS) {
+      const p = this.worldToCanvas(d.x, d.z);
+      const dist = Math.hypot(cx - p.x, cy - p.y);
+      if (dist < 32) {
+        if (this.infoEl) {
+          const descriptions = {
+            'Cyber District': 'GURUGRAM - CYBER DISTRICT: Fictionalised corporate hub featuring vertical glass facades, flyovers, and elevated transit structures.',
+            'Corporate Mile': 'GURUGRAM - CORPORATE MILE: High-density night-drive district surrounded by illuminated office towers and corporate Plazas.',
+            'Golf Course Belt': 'GURUGRAM - GOLF BELT: High-end luxury residential towers bordering the green golf courses.',
+            'Industrial Edge': 'GURUGRAM - INDUSTRIAL REGION: Heavy industrial silos, factories, and warehouses.',
+            'Old Market': 'DELHI - OLD BAZAAR: High density street market featuring small shops, colorful awnings, parked scooters, and tea stalls.',
+            'Delhi Central': 'DELHI - CENTRAL VISTA: Sandstone heritage avenues centering around the grand India Gate-inspired arch landmark.',
+            'Yamuna Crossing': 'YAMUNA CROSSING: Cable-stayed bridge spanning the Yamuna River with beautiful water reflections.',
+            'Noida Expressway': 'NOIDA EXPRESSWAY: Broad 6-lane high-speed expressway, perfect for nitro runs and near-miss streaks.',
+            'Sector 143 Tech': 'NOIDA - SECTOR 143: Modern planned tech park zone with the futuristic Innovation Center Dome.'
+          };
+          const desc = descriptions[d.name] || 'NCR Region';
+          this.infoEl.innerHTML = `
+            <div class="map-info-card">
+              <div class="map-info-title">📍 ${d.name.toUpperCase()}</div>
+              <div class="map-info-desc">${desc}</div>
+              <button class="map-tp-btn" data-x="${d.x}" data-z="${d.z}">FAST TRAVEL TO DISTRICT</button>
+            </div>
+          `;
+
+          const tpBtn = this.infoEl.querySelector('.map-tp-btn');
+          if (tpBtn) {
+            tpBtn.addEventListener('click', () => {
+              const tx = parseFloat(tpBtn.dataset.x);
+              const tz = parseFloat(tpBtn.dataset.z);
+              if (this.onTeleport) this.onTeleport(tx, tz);
+              this.close();
+            });
+          }
+        }
+        return;
+      }
+    }
+
+    // 3. Otherwise show fast travel option to clicked coordinate
     const worldCoord = this.canvasToWorld(cx, cy);
     if (this.infoEl) {
       this.infoEl.innerHTML = `

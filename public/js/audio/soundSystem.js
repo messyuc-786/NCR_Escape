@@ -4,9 +4,9 @@
 export const SOUND_PLAYLISTS = [
   {
     id: '90s-bollywood',
-    title: '90s Bollywood Classics',
-    category: '90s HINDI',
-    badge: '90s NOSTALGIA',
+    title: 'NCR GOLD',
+    category: '90s BOLLYWOOD',
+    badge: 'NCR GOLD',
     color: '#ff7a18',
     tempo: 118,
     tracks: [
@@ -19,9 +19,9 @@ export const SOUND_PLAYLISTS = [
   },
   {
     id: '2000s-anthems',
-    title: '2000s Bollywood Anthems',
-    category: '2000s HITS',
-    badge: '2000s SUPERHITS',
+    title: '2000s DRIVE',
+    category: '2000s BOLLYWOOD',
+    badge: '2000s DRIVE',
     color: '#00ffff',
     tempo: 128,
     tracks: [
@@ -34,9 +34,9 @@ export const SOUND_PLAYLISTS = [
   },
   {
     id: 'punjabi-power',
-    title: 'Punjab Heavy Dhol & Bass',
+    title: 'DESI BASS',
     category: 'PUNJABI HITS',
-    badge: 'PUNJABI POWER',
+    badge: 'DESI BASS',
     color: '#ffd166',
     tempo: 132,
     tracks: [
@@ -48,68 +48,10 @@ export const SOUND_PLAYLISTS = [
     ]
   },
   {
-    id: '2010s-explosions',
-    title: '2010s Bollywood Party Explosions',
-    category: '2010s HITS',
-    badge: 'PARTY BLAST',
-    color: '#ff2d55',
-    tempo: 130,
-    tracks: [
-      { id: 'kala-chashma', title: 'Kala Chashma (Punjabi Bass Drop)', artist: 'Amar Arshi, Badshah & Neha Kakkar', era: '2016', style: 'dance' },
-      { id: 'subha-hone-na-de', title: 'Subha Hone Na De (Night Expressway)', artist: 'Mika Singh & Shefali Alvares', era: '2011', style: 'club' },
-      { id: 'badtameez-dil', title: 'Badtameez Dil (Brass Section Groove)', artist: 'Benny Dayal & Pritam', era: '2013', style: 'brass' },
-      { id: 'kar-gayi-chull', title: 'Kar Gayi Chull (Desi House Kick)', artist: 'Badshah & Fazilpuria', era: '2016', style: 'house' },
-      { id: 'chittiyaan', title: 'Chittiyaan Kalaiyaan (Electro Dhol)', artist: 'Meet Bros & Kanika Kapoor', era: '2015', style: 'dhol' },
-    ]
-  },
-  {
-    id: '2020s-bops',
-    title: '2020s Latest Trending Hits',
-    category: '2020s BOPS',
-    badge: 'TRENDING NOW',
-    color: '#00d4aa',
-    tempo: 126,
-    tracks: [
-      { id: 'tauba-tauba', title: 'Tauba Tauba (Karan Aujla Flow)', artist: 'Karan Aujla & Vicky Kaushal', era: '2024', style: 'modern-flow' },
-      { id: 'kesariya', title: 'Kesariya (Expressway Sunset Riff)', artist: 'Arijit Singh & Pritam', era: '2022', style: 'romantic' },
-      { id: 'jhoome-pathaan', title: 'Jhoome Jo Pathaan (Spanish Guitar Kick)', artist: 'Arijit Singh & Vishal-Shekhar', era: '2023', style: 'spanish-kick' },
-      { id: 'what-jhumka', title: 'What Jhumka? (Bassline Bounce)', artist: 'Arijit Singh & Jonita Gandhi', era: '2023', style: 'bounce' },
-      { id: 'apna-bana-le', title: 'Apna Bana Le (Midnight Highway)', artist: 'Arijit Singh & Sachin-Jigar', era: '2022', style: 'acoustic' },
-    ]
-  },
-  {
-    id: 'haryanvi-power',
-    title: 'Haryanvi Power & Ragni Beats',
-    category: 'HARYANVI HITS',
-    badge: 'HARYANA POWER',
-    color: '#fbbf24',
-    tempo: 134,
-    tracks: [
-      { id: '52-gaj', title: '52 Gaj Ka Daman (Desi Folk Bass)', artist: 'Renuka Panwar & Aman Jaji', era: '2020', style: 'haryanvi-folk' },
-      { id: 'gypsy', title: 'Gypsy (Balam Thanedhar GT Road)', artist: 'GD Kaur & Dinesh Golapuria', era: '2022', style: 'gypsy-bass' },
-      { id: 'bahu-kale-ki', title: 'Bahu Kale Ki (Heavy Dholak Slap)', artist: 'Ajay Hooda & Gajender Phogat', era: '2018', style: 'dholak-slap' },
-      { id: 'solid-body', title: 'Solid Body (High-Octane Ragni)', artist: 'Raju Punjabi & Sheenam Katholic', era: '2015', style: 'ragni-bass' },
-      { id: 'systumm', title: 'Systummm Hang (NCR Heavy Sub)', artist: 'Desi Hood Crew', era: '2024', style: 'sub-bass' },
-    ]
-  },
-  {
-    id: 'latest-ncr',
-    title: 'Latest NCR Street & Desi Drill',
-    category: 'LATEST HITS',
-    badge: 'NCR STREET 2026',
-    color: '#ff3b30',
-    tempo: 140,
-    tracks: [
-      { id: 'sec143', title: 'Sector 143 Underground Drill', artist: 'Delhi Underground Crew', era: '2026', style: 'drill' },
-      { id: 'delhi-night', title: 'Connaught Place Midnight Riser', artist: 'NCR Synth Collective', era: '2026', style: 'synth-drill' },
-      { id: 'yamuna-drift', title: 'Yamuna Bridge Bass Drop', artist: 'Noida Expressway Sound', era: '2026', style: 'bass' },
-    ]
-  },
-  {
     id: 'midnight-lofi',
-    title: 'NCR Midnight Desi Lo-Fi',
+    title: 'NCR MIDNIGHT',
     category: 'CHILL / LO-FI',
-    badge: 'MIDNIGHT CHILL',
+    badge: 'NCR MIDNIGHT',
     color: '#a855f7',
     tempo: 88,
     tracks: [
@@ -120,9 +62,9 @@ export const SOUND_PLAYLISTS = [
   },
   {
     id: 'aux-mode',
-    title: 'AUX / Bluetooth Audio Input',
+    title: 'MY RADIO',
     category: 'CUSTOM MP3',
-    badge: 'USER PLAYLIST',
+    badge: 'MY RADIO',
     color: '#38ef7d',
     tempo: 120,
     tracks: [
@@ -134,14 +76,25 @@ export const SOUND_PLAYLISTS = [
 export class SoundSystem {
   constructor(audioEngine) {
     this.audio = audioEngine;
-    this.currentPlaylistIndex = 0; // default 90s Bollywood
-    this.currentTrackIndex = 0;
+    
+    // Radio memory persistence (Step 16)
+    const savedPlaylistIndex = localStorage.getItem('ncr_radio_station_index');
+    const savedTrackIndex = localStorage.getItem('ncr_radio_track_index');
+    const savedVolume = localStorage.getItem('ncr_radio_volume');
+    const savedMute = localStorage.getItem('ncr_radio_mute');
+
+    this.currentPlaylistIndex = savedPlaylistIndex !== null ? Math.min(parseInt(savedPlaylistIndex), SOUND_PLAYLISTS.length - 1) : 0;
+    this.currentTrackIndex = savedTrackIndex !== null ? parseInt(savedTrackIndex) : 0;
+    this._volume = savedVolume !== null ? parseFloat(savedVolume) : 0.8;
+    this.isPlaying = false;
+    this.eqMode = 'BASS_BOOST'; // 'NORMAL', 'BASS_BOOST', 'VOCAL', 'CLUB'
     this.timer = null;
     this.step = 0;
     this.bassBoost = 1.35; // Subwoofer multiplier
-    this.volume = 1.0;
-    this.isPlaying = false;
-    this.eqMode = 'BASS_BOOST'; // 'NORMAL', 'BASS_BOOST', 'VOCAL', 'CLUB'
+
+    if (savedMute === 'true' && this.audio) {
+      this.audio.isMuted = true;
+    }
 
     // Callbacks for UI sync
     this.onTrackChange = null;
@@ -151,6 +104,24 @@ export class SoundSystem {
     this.auxAudio = new Audio();
     this.auxAudio.crossOrigin = 'anonymous';
     this.auxAudio.loop = true;
+    this.auxSource = null;
+
+    // Dedicated Radio Audio Player (Step 2 - Actual Songs)
+    this.radioAudio = new Audio();
+    this.radioAudio.crossOrigin = 'anonymous';
+    this.radioAudio.loop = true;
+    this.radioSource = null;
+  }
+
+  get volume() {
+    return this._volume;
+  }
+
+  set volume(val) {
+    this._volume = Math.max(0, Math.min(1, val));
+    localStorage.setItem('ncr_radio_volume', this._volume);
+    if (this.auxAudio) this.auxAudio.volume = this._volume;
+    if (this.radioAudio) this.radioAudio.volume = this._volume;
   }
 
   getCurrentPlaylist() {
@@ -179,6 +150,9 @@ export class SoundSystem {
     if (this.auxAudio) {
       this.auxAudio.pause();
     }
+    if (this.radioAudio) {
+      this.radioAudio.pause();
+    }
     if (this.onStateChange) this.onStateChange(false);
   }
 
@@ -190,10 +164,15 @@ export class SoundSystem {
     }
   }
 
+  toggle() {
+    this.togglePlay();
+  }
+
   nextTrack() {
     const pl = this.getCurrentPlaylist();
     this.currentTrackIndex = (this.currentTrackIndex + 1) % pl.tracks.length;
     this.step = 0;
+    localStorage.setItem('ncr_radio_track_index', this.currentTrackIndex);
     if (this.isPlaying) this.applyTrack();
     if (this.onTrackChange) this.onTrackChange(this.getCurrentPlaylist(), this.getCurrentTrack());
   }
@@ -202,6 +181,7 @@ export class SoundSystem {
     const pl = this.getCurrentPlaylist();
     this.currentTrackIndex = (this.currentTrackIndex - 1 + pl.tracks.length) % pl.tracks.length;
     this.step = 0;
+    localStorage.setItem('ncr_radio_track_index', this.currentTrackIndex);
     if (this.isPlaying) this.applyTrack();
     if (this.onTrackChange) this.onTrackChange(this.getCurrentPlaylist(), this.getCurrentTrack());
   }
@@ -212,6 +192,8 @@ export class SoundSystem {
       this.currentPlaylistIndex = idx;
       this.currentTrackIndex = 0;
       this.step = 0;
+      localStorage.setItem('ncr_radio_station_index', this.currentPlaylistIndex);
+      localStorage.setItem('ncr_radio_track_index', this.currentTrackIndex);
       if (this.isPlaying) {
         this.applyTrack();
       } else {
@@ -226,6 +208,7 @@ export class SoundSystem {
     if (idx >= 0 && idx < pl.tracks.length) {
       this.currentTrackIndex = idx;
       this.step = 0;
+      localStorage.setItem('ncr_radio_track_index', this.currentTrackIndex);
       this.play();
       if (this.onTrackChange) this.onTrackChange(this.getCurrentPlaylist(), this.getCurrentTrack());
     }
@@ -269,14 +252,33 @@ export class SoundSystem {
     if (this.auxAudio) {
       this.auxAudio.pause();
     }
+    if (this.radioAudio) {
+      this.radioAudio.pause();
+    }
 
     if (!this.isPlaying) return;
 
     const playlist = this.getCurrentPlaylist();
     const track = this.getCurrentTrack();
 
+    // Smooth transition: temporary fade-in (Step 7)
+    if (this.audio.initialized && this.audio.ctx && this.audio.masterGain) {
+      const now = this.audio.ctx.currentTime;
+      const baseGain = 0.35 * (this.audio.isMuted ? 0 : 1);
+      this.audio.masterGain.gain.setValueAtTime(0.01, now);
+      this.audio.masterGain.gain.exponentialRampToValueAtTime(baseGain, now + 0.35);
+    }
+
     if (playlist.id === 'aux-mode') {
       if (this.auxAudio.src) {
+        if (!this.auxSource && this.audio.initialized && this.audio.ctx) {
+          try {
+            this.auxSource = this.audio.ctx.createMediaElementSource(this.auxAudio);
+            this.auxSource.connect(this.audio.masterGain);
+          } catch (e) {
+            console.warn("Could not route AUX element to Web Audio masterGain:", e);
+          }
+        }
         this.auxAudio.volume = this.volume;
         this.auxAudio.play().catch(() => {});
       }
@@ -284,16 +286,46 @@ export class SoundSystem {
       return;
     }
 
-    const tempo = playlist.tempo || 120;
-    const intervalMs = (60 / tempo) * 500; // 8th-note tick
+    // Play actual song tracks (Step 2 & 3)
+    const files = {
+      '90s-bollywood': 'assets/music/ncr_gold.mp3',
+      '2000s-anthems': 'assets/music/2000s_drive.mp3',
+      'punjabi-power': 'assets/music/desi_bass.mp3',
+      'midnight-lofi': 'assets/music/ncr_midnight.mp3'
+    };
 
+    const targetFile = files[playlist.id];
+    if (targetFile) {
+      // Connect to Web Audio masterGain if not already done
+      if (!this.radioSource && this.audio.initialized && this.audio.ctx) {
+        try {
+          this.radioSource = this.audio.ctx.createMediaElementSource(this.radioAudio);
+          this.radioSource.connect(this.audio.masterGain);
+        } catch (e) {
+          console.warn("Could not route radio element to Web Audio masterGain:", e);
+        }
+      }
+
+      // Check if current source is already playing this station to avoid restarting track unnecessarily (Step 8)
+      const currentSrc = this.radioAudio.getAttribute('src');
+      if (currentSrc !== targetFile) {
+        this.radioAudio.src = targetFile;
+      }
+      
+      this.radioAudio.volume = this.volume;
+      this.radioAudio.play().catch(() => {});
+    }
+
+    // Setup visualizer ticker fallback (e.g. subwoofer thump heartbeat ticks)
+    const tempo = playlist.tempo || 120;
+    const intervalMs = (60 / tempo) * 500;
     this.step = 0;
-    if (this.onTrackChange) this.onTrackChange(playlist, track);
 
     this.timer = setInterval(() => {
-      this.playSynthesizedStep(playlist.id, track);
       this.step = (this.step + 1) % 32;
     }, intervalMs);
+
+    if (this.onTrackChange) this.onTrackChange(playlist, track);
   }
 
   playSynthesizedStep(playlistId, track) {

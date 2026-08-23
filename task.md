@@ -21,3 +21,15 @@
 - [x] Block reversing exploits via forward speed check
 - [x] Implement dynamic difficulty density scaling over elapsed run time
 - [x] Include first-run visual tutorial banner
+
+## Phase 2: Living NCR Traffic
+- [x] Centralize signal state machine timings (GREEN: 22s, YELLOW: 4s, ALL_RED: 1.5s)
+- [x] Spatial cascade green wave synchronization
+- [x] Yellow choice safe distance choice logic with driver variety
+- [x] Wave-like queue release delays on green transition
+- [x] Implement type-specific physics (auto-rickshaw, sedan, truck)
+- [x] Regional traffic density and type-specific weighting
+- [x] Time of Day density/speed modifications (Evening rush, Night speed cruising)
+- [x] Monsoon Rain friction, speed limits, and cautious lane checks
+- [x] Optimised Night-Only PointLights to preserve WebGL shader budgets
+- [x] Verified full player gameplay freedom (ignoring signals for combos)

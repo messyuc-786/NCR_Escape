@@ -20,6 +20,7 @@ import { TrafficSystem } from '../traffic/trafficSystem.js';
 import { RaceSystem, RACE_STATE } from '../racing/raceSystem.js';
 import { Progression } from '../progression/progression.js';
 import { AchievementSystem } from '../progression/achievementSystem.js';
+import { ChallengeSystem } from '../progression/challengeSystem.js';
 import { GameUI } from '../ui/gameUI.js';
 import { audioEngine } from '../audio/audioEngine.js';
 import { PedestrianSystem } from '../world/pedestrianSystem.js';
@@ -64,7 +65,9 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x2a3550);
 
 const camera = createChaseCamera(window.innerWidth / window.innerHeight);
-const { colliders, setDayNight, getCurrentMode } = buildDistrict(scene);
+const { colliders, setDayNight, getCurrentMode, setWeatherMode } = buildDistrict(scene);
+window.setDistrictWeatherMode = setWeatherMode;
+window.getCurrentDistrictLightingMode = getCurrentMode;
 const weather = new WeatherSystem(scene);
 window.weather = weather;
 const timeCycle = new TimeCycleSystem(scene, setDayNight);
@@ -77,9 +80,19 @@ let paused = false;
 const soundUI = new SoundSystemUI(soundSystem, () => {
   paused = false;
 });
+window.soundSystem = soundSystem;
+window.soundUI = soundUI;
 
 if (soundToggleBtn) {
   soundToggleBtn.addEventListener('click', () => {
+    paused = true;
+    soundUI.open();
+  });
+}
+
+const btnMobileRadioToggle = document.getElementById('btn-mobile-radio-toggle');
+if (btnMobileRadioToggle) {
+  btnMobileRadioToggle.addEventListener('click', () => {
     paused = true;
     soundUI.open();
   });
@@ -91,6 +104,8 @@ const achievements = new AchievementSystem(progression, () => {
   audioEngine.playChime();
   if (ui) ui.updateWallet();
 });
+const challenges = new ChallengeSystem(progression);
+window.challenges = challenges;
 
 let activeCarDef = progression.getSelectedVehicle();
 let vehicle = progression.applyUpgrades(activeCarDef);
@@ -443,12 +458,46 @@ function checkNearMisses(state, trafficPositions) {
       // Economy rewards
       progression.awardDrift(bonusCash);
       achievements.recordNearMiss();
+      challenges.recordNearMiss(isTruck, clearance);
+      challenges.recordCombo(currentCombo);
       ui.updateWallet();
 
       // Procedural Audio
       audioEngine.playNearMissWhoosh(chimeTone);
       if (currentCombo >= 2) {
         audioEngine.playChime();
+      }
+
+      // Radio + Gameplay Synergy (Step 13)
+      const igRadio = document.getElementById('in-game-radio-hud');
+      const igStation = document.getElementById('ig-radio-station');
+      if (igRadio && igStation) {
+        // A. Visual pulse for major near miss
+        if (clearance <= 0.85) {
+          igRadio.classList.add('ig-radio-pulse');
+          setTimeout(() => {
+            igRadio.classList.remove('ig-radio-pulse');
+          }, 120);
+        }
+
+        // B. Combo text overrides
+        if (currentCombo >= 5) {
+          igStation.textContent = '🔥 NCR NIGHT RUN';
+          igStation.style.color = '#ff0054';
+        } else if (currentCombo >= 3) {
+          igStation.textContent = '🔥 HOT RUN';
+          igStation.style.color = '#ffb703';
+        }
+
+        // C. Restore active station name after combo expires
+        if (window.igComboResetTimeout) clearTimeout(window.igComboResetTimeout);
+        window.igComboResetTimeout = setTimeout(() => {
+          const pl = soundSystem.getCurrentPlaylist();
+          if (pl && igStation) {
+            igStation.textContent = pl.title;
+            igStation.style.color = pl.color || '#00ffff';
+          }
+        }, 3800);
       }
 
       // HUD Notifications
@@ -582,6 +631,7 @@ if (weatherToggleBtn) {
     const cur = weather.currentWeather;
     const next = cur === WEATHER_TYPES.CLEAR ? WEATHER_TYPES.RAIN : cur === WEATHER_TYPES.RAIN ? WEATHER_TYPES.HAZE : WEATHER_TYPES.CLEAR;
     weather.setWeather(next);
+    if (window.setDistrictWeatherMode) window.setDistrictWeatherMode(next);
     weatherToggleBtn.textContent = next === WEATHER_TYPES.CLEAR ? '☀️ CLEAR' : next === WEATHER_TYPES.RAIN ? '🌧️ RAIN' : '🌫️ HAZE';
   });
 }
@@ -709,6 +759,13 @@ function animate(now) {
       return;
     }
 
+    if (consumePress('BracketLeft')) {
+      soundSystem.prevTrack();
+    }
+    if (consumePress('BracketRight')) {
+      soundSystem.nextTrack();
+    }
+
     if (consumePress('KeyM')) {
       paused = true;
       worldMap.open(carState);
@@ -729,6 +786,7 @@ function animate(now) {
 
     const interactPressed = consumePress('KeyE');
     const kmh = Math.abs(carState.speed) * 3.6;
+    const frozen = race.state === RACE_STATE.COUNTDOWN;
 
     // Exhaust backfire check on sudden deceleration
     if (input.throttle === 0 && lastThrottle > 0.8 && kmh > 65) {
@@ -744,7 +802,29 @@ function animate(now) {
     lastThrottle = input.throttle;
 
     achievements.recordSpeed(kmh);
-    achievements.recordDistrict(minimap.getDistrictName(carState.x, carState.z));
+    const dName = minimap.getDistrictName(carState.x, carState.z);
+    achievements.recordDistrict(dName);
+
+    // Update challenges progression
+    challenges.recordSpeed(kmh, dName);
+    challenges.recordDistrict(dName);
+    if (!frozen && kmh > 5) {
+      const distanceStepped = Math.abs(carState.speed) * dt;
+      challenges.recordDistance(distanceStepped);
+      challenges.recordTimeStep(dt);
+    }
+
+    // District-based station suggestion (Step 14)
+    if (window.lastDistrictSuggestionName !== dName) {
+      window.lastDistrictSuggestionName = dName;
+      if (dName === 'NOIDA EXPRESSWAY' || dName === 'SECTOR 143 TECH DISTRICT') {
+        soundUI.suggestStation('punjabi-power', 'DESI BASS (NOIDA)');
+      } else if (dName === 'YAMUNA RIVER CROSSING') {
+        soundUI.suggestStation('midnight-lofi', 'NCR MIDNIGHT (YAMUNA)');
+      } else if (dName === 'CYBER DISTRICT' || dName === 'CORPORATE MILE' || dName === 'GOLF COURSE BELT') {
+        soundUI.suggestStation('90s-bollywood', 'NCR GOLD (GURUGRAM)');
+      }
+    }
 
     traffic.update(dt, carState.x, carState.z, carState.heading, carState.speed);
     pedestrians.update(dt, carState.x, carState.z, carState.speed);
@@ -786,7 +866,6 @@ function animate(now) {
       lastCountdownNum = null;
     }
 
-    const frozen = race.state === RACE_STATE.COUNTDOWN;
     const frameColliders = colliders
       .concat(traffic.getColliders())
       .concat(police.getColliders())
@@ -827,6 +906,7 @@ function animate(now) {
     if (Math.abs(speedBeforeStep) > 10 && Math.abs(carState.speed) < Math.abs(speedBeforeStep) * 0.7) {
       audioEngine.playCollision(1.0);
       trafficRun.registerCrash();
+      challenges.recordCrash();
       if (Math.abs(speedBeforeStep) > 18) {
         police.addHeat(1);
         audioEngine.setSiren(true);
@@ -932,6 +1012,7 @@ if (settingsWeatherToggle) {
     const cur = weather.currentWeather;
     const next = cur === WEATHER_TYPES.CLEAR ? WEATHER_TYPES.RAIN : cur === WEATHER_TYPES.RAIN ? WEATHER_TYPES.HAZE : WEATHER_TYPES.CLEAR;
     weather.setWeather(next);
+    if (window.setDistrictWeatherMode) window.setDistrictWeatherMode(next);
     settingsWeatherToggle.textContent = next === WEATHER_TYPES.CLEAR ? '☀️ CLEAR' : next === WEATHER_TYPES.RAIN ? '🌧️ RAIN' : '🌫️ HAZE';
     if (weatherToggleBtn) weatherToggleBtn.textContent = next === WEATHER_TYPES.CLEAR ? '☀️ CLEAR' : next === WEATHER_TYPES.RAIN ? '🌧️ RAIN' : '🌫️ HAZE';
   });
@@ -955,6 +1036,11 @@ if (startBtn) {
     // Reveal Gameplay HUD cleanly
     if (hudElement) hudElement.classList.remove('hidden');
     if (topbarElement) topbarElement.classList.remove('hidden');
+    const igRadio = document.getElementById('in-game-radio-hud');
+    if (igRadio) igRadio.classList.remove('hidden');
+    if (!soundSystem.isPlaying) {
+      soundSystem.play();
+    }
     if (minimapContainer) minimapContainer.classList.remove('hidden');
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
       if (touchControls) touchControls.classList.remove('hidden');
@@ -966,6 +1052,7 @@ if (startBtn) {
 
     resetCar();
     trafficRun.start(carState.x, carState.z);
+    challenges.startRun();
 
     running = true;
   });
@@ -1096,6 +1183,20 @@ function endTrafficRun() {
   const stats = trafficRun.end();
   trafficRunResultsActive = true;
 
+  // Calculate base rewards
+  const baseCash = Math.floor(stats.score / 15);
+  const baseXP = Math.floor(stats.score / 30);
+
+  // Add challenge rewards
+  const chRewards = challenges.endRun();
+
+  progression.data.cash += baseCash;
+  progression.data.xp += baseXP;
+  progression.save();
+
+  const totalXP = baseXP + chRewards.xp;
+  const totalCash = baseCash + chRewards.credits;
+
   const resScore = document.getElementById('traffic-res-score');
   const resBest = document.getElementById('traffic-res-best');
   const resDistance = document.getElementById('traffic-res-distance');
@@ -1103,12 +1204,23 @@ function endTrafficRun() {
   const resNearMisses = document.getElementById('traffic-res-nearmisses');
   const resBestCombo = document.getElementById('traffic-res-bestcombo');
 
+  // New Rewards UI fields
+  const resXPEarned = document.getElementById('traffic-res-xp-earned');
+  const resCreditsEarned = document.getElementById('traffic-res-credits-earned');
+  const resChallengesCompleted = document.getElementById('traffic-res-challenges-completed');
+
   if (resScore) resScore.textContent = stats.score.toLocaleString();
   if (resBest) resBest.textContent = stats.best.toLocaleString();
   if (resDistance) resDistance.textContent = `${stats.distance} KM`;
   if (resTopSpeed) resTopSpeed.textContent = `${stats.topSpeed} KM/H`;
   if (resNearMisses) resNearMisses.textContent = stats.nearMisses;
   if (resBestCombo) resBestCombo.textContent = `×${stats.bestCombo}`;
+
+  if (resXPEarned) resXPEarned.textContent = `+${totalXP} XP`;
+  if (resCreditsEarned) resCreditsEarned.textContent = `+₹${totalCash.toLocaleString('en-IN')}`;
+  if (resChallengesCompleted) resChallengesCompleted.textContent = chRewards.completedCount;
+
+  ui.updateWallet();
 
   const resultsOverlay = document.getElementById('traffic-results-overlay');
   if (resultsOverlay) resultsOverlay.classList.remove('hidden');
@@ -1132,7 +1244,11 @@ if (resBtnDrive) {
 
     resetCar();
     trafficRun.start(carState.x, carState.z);
+    challenges.startRun();
     paused = false;
+    if (!soundSystem.isPlaying) {
+      soundSystem.play();
+    }
   });
 }
 
@@ -1157,6 +1273,8 @@ if (resBtnMenu) {
     if (topbarElement) topbarElement.classList.add('hidden');
     if (minimapContainer) minimapContainer.classList.add('hidden');
     if (touchControls) touchControls.classList.add('hidden');
+    const igRadio = document.getElementById('in-game-radio-hud');
+    if (igRadio) igRadio.classList.add('hidden');
 
     // Show title screen
     if (introOverlay) introOverlay.classList.remove('hidden');

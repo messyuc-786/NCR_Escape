@@ -2001,3 +2001,175 @@ html, body {
   text-shadow: 0 0 15px #ff0054, 0 0 30px #ff0054, 0 0 45px #ff0054;
   animation: comboPop 0.25s infinite alternate !important;
 }
+
+/* Compact In-Game Radio Widget (Step 5) */
+#in-game-radio-hud {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.ig-radio-card {
+  width: 220px;
+  background: rgba(10, 15, 30, 0.85);
+  border: 1px solid rgba(0, 212, 170, 0.4);
+  border-radius: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 212, 170, 0.15);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ig-radio-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ff7a18;
+  text-transform: uppercase;
+}
+
+.ig-radio-lcd {
+  background: #060912;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  height: 38px;
+}
+
+#ig-radio-title {
+  color: #00ffff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(0, 255, 255, 0.4);
+}
+
+#ig-radio-artist {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Compact Visualizer bars */
+.ig-visualizer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 16px;
+  margin: 2px 0;
+}
+
+.ig-bar {
+  width: 4px;
+  height: 3px;
+  background: #00ffff;
+  border-radius: 1px;
+  transition: height 0.08s ease;
+}
+
+.ig-radio-ctrls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.ig-ctrl-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ig-ctrl-btn:hover {
+  background: rgba(0, 255, 255, 0.1);
+  border-color: #00ffff;
+  color: #00ffff;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+}
+
+/* Responsive adjustments for mobile viewports */
+@media (max-width: 768px) {
+  #in-game-radio-hud {
+    bottom: auto;
+    top: 90px; /* Safe below the top status bar */
+    left: 12px;
+  }
+  .ig-radio-card {
+    width: 170px;
+    padding: 6px;
+  }
+  #ig-radio-title {
+    font-size: 11px;
+  }
+  #ig-radio-artist {
+    font-size: 9px;
+  }
+}
+
+/* Radio Notification Popup (Step 11) */
+.radio-notify {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(10, 15, 30, 0.95);
+  border: 1.5px solid #ff7a18;
+  border-radius: 6px;
+  padding: 8px 18px;
+  text-align: center;
+  z-index: 500;
+  box-shadow: 0 0 20px rgba(255, 122, 24, 0.4), inset 0 0 10px rgba(255, 122, 24, 0.1);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+}
+.radio-notify.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.05);
+}
+.rn-station {
+  color: #ff7a18;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 0 5px rgba(255, 122, 24, 0.5);
+}
+.rn-desc {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.85;
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+
+/* In-game radio visual pulse on near miss (Step 13) */
+.ig-radio-pulse {
+  transform: scale(1.06);
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.6), inset 0 0 15px rgba(0, 255, 255, 0.3);
+  border-color: #00ffff !important;
+}
+.ig-radio-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}

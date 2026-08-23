@@ -158,7 +158,7 @@ async function main() {
     // Must brake from a genuinely high speed. Below ~0.5 m/s the brake input intentionally
     // becomes reverse thrust, so asserting on |speed| from a near-stopped car measures the
     // wrong thing (it fails while the game is behaving correctly). Get properly moving first.
-    await page.evaluate(() => window.__DEBUG_TELEPORT && window.__DEBUG_TELEPORT(0, -200));
+    await page.evaluate(() => window.__DEBUG_TELEPORT && window.__DEBUG_TELEPORT(600, -200));
     await page.keyboard.down('KeyW');
     let speedBeforeBrake = 0;
     for (let i = 0; i < 40; i++) {
@@ -180,7 +180,7 @@ async function main() {
     }
 
     // --- Reverse: from a standstill, holding brake should back the car up ---
-    await page.evaluate(() => window.__DEBUG_TELEPORT && window.__DEBUG_TELEPORT(0, -200));
+    await page.evaluate(() => window.__DEBUG_TELEPORT && window.__DEBUG_TELEPORT(600, -200));
     await page.waitForTimeout(300);
     const zBeforeReverse = (await page.evaluate(() => window.__DEBUG_POS())).z;
     await page.keyboard.down('KeyS');

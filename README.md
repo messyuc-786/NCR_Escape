@@ -33,8 +33,20 @@ This is a **completely independent project** built from the ground up with zero 
   - 1–3 Star Heat Level with pursuit AI, PCR Police Cruiser 3D models with animated red/blue roof strobe light bars, procedural police sirens, and Busted vs. Escaped dynamics.
 - **Speed Trap Radar Mini-Game**:
   - Overhead radar gantries along expressways with camera shutter audio, HUD flash animation, and velocity bonuses.
-- **Synthesized In-Game Radio Stations**:
-  - *NCR Synthwave FM (98.4 FM)*, *Delhi Desi Bass (104.2 FM)*, *Cyber Chillout (91.1 FM)* — 100% procedural Web Audio without external audio files.
+- **90s / 2000s Bollywood & Punjabi Radio Experience**:
+  - Live deck streaming multiple retro/remix channels (Punjabi Power, Desi Bass, Bollywood Beats, Lofi Midnight) and a custom AUX mode for local files.
+  - Interactive compact LCD widget displaying frequency visualizer bars and playlist updates, responsive to driving combos and near-miss state pulses.
+- **Atmospheric District-Specific Styling & Landmarks**:
+  - **Gurugram**: Twin glass skyscrapers (Cyber Spire Plaza) with a horizontal neon skybridge and digital billboards.
+  - **Noida**: Stepped terraced corporate spire with high-intensity orange crown beacons and overhead exit signs.
+  - **Delhi**: A sandstone Central Vista arch and a dense market bazaar along Old Market Cross featuring canvas-awned kiosks, parked scooters, autoshaws, and tea stalls.
+  - **Yamuna Crossing**: A large cable-stayed suspension bridge with stay lines and optimized specular river reflections.
+- **Dynamic Monsoon Wet Weather**:
+  - Rain dynamically darkens the asphalt material, increasing reflectivity (roughness: 0.15, metalness: 0.55) to simulate slick wet surfaces.
+- **Lightweight Challenge & Level Progression Engine**:
+  - Data-driven challenge templates (Traffic, Speed, Combo, Driving, District, and Special categories) with active HUD progress updates.
+  - Slower Level scaling formula (`XP = 250 * L * (L - 1)`) and a Garage Profile Dashboard showing Level, XP progress bar, and wallet NCR Credits.
+  - Automatic local-date based **Daily Challenges** reset.
 - **Interactive Photo Mode & Filters**:
   - Orbit camera, FOV & Dutch angle tilt sliders, time-of-day toggle, 5 cinematic color filters, and instant PNG screenshot downloads.
 - **Achievements & Milestones**:
@@ -96,10 +108,15 @@ npm test
 ```
 
 Test Suites:
-1. `drive.smoke.js`: Forward acceleration, steering heading change, drift yaw, braking, reverse, nitro, collisions, zero console errors.
-2. `traffic.smoke.js`: Traffic spawning, lane boundaries, continuous movement, solid player collision, zero console errors.
-3. `intersections.smoke.js`: Derived line-segment junctions, non-overlapping traffic light phases, road-to-road turning, zero console errors.
-4. `loop.smoke.js`: Complete end-to-end game loop from start line -> event discovery -> countdown freeze -> checkpoint progression -> race finish -> cash/XP/rep rewards -> garage upgrade purchase -> physics stat modification -> reload persistence.
+1. `title-screen.test.js`: Validates desktop and mobile layout rules, visibility of interactive panels, settings inputs, and start buttons.
+2. `traffic-run.smoke.js`: Verifies the score loop, restart triggers, play again routes, and results screen population.
+3. `radio.smoke.js`: Verifies station deck selections, volume ramping, media streams routing, and local persistence.
+4. `challenges.smoke.js`: Verifies challenge engine completions, leveling formula thresholds, wallet updates, and garage dashboard rendering.
+5. `phase1-world.smoke.js`: Validates pedestrian movement, stride animations, and traffic light cycle phases.
+6. `drive.smoke.js`: Forward acceleration, steering heading change, drift yaw, braking, reverse, nitro, collisions, zero console errors.
+7. `traffic.smoke.js`: Traffic spawning, lane boundaries, continuous movement, solid player collision, zero console errors.
+8. `intersections.smoke.js`: Derived line-segment junctions, non-overlapping traffic light phases, road-to-road turning, zero console errors.
+9. `loop.smoke.js`: Complete end-to-end game loop from start line -> event discovery -> countdown freeze -> checkpoint progression -> race finish -> cash/XP/rep rewards -> garage upgrade purchase -> physics stat modification -> reload persistence.
 
 ---
 

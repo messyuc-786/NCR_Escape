@@ -47,6 +47,39 @@
       </div>
     </div>
 
+    <!-- Compact In-Game Radio Widget (Step 5) -->
+    <div id="in-game-radio-hud" class="hidden">
+      <div class="ig-radio-card">
+        <div class="ig-radio-header">
+          <span class="ig-radio-icon">📻</span>
+          <span id="ig-radio-station">NCR GOLD</span>
+        </div>
+        <div class="ig-radio-lcd">
+          <div id="ig-radio-title">Tujhe Dekha Toh</div>
+          <div id="ig-radio-artist">Lata & Kumar Sanu</div>
+        </div>
+        <div id="ig-radio-visualizer" class="ig-visualizer">
+          <span class="ig-bar ib1"></span>
+          <span class="ig-bar ib2"></span>
+          <span class="ig-bar ib3"></span>
+          <span class="ig-bar ib4"></span>
+          <span class="ig-bar ib5"></span>
+          <span class="ig-bar ib6"></span>
+        </div>
+        <div class="ig-radio-ctrls">
+          <button id="ig-btn-prev" class="ig-ctrl-btn" title="Previous Station">⏮️</button>
+          <button id="ig-btn-play" class="ig-ctrl-btn" title="Play/Pause">▶️</button>
+          <button id="ig-btn-next" class="ig-ctrl-btn" title="Next Station">⏭️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Radio Notification Popup (Step 11) -->
+    <div id="radio-notification" class="radio-notify hidden">
+      <div id="rn-station" class="rn-station">NCR GOLD</div>
+      <div id="rn-desc" class="rn-desc">90s DRIVE</div>
+    </div>
+
     <!-- Near Miss & Traffic Combo Notification -->
     <div id="nearmiss-hud" class="hidden">
       <div id="nearmiss-badge">⚡ NEAR MISS</div>
@@ -84,6 +117,15 @@
       <div id="ach-title">🏆 PODIUM CHAMPION</div>
       <div id="ach-desc">Claim 1st place in any street race event</div>
       <div id="ach-reward">+₹2,000 · +100 REP</div>
+    </div>
+
+    <!-- Challenge HUD Overlay -->
+    <div id="challenge-hud" style="position: absolute; top: 75px; left: 50%; transform: translateX(-50%); background: rgba(10, 15, 29, 0.85); border: 1.5px solid rgba(255, 122, 24, 0.6); padding: 6px 14px; border-radius: 8px; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; align-items: center; gap: 10px; pointer-events: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: transform 0.15s;" class="hidden">
+      <div id="challenge-hud-icon" style="font-size: 16px;">🎯</div>
+      <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 1px;">
+        <span id="challenge-hud-title" style="font-weight: 800; font-size: 12px; letter-spacing: 0.5px; color: #ffd166; white-space: nowrap;">ACTIVE CHALLENGE</span>
+        <span id="challenge-hud-progress" style="font-size: 11px; font-weight: 700; color: #8fa3c7;">0 / 10</span>
+      </div>
     </div>
 
     <!-- Top Status Bar -->
@@ -164,6 +206,23 @@
             </div>
           </div>
 
+          <!-- Challenge/XP Rewards Section -->
+          <div id="traffic-res-rewards-section" style="margin-bottom: 22px; text-align: left; display: flex; flex-direction: column; gap: 8px; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-family: 'Rajdhani', sans-serif;">
+            <div style="font-weight: 800; font-size: 13px; color: #ff7a18; letter-spacing: 1px; margin-bottom: 4px;">REWARDS EARNED</div>
+            <div style="display: flex; justify-content: space-between; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 4px;">
+              <span>XP EARNED</span>
+              <span id="traffic-res-xp-earned" style="color: #4aa8ff; font-weight: bold;">+0 XP</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 4px;">
+              <span>NCR CREDITS</span>
+              <span id="traffic-res-credits-earned" style="color: #38ef7d; font-weight: bold;">+₹0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 15px;">
+              <span>CHALLENGES COMPLETED</span>
+              <span id="traffic-res-challenges-completed" style="color: #ffd166; font-weight: bold;">0</span>
+            </div>
+          </div>
+
           <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
             <button id="traffic-res-btn-drive" class="primary-btn" style="background: #ff7a18; color: #03050a; font-weight: 900; margin-top: 0;">PLAY AGAIN</button>
             <button id="traffic-res-btn-garage" class="primary-btn" style="background: rgba(255,255,255,0.08); color: #fff; margin-top: 0;">GARAGE</button>
@@ -179,6 +238,21 @@
         <div class="garage-header">
           <h2>NCR CUSTOMS & TUNING GARAGE</h2>
           <button id="garage-close" class="close-btn">&times;</button>
+        </div>
+
+        <!-- Garage profile summary dashboard (Step 6 / Step 10) -->
+        <div id="garage-profile-summary" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.35); border-bottom: 2px solid rgba(255, 122, 24, 0.4); padding: 10px 20px; font-family: 'Rajdhani', sans-serif; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-weight: 900; color: #ffd166; font-size: 16px; letter-spacing: 0.5px;" id="garage-player-level">LEVEL 1</span>
+            <div style="width: 140px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; position: relative;">
+              <div id="garage-xp-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4aa8ff, #00d4aa);"></div>
+            </div>
+            <span id="garage-xp-val" style="font-size: 14px; color: #8fa3c7; font-weight: bold;">0 / 500 XP</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 15px;">
+            <span style="color: #8fa3c7; font-weight: 700;">NCR WALLET:</span>
+            <span id="garage-wallet-val" style="font-weight: 900; color: #38ef7d; font-size: 17px;">₹0</span>
+          </div>
         </div>
 
         <div class="garage-tabs">
@@ -211,6 +285,7 @@
         <button id="btn-horn" class="touch-btn touch-action" aria-label="Horn / Honk">🎺 HORN</button>
         <button id="btn-interact" class="touch-btn touch-action" aria-label="Interact / Start Race">⚡ EVENT</button>
         <button id="btn-reset" class="touch-btn touch-action" aria-label="Reset Car">↺ RESET</button>
+        <button id="btn-mobile-radio-toggle" class="touch-btn touch-action" aria-label="Toggle Radio">📻 RADIO</button>
       </div>
       <div class="touch-right-cluster">
         <button id="btn-nitro" class="touch-btn touch-nitro" aria-label="Nitro Boost">🚀 NITRO</button>

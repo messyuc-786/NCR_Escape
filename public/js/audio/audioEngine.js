@@ -17,6 +17,7 @@ class AudioEngine {
     this.enabled = true;
     this.isMuted = false;
     this.initialized = false;
+    this.analyser = null;
   }
 
   init() {
@@ -27,7 +28,11 @@ class AudioEngine {
       this.ctx = new AudioCtx();
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
+
+      this.analyser = this.ctx.createAnalyser();
+      this.analyser.fftSize = 64;
+      this.masterGain.connect(this.analyser);
+      this.analyser.connect(this.ctx.destination);
 
       this.setupEngineSynth();
       this.setupTireSynth();

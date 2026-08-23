@@ -56,7 +56,9 @@ export class Progression {
   }
 
   get level() {
-    return Math.floor(this.data.xp / 500) + 1;
+    const xp = this.data.xp || 0;
+    const val = 1 + (4 * xp) / 250;
+    return Math.floor((1 + Math.sqrt(val)) / 2);
   }
 
   awardRace(result, eventId) {

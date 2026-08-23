@@ -141,6 +141,24 @@ export class GameUI {
     const unlocked = p.data.unlockedVehicles || ['vantra-rs'];
     const unlockedAchs = p.data.unlockedAchievements || [];
 
+    // Update garage dashboard header values (Step 6 / Step 10)
+    const level = p.level;
+    const currentLevelCumulativeXP = 250 * level * (level - 1);
+    const nextLevelCumulativeXP = 250 * (level + 1) * level;
+    const xpNeededForNextLevel = nextLevelCumulativeXP - currentLevelCumulativeXP;
+    const xpEarnedInCurrentLevel = p.data.xp - currentLevelCumulativeXP;
+    const xpPercent = Math.min(100, Math.max(0, (xpEarnedInCurrentLevel / xpNeededForNextLevel) * 100));
+
+    const lvlEl = document.getElementById('garage-player-level');
+    const xpBarEl = document.getElementById('garage-xp-progress-bar');
+    const xpValEl = document.getElementById('garage-xp-val');
+    const walletValEl = document.getElementById('garage-wallet-val');
+
+    if (lvlEl) lvlEl.textContent = `LEVEL ${level}`;
+    if (xpBarEl) xpBarEl.style.width = `${xpPercent}%`;
+    if (xpValEl) xpValEl.textContent = `${xpEarnedInCurrentLevel} / ${xpNeededForNextLevel} XP`;
+    if (walletValEl) walletValEl.textContent = `₹${p.data.cash.toLocaleString('en-IN')}`;
+
     // 1. Vehicle Selection Grid
     const vehicleCards = Object.values(VEHICLE_CATALOGUE).map((car) => {
       const isOwned = unlocked.includes(car.id);

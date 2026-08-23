@@ -21,6 +21,9 @@ export const WEATHER_MODES = {
   HAZE: 'haze',
 };
 
+const roadMaterials = [];
+const reflectionPlanes = [];
+
 // Procedural Window Grid Canvas Texture Generator
 function createWindowTexture(litColor = '#ffea9f', unlitColor = '#151d28', rows = 16, cols = 8) {
   const canvas = document.createElement('canvas');
@@ -51,6 +54,8 @@ function createWindowTexture(litColor = '#ffea9f', unlitColor = '#151d28', rows 
 const windowTexDay = createWindowTexture('#ffe8a3', '#1e293b');
 const windowTexWarm = createWindowTexture('#ffd275', '#16202c');
 const windowTexCyber = createWindowTexture('#00d4aa', '#0f172a');
+const windowTexNoida = createWindowTexture('#ff9f43', '#1b2230', 20, 10);
+const windowTexDelhi = createWindowTexture('#ffcc22', '#2c1e16', 12, 6);
 
 /**
  * Builds the complete organic 4-Region NCR World with authentic Indian street culture,
@@ -112,19 +117,23 @@ export function buildDistrict(scene) {
 
   // 5. District Architecture & Detailed Windowed Facades
   buildAllDistrictBuildings(scene, colliders);
+  buildCyberSpirePlaza(scene, colliders);
   buildDelhiMonuments(scene, colliders);
   buildYamunaCableStayedBridge(scene);
   buildNoidaTechParks(scene, colliders);
+  buildNoidaGatewaySpire(scene, colliders);
   buildSector143InnovationCenter(scene, colliders);
 
   // 6. Authentic Indian Street Culture & Roadside Details
   buildIndianStreetCulture(scene, colliders);
+  buildDelhiBazaar(scene, colliders);
 
   // 7. Props: Metro Viaduct with Art Murals, Gantries, Streetlights, Organic Trees
   buildMetroViaduct(scene);
   buildHighwaySigns(scene);
   buildStreetlights(scene);
   buildLushIndianTrees(scene);
+  buildUtilityPoles(scene);
   buildIndustrialSilos(scene, colliders);
 
   // 8. World Boundaries
@@ -166,6 +175,10 @@ export function buildDistrict(scene) {
       ambient.intensity = 0.45;
       sun.color.setHex(0x486499);
       sun.intensity = 0.4;
+
+      reflectionPlanes.forEach((p) => {
+        p.material.opacity = p.material.color.getHex() === 0xffcc44 ? 0.38 : 0.28;
+      });
     } else if (mode === LIGHTING_MODES.SUNSET) {
       scene.background = new THREE.Color(0x4a2638);
       scene.fog.color = new THREE.Color(0x4a2638);
@@ -176,6 +189,10 @@ export function buildDistrict(scene) {
       ambient.intensity = 0.65;
       sun.color.setHex(0xffb04a);
       sun.intensity = 1.4;
+
+      reflectionPlanes.forEach((p) => {
+        p.material.opacity = p.material.color.getHex() === 0xffcc44 ? 0.22 : 0.14;
+      });
     } else {
       scene.background = new THREE.Color(0x354466);
       scene.fog.color = new THREE.Color(0x354466);
@@ -186,6 +203,42 @@ export function buildDistrict(scene) {
       ambient.intensity = 0.7;
       sun.color.setHex(0xffe2b8);
       sun.intensity = 1.6;
+
+      reflectionPlanes.forEach((p) => {
+        p.material.opacity = 0.0;
+      });
+    }
+  }
+
+  function setWeatherMode(mode) {
+    if (mode === 'rain') {
+      roadMaterials.forEach((m) => {
+        m.color.setHex(0x13151c); // Darker wet asphalt
+        m.roughness = 0.15; // Slick reflective surface
+        m.metalness = 0.55; // Specular wet highlights
+      });
+      reflectionPlanes.forEach((p) => {
+        p.material.opacity = p.material.color.getHex() === 0xffcc44 ? 0.45 : 0.35;
+      });
+    } else {
+      roadMaterials.forEach((m) => {
+        m.color.setHex(ASPHALT);
+        m.roughness = 0.95;
+        m.metalness = 0.05;
+      });
+      if (currentLighting === LIGHTING_MODES.NIGHT) {
+        reflectionPlanes.forEach((p) => {
+          p.material.opacity = p.material.color.getHex() === 0xffcc44 ? 0.38 : 0.28;
+        });
+      } else if (currentLighting === LIGHTING_MODES.SUNSET) {
+        reflectionPlanes.forEach((p) => {
+          p.material.opacity = p.material.color.getHex() === 0xffcc44 ? 0.22 : 0.14;
+        });
+      } else {
+        reflectionPlanes.forEach((p) => {
+          p.material.opacity = 0.0;
+        });
+      }
     }
   }
 
@@ -193,6 +246,7 @@ export function buildDistrict(scene) {
     colliders,
     setDayNight,
     getCurrentMode: () => currentLighting,
+    setWeatherMode,
   };
 }
 
@@ -267,16 +321,22 @@ function buildRoadSegment(scene, seg, colliders) {
     polygonOffsetFactor: -4,
     polygonOffsetUnits: -4,
   });
+  roadMaterials.push(roadMat);
+
   const road = new THREE.Mesh(new THREE.PlaneGeometry(seg.width, length), roadMat);
   road.rotation.x = -Math.PI / 2;
   road.rotation.z = -angle;
   road.position.set(midX, 0.05 + lift, midZ);
   scene.add(road);
 
-  // Sidewalk Curbs (Left & Right)
-  const curbMat = new THREE.MeshStandardMaterial({ color: CURB, roughness: 0.9 });
-  const curbThickness = 0.8;
-  const curbHeight = 0.25;
+  // Sidewalk Curbs or Concrete Highway Barriers (Left & Right)
+  const isBarrier = seg.id.includes('expressway') || seg.id.includes('boulevard') || seg.id.includes('bridge');
+  const curbMat = new THREE.MeshStandardMaterial({ 
+    color: isBarrier ? 0x8a94a6 : CURB, 
+    roughness: isBarrier ? 0.75 : 0.9 
+  });
+  const curbThickness = isBarrier ? 0.95 : 0.8;
+  const curbHeight = isBarrier ? 1.25 : 0.25;
 
   const perpX = Math.cos(angle) * (seg.width / 2 + curbThickness / 2);
   const perpZ = -Math.sin(angle) * (seg.width / 2 + curbThickness / 2);
@@ -290,6 +350,15 @@ function buildRoadSegment(scene, seg, colliders) {
   curbR.position.set(midX + perpX, curbHeight / 2 + lift, midZ + perpZ);
   curbR.rotation.y = angle;
   scene.add(curbR);
+
+  // If it's a barrier road (expressway/boulevard/bridge), add a center median guardrail divider barrier
+  if (isBarrier) {
+    const centerBarrierMat = new THREE.MeshStandardMaterial({ color: 0x718096, roughness: 0.6 });
+    const centerBarrier = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.25, length), centerBarrierMat);
+    centerBarrier.position.set(midX, 1.25 / 2 + lift, midZ);
+    centerBarrier.rotation.y = angle;
+    scene.add(centerBarrier);
+  }
 
   // Road Markings (Solid Outer White Lines & Broken Yellow Median)
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -502,6 +571,38 @@ function buildYamunaCableStayedBridge(scene) {
     ghat.position.set(0, 0.6, z);
     scene.add(ghat);
   }
+
+  // City light reflections on the water (Step 9)
+  const reflectionMat = new THREE.MeshBasicMaterial({
+    color: 0xffcc44,
+    transparent: true,
+    opacity: 0.0, // Fades in at sunset/night
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const reflectionMatBlue = new THREE.MeshBasicMaterial({
+    color: 0x44a8ff,
+    transparent: true,
+    opacity: 0.0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const reflectionCoords = [
+    { x: -140, z: -910, w: 22, d: 290, mat: reflectionMat },
+    { x: -50, z: -910, w: 18, d: 290, mat: reflectionMatBlue },
+    { x: 50, z: -910, w: 18, d: 290, mat: reflectionMat },
+    { x: 140, z: -910, w: 22, d: 290, mat: reflectionMatBlue }
+  ];
+
+  reflectionCoords.forEach((rf) => {
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(rf.w, rf.d), rf.mat);
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.set(rf.x, 0.015, rf.z);
+    scene.add(plane);
+    reflectionPlanes.push(plane);
+  });
 }
 
 // --- Noida Expressway Tech Parks & Sector 143 ---------------------------------
@@ -791,6 +892,9 @@ function buildLushIndianTrees(scene) {
       tree.add(canopy3);
     }
 
+    const scale = 0.82 + Math.random() * 0.38;
+    tree.scale.set(scale, scale, scale);
+    tree.rotation.y = Math.random() * Math.PI * 2;
     tree.position.set(tp.x, 0, tp.z);
     scene.add(tree);
   });
@@ -931,4 +1035,293 @@ function buildStreetlights(scene) {
     group.position.set(p.x, 0, p.z);
     scene.add(group);
   });
+}
+
+function buildCyberSpirePlaza(scene, colliders) {
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x0c1e30,
+    map: windowTexCyber,
+    roughness: 0.15,
+    metalness: 0.85
+  });
+
+  const neonBlue = 0x00d4aa;
+  const crownMat = new THREE.MeshStandardMaterial({
+    color: neonBlue,
+    emissive: neonBlue,
+    emissiveIntensity: 1.2
+  });
+
+  const bridgeMat = new THREE.MeshStandardMaterial({
+    color: 0x475569,
+    roughness: 0.4,
+    metalness: 0.7
+  });
+
+  // Tower A (Left)
+  const towerA = new THREE.Mesh(new THREE.BoxGeometry(16, 115, 16), glassMat);
+  towerA.position.set(-132, 57.5, 0);
+  towerA.castShadow = true;
+  scene.add(towerA);
+
+  // Tower B (Right)
+  const towerB = new THREE.Mesh(new THREE.BoxGeometry(16, 115, 16), glassMat);
+  towerB.position.set(-108, 57.5, 0);
+  towerB.castShadow = true;
+  scene.add(towerB);
+
+  // High-Altitude Skybridge connecting Tower A and Tower B
+  const skybridge = new THREE.Mesh(new THREE.BoxGeometry(10, 4.5, 4.0), bridgeMat);
+  skybridge.position.set(-120, 85, 0);
+  scene.add(skybridge);
+
+  // Glowing skybridge outlines/windows
+  const bridgeWindows = new THREE.Mesh(
+    new THREE.BoxGeometry(9.8, 2.2, 4.2),
+    crownMat
+  );
+  bridgeWindows.position.set(-120, 85, 0);
+  scene.add(bridgeWindows);
+
+  // Glowing Crowns
+  const crownA = new THREE.Mesh(new THREE.BoxGeometry(16.5, 2.0, 16.5), crownMat);
+  crownA.position.set(-132, 115.5, 0);
+  scene.add(crownA);
+
+  const crownB = new THREE.Mesh(new THREE.BoxGeometry(16.5, 2.0, 16.5), crownMat);
+  crownB.position.set(-108, 115.5, 0);
+  scene.add(crownB);
+
+  // Large digital facade/ad board on Tower B facing Noida/Delhi direction (southward)
+  const billboardBack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 36, 10), bridgeMat);
+  billboardBack.position.set(-99.3, 75, 0);
+  scene.add(billboardBack);
+
+  const billboardFace = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 34, 9),
+    new THREE.MeshStandardMaterial({
+      color: 0x00ff88,
+      emissive: 0x00cc66,
+      emissiveIntensity: 1.0,
+      roughness: 0.1
+    })
+  );
+  billboardFace.position.set(-99.1, 75, 0);
+  scene.add(billboardFace);
+
+  colliders.push({ minX: -140, maxX: -124, minZ: -8, maxZ: 8 });
+  colliders.push({ minX: -116, maxX: -100, minZ: -8, maxZ: 8 });
+}
+
+function buildNoidaGatewaySpire(scene, colliders) {
+  const concreteMat = new THREE.MeshStandardMaterial({
+    color: 0x1f2937,
+    map: windowTexNoida,
+    roughness: 0.5,
+    metalness: 0.5
+  });
+
+  const orangeBeacon = 0xff6b00;
+  const beaconMat = new THREE.MeshStandardMaterial({
+    color: orangeBeacon,
+    emissive: orangeBeacon,
+    emissiveIntensity: 1.3
+  });
+
+  // Base Tier
+  const base = new THREE.Mesh(new THREE.BoxGeometry(26, 42, 26), concreteMat);
+  base.position.set(-120, 21, -1250);
+  base.castShadow = true;
+  scene.add(base);
+
+  // Mid Tier
+  const mid = new THREE.Mesh(new THREE.BoxGeometry(20, 42, 20), concreteMat);
+  mid.position.set(-120, 63, -1250);
+  mid.castShadow = true;
+  scene.add(mid);
+
+  // Top Tier
+  const top = new THREE.Mesh(new THREE.BoxGeometry(14, 42, 14), concreteMat);
+  top.position.set(-120, 105, -1250);
+  top.castShadow = true;
+  scene.add(top);
+
+  // Orange Glowing Beacon
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.6, 15, 8), beaconMat);
+  beacon.position.set(-120, 131.5, -1250);
+  scene.add(beacon);
+
+  const crown = new THREE.Mesh(new THREE.BoxGeometry(14.5, 1.5, 14.5), beaconMat);
+  crown.position.set(-120, 124.5, -1250);
+  scene.add(crown);
+
+  const signBack = new THREE.Mesh(
+    new THREE.BoxGeometry(10, 4, 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x111111 })
+  );
+  signBack.position.set(-106.8, 25, -1250);
+  scene.add(signBack);
+
+  const signText = new THREE.Mesh(
+    new THREE.BoxGeometry(9.6, 3.2, 0.1),
+    beaconMat
+  );
+  signText.position.set(-106.5, 25, -1250);
+  scene.add(signText);
+
+  colliders.push({ minX: -133, maxX: -107, minZ: -1263, maxZ: -1237 });
+}
+
+function buildDelhiBazaar(scene, colliders) {
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x5a3e2b, roughness: 0.95 });
+  const fabricColors = [0xe63946, 0x1d3557, 0x457b9d, 0x2a9d8f, 0xe9c46a];
+  const goldLight = 0xffd166;
+  const lanternMat = new THREE.MeshStandardMaterial({
+    color: goldLight,
+    emissive: goldLight,
+    emissiveIntensity: 1.5
+  });
+
+  const shopLocations = [
+    { x: -55, z: -340, rot: 0, title: 'DELHI SPICES' },
+    { x: -35, z: -340, rot: 0, title: 'SWEET SHACK' },
+    { x: 35, z: -340, rot: 0, title: 'AUTO SPARES' },
+    { x: 55, z: -340, rot: 0, title: 'NCR TOYS' },
+    { x: -75, z: -360, rot: Math.PI, title: 'CHAI CORNER' },
+    { x: -25, z: -360, rot: Math.PI, title: 'TASTY KEBABS' },
+    { x: 25, z: -360, rot: Math.PI, title: 'FRUIT CART' },
+    { x: 75, z: -360, rot: Math.PI, title: 'SARI BAZAAR' },
+  ];
+
+  shopLocations.forEach((s, idx) => {
+    const shop = new THREE.Group();
+
+    const counter = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.2, 2.2), woodMat);
+    counter.position.set(0, 0.6, 0);
+    shop.add(counter);
+
+    const color = fabricColors[idx % fabricColors.length];
+    const awningMat = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.15, 2.8), awningMat);
+    canopy.position.set(0, 2.5, 0);
+    shop.add(canopy);
+
+    const ironMat = new THREE.MeshStandardMaterial({ color: 0x718096, roughness: 0.5 });
+    for (const px of [-2.3, 2.3]) {
+      for (const pz of [-1.2, 1.2]) {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.5, 6), ironMat);
+        pole.position.set(px, 1.25, pz);
+        shop.add(pole);
+      }
+    }
+
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), lanternMat);
+    bulb.position.set(0, 2.1, 0.5);
+    shop.add(bulb);
+
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4), ironMat);
+    cord.position.set(0, 2.35, 0.5);
+    shop.add(cord);
+
+    const signBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 0.6, 0.15),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
+    );
+    signBoard.position.set(0, 2.85, 1.1);
+    shop.add(signBoard);
+
+    shop.position.set(s.x, 0, s.z);
+    shop.rotation.y = s.rot;
+    scene.add(shop);
+
+    colliders.push({ minX: s.x - 2.8, maxX: s.x + 2.8, minZ: s.z - 1.8, maxZ: s.z + 1.8 });
+  });
+
+  const scooterSpots = [
+    { x: -45, z: -343, rot: 0.2 },
+    { x: -43, z: -343, rot: -0.1 },
+    { x: -15, z: -343, rot: 0.15 },
+    { x: 12, z: -343, rot: -0.2 },
+    { x: 45, z: -357, rot: Math.PI + 0.1 },
+    { x: 48, z: -357, rot: Math.PI - 0.25 },
+  ];
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.6 });
+  const tireMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+
+  scooterSpots.forEach((spot) => {
+    const scooter = new THREE.Group();
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 1.4), bodyMat);
+    body.position.set(0, 0.45, 0);
+    scooter.add(body);
+
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.12, 0.8), tireMat);
+    seat.position.set(0, 0.8, -0.1);
+    scooter.add(seat);
+
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.08, 0.08), tireMat);
+    bar.position.set(0, 0.95, 0.4);
+    scooter.add(bar);
+
+    for (const wz of [-0.5, 0.5]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.12, 8), tireMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(0, 0.22, wz);
+      scooter.add(wheel);
+    }
+
+    scooter.position.set(spot.x, 0, spot.z);
+    scooter.rotation.y = spot.rot;
+    scene.add(scooter);
+
+    colliders.push({ minX: spot.x - 0.4, maxX: spot.x + 0.4, minZ: spot.z - 0.8, maxZ: spot.z + 0.8 });
+  });
+}
+
+function buildUtilityPoles(scene) {
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x4a4f58, roughness: 0.8 });
+  const beamMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+
+  for (let z = -700; z <= -100; z += 65) {
+    const groupL = new THREE.Group();
+    const poleL = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 9.0, 6), poleMat);
+    poleL.position.y = 4.5;
+    groupL.add(poleL);
+
+    const beamL = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 0.12), beamMat);
+    beamL.position.set(0, 8.5, 0);
+    groupL.add(beamL);
+
+    groupL.position.set(-14.5, 0, z);
+    scene.add(groupL);
+
+    const groupR = new THREE.Group();
+    const poleR = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 9.0, 6), poleMat);
+    poleR.position.y = 4.5;
+    groupR.add(poleR);
+
+    const beamR = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 0.12), beamMat);
+    beamR.position.set(0, 8.5, 0);
+    groupR.add(beamR);
+
+    groupR.position.set(14.5, 0, z);
+    scene.add(groupR);
+
+    if (z > -700) {
+      for (const offset of [-0.6, 0.6]) {
+        const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 65.1), wireMat);
+        wire.rotation.x = Math.PI / 2;
+        wire.position.set(-14.5 + offset, 8.45, z - 32.5);
+        scene.add(wire);
+      }
+      for (const offset of [-0.6, 0.6]) {
+        const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 65.1), wireMat);
+        wire.rotation.x = Math.PI / 2;
+        wire.position.set(14.5 + offset, 8.45, z - 32.5);
+        scene.add(wire);
+      }
+    }
+  }
 }
