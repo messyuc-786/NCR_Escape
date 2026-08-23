@@ -9,7 +9,7 @@ import { PhotoMode } from '/js/core/photoMode.js';
 import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
 import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
 import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
-import { createChaseCamera, updateChaseCamera, snapChaseCamera } from '/js/core/camera.js';
+import { createChaseCamera, updateChaseCamera, snapChaseCamera, cycleCameraMode, getCurrentCameraMode } from '/js/core/camera.js';
 import { updateHUD } from '/js/ui/hud.js';
 import { Minimap } from '/js/ui/minimap.js';
 import { spawnPoint } from '/js/roads/network.js';
@@ -20,6 +20,13 @@ import { AchievementSystem } from '/js/progression/achievementSystem.js';
 import { GameUI } from '/js/ui/gameUI.js';
 import { audioEngine } from '/js/audio/audioEngine.js';
 
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 const canvas = document.getElementById('game-canvas');
 const startBtn = document.getElementById('start-btn');
 const introOverlay = document.getElementById('intro-overlay');
@@ -27,6 +34,7 @@ const radioToggleBtn = document.getElementById('radio-toggle');
 const modeToggleBtn = document.getElementById('mode-toggle');
 const weatherToggleBtn = document.getElementById('weather-toggle');
 const audioToggleBtn = document.getElementById('audio-toggle');
+const cameraToggleBtn = document.getElementById('camera-toggle');
 const photoOpenBtn = document.getElementById('photo-open');
 const touchControls = document.getElementById('touch-controls');
 const garageOpenBtn = document.getElementById('garage-open');
@@ -65,33 +73,39 @@ let vehicle = progression.applyUpgrades(activeCarDef);
 
 let nitroFlameL = null;
 let nitroFlameR = null;
+let backfireFlame = null;
 
-function createNitroFlames() {
-  const flameMat = new THREE.MeshBasicMaterial({
-    color: 0x00ffff,
-    transparent: true,
-    opacity: 0.85,
-  });
+function createExhaustFlames() {
+  const nitroMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.85 });
+  const backfireMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.95 });
   const flameGeo = new THREE.ConeGeometry(0.12, 0.65, 8);
   flameGeo.rotateX(-Math.PI / 2);
 
-  const flameL = new THREE.Mesh(flameGeo, flameMat);
+  const flameL = new THREE.Mesh(flameGeo, nitroMat);
   flameL.position.set(0.45, 0.35, -2.35);
   flameL.visible = false;
 
-  const flameR = new THREE.Mesh(flameGeo, flameMat);
+  const flameR = new THREE.Mesh(flameGeo, nitroMat);
   flameR.position.set(-0.45, 0.35, -2.35);
   flameR.visible = false;
 
-  return { flameL, flameR };
+  const bfGeo = new THREE.ConeGeometry(0.16, 0.45, 8);
+  bfGeo.rotateX(-Math.PI / 2);
+  const bfFlame = new THREE.Mesh(bfGeo, backfireMat);
+  bfFlame.position.set(0, 0.35, -2.3);
+  bfFlame.visible = false;
+
+  return { flameL, flameR, bfFlame };
 }
 
 let carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint);
-const flames = createNitroFlames();
-nitroFlameL = flames.flameL;
-nitroFlameR = flames.flameR;
+const exFlames = createExhaustFlames();
+nitroFlameL = exFlames.flameL;
+nitroFlameR = exFlames.flameR;
+backfireFlame = exFlames.bfFlame;
 carMesh.add(nitroFlameL);
 carMesh.add(nitroFlameR);
+carMesh.add(backfireFlame);
 scene.add(carMesh);
 
 function rebuildCarMesh() {
@@ -99,11 +113,13 @@ function rebuildCarMesh() {
   activeCarDef = progression.getSelectedVehicle();
   vehicle = progression.applyUpgrades(activeCarDef);
   carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint);
-  const newFlames = createNitroFlames();
-  nitroFlameL = newFlames.flameL;
-  nitroFlameR = newFlames.flameR;
+  const newEx = createExhaustFlames();
+  nitroFlameL = newEx.flameL;
+  nitroFlameR = newEx.flameR;
+  backfireFlame = newEx.bfFlame;
   carMesh.add(nitroFlameL);
   carMesh.add(nitroFlameR);
+  carMesh.add(backfireFlame);
   carMesh.position.set(carState.x, 0, carState.z);
   carMesh.rotation.y = carState.heading;
   scene.add(carMesh);
@@ -306,11 +322,19 @@ function updateDriftScore(dt, state, isHandbraking) {
   return isDrifting;
 }
 
-// --- Quick Toggles (Radio, Day/Night, Weather, Audio) ------------------------
+// --- Quick Toggles (Radio, Day/Night, Weather, Audio, Camera) ----------------
 if (radioToggleBtn) {
   radioToggleBtn.addEventListener('click', () => {
     const nextStn = radio.nextStation();
     radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
+  });
+}
+
+if (cameraToggleBtn) {
+  cameraToggleBtn.addEventListener('click', () => {
+    const nextCam = cycleCameraMode();
+    cameraToggleBtn.textContent = `🎥 ${nextCam.name}`;
+    snapChaseCamera(camera, carState);
   });
 }
 
@@ -344,6 +368,8 @@ initTouchControls();
 
 let running = false;
 let lastTime = performance.now();
+let lastThrottle = 0;
+let backfireTimeout = null;
 
 // Exposed for Playwright tests
 window.__DEBUG_SPEED = () => Math.abs(carState.speed);
@@ -406,6 +432,12 @@ function animate(now) {
       if (radioToggleBtn) radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
     }
 
+    if (consumePress('KeyC')) {
+      const nextCam = cycleCameraMode();
+      if (cameraToggleBtn) cameraToggleBtn.textContent = `🎥 ${nextCam.name}`;
+      snapChaseCamera(camera, carState);
+    }
+
     if (consumePress('KeyP')) {
       paused = true;
       photoMode.enter(carState);
@@ -414,6 +446,19 @@ function animate(now) {
 
     const interactPressed = consumePress('KeyE');
     const kmh = Math.abs(carState.speed) * 3.6;
+
+    // Exhaust backfire check on sudden deceleration
+    if (input.throttle === 0 && lastThrottle > 0.8 && kmh > 65) {
+      audioEngine.playBackfire();
+      if (backfireFlame) {
+        backfireFlame.visible = true;
+        if (backfireTimeout) clearTimeout(backfireTimeout);
+        backfireTimeout = setTimeout(() => {
+          if (backfireFlame) backfireFlame.visible = false;
+        }, 110);
+      }
+    }
+    lastThrottle = input.throttle;
 
     achievements.recordSpeed(kmh);
     achievements.recordDistrict(minimap.getDistrictName(carState.x, carState.z));

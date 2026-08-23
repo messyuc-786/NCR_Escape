@@ -241,6 +241,28 @@ class AudioEngine {
     } catch {}
   }
 
+  playBackfire() {
+    if (!this.initialized || !this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(35, now + 0.07);
+
+      gain.gain.setValueAtTime(0.32, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch {}
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.masterGain && this.ctx) {
