@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0d1117" />
-  <title>NCR ESCAPE — Open World Indian Street Racing</title>
-  <link rel="icon" href="/favicon.ico" />
+  <title>NCR ESCAPE — Open-World Indian Driving & Racing</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <div id="app">
+  <div id="game-container">
+    <!-- Main 3D Canvas -->
     <canvas id="game-canvas"></canvas>
 
     <!-- Minimap Radar -->
@@ -27,11 +26,19 @@
       <div id="rpm-bar-bg">
         <div id="rpm-bar-fill"></div>
       </div>
+      <div id="nitro-bar-bg" title="Nitro Boost Gauge">
+        <div id="nitro-bar-fill"></div>
+      </div>
     </div>
 
     <!-- Drift Score Notification -->
     <div id="drift-hud" class="hidden">
       <div id="drift-score">DRIFT <strong>+0</strong> <span class="d-mult">x1.0</span></div>
+    </div>
+
+    <!-- Near Miss Notification -->
+    <div id="nearmiss-hud" class="hidden">
+      <div id="nearmiss-text">⚡ NEAR MISS +₹50</div>
     </div>
 
     <!-- Speed Trap Radar Notification -->
@@ -51,6 +58,7 @@
     <div id="topbar">
       <div id="wallet"></div>
       <div class="topbar-actions">
+        <button id="radio-toggle" title="Cycle Radio Stations">📻 RADIO: OFF</button>
         <button id="mode-toggle" title="Toggle Day/Night Mode">☀️ DAY</button>
         <button id="weather-toggle" title="Toggle Weather Mode">☀️ CLEAR</button>
         <button id="audio-toggle" title="Toggle Audio">🔊 SOUND</button>
@@ -73,29 +81,51 @@
       <div id="race-timer">0.00</div>
       <div class="race-hud-meta">
         <div id="race-checkpoint">CP 1 / 4</div>
-        <div id="race-position">POS 1 / 3</div>
+        <div id="race-lap" class="hidden">LAP 1 / 2</div>
+        <div id="race-position" class="hidden">POS 1 / 4</div>
       </div>
     </div>
 
-    <!-- Results Modal -->
-    <div id="results" class="hidden">
-      <div class="panel">
-        <div class="panel-title">RACE COMPLETE</div>
-        <div id="results-body"></div>
-        <button id="results-close" class="primary-btn">CONTINUE</button>
+    <!-- Race Finish Results Overlay -->
+    <div id="results-overlay" class="hidden">
+      <div class="results-card">
+        <div class="results-badge" id="results-badge">VICTORY</div>
+        <h2 id="results-title">RACE COMPLETED</h2>
+        <div class="results-time" id="results-time">Time: 0.00s</div>
+        <div class="results-rewards" id="results-rewards"></div>
+        <button id="results-close" class="primary-btn">CONTINUE CRUISE</button>
       </div>
     </div>
 
-    <!-- Garage Modal -->
-    <div id="garage" class="hidden">
-      <div class="panel garage-panel">
-        <div class="panel-title">NCR CUSTOMS & GARAGE</div>
-        <div id="garage-body"></div>
-        <button id="garage-close" class="primary-btn">BACK TO WORLD</button>
+    <!-- Garage & Upgrade Menu Overlay -->
+    <div id="garage-overlay" class="hidden">
+      <div class="garage-panel">
+        <div class="garage-header">
+          <h2>NCR CUSTOMS & TUNING GARAGE</h2>
+          <button id="garage-close" class="close-btn">&times;</button>
+        </div>
+
+        <div class="garage-tabs">
+          <button class="g-tab active" data-tab="cars">VEHICLE ROSTER</button>
+          <button class="g-tab" data-tab="upgrades">PERFORMANCE TUNING</button>
+          <button class="g-tab" data-tab="paint">CUSTOM PAINT</button>
+        </div>
+
+        <div class="garage-content">
+          <div id="tab-cars" class="g-tab-pane active">
+            <div id="vehicle-grid" class="vehicle-grid"></div>
+          </div>
+          <div id="tab-upgrades" class="g-tab-pane">
+            <div id="upgrade-list" class="upgrade-list"></div>
+          </div>
+          <div id="tab-paint" class="g-tab-pane">
+            <div id="paint-grid" class="paint-grid"></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Mobile Virtual Touch Controls -->
+    <!-- Multi-Touch Virtual Controls for Smartphones / Tablets -->
     <div id="touch-controls" class="hidden">
       <div class="touch-left-cluster">
         <button id="btn-steer-left" class="touch-btn touch-steer" aria-label="Steer Left">◀</button>
@@ -106,6 +136,7 @@
         <button id="btn-reset" class="touch-btn touch-action" aria-label="Reset Car">↺ RESET</button>
       </div>
       <div class="touch-right-cluster">
+        <button id="btn-nitro" class="touch-btn touch-nitro" aria-label="Nitro Boost">🚀 NITRO</button>
         <button id="btn-handbrake" class="touch-btn touch-drift" aria-label="Handbrake / Drift">DRIFT</button>
         <div class="touch-pedals">
           <button id="btn-brake" class="touch-btn touch-pedal pedal-brake" aria-label="Brake / Reverse">BRAKE</button>
@@ -125,12 +156,12 @@
           <div>
             <strong>Desktop Controls</strong>
             <span><strong>W / ↑</strong> Gas &nbsp; <strong>S / ↓</strong> Brake/Reverse</span>
-            <span><strong>A / D / ← →</strong> Steer &nbsp; <strong>SPACE</strong> Drift</span>
+            <span><strong>A / D / ← →</strong> Steer &nbsp; <strong>SPACE</strong> Drift &nbsp; <strong>SHIFT/N</strong> Nitro</span>
             <span><strong>E</strong> Event &nbsp; <strong>R</strong> Reset &nbsp; <strong>G</strong> Garage</span>
           </div>
           <div>
             <strong>Phone / Tablet</strong>
-            <span>Virtual on-screen touch controls with multi-touch steering, pedals & drift button</span>
+            <span>Virtual on-screen touch controls with multi-touch steering, pedals, nitro & drift button</span>
           </div>
         </div>
 

@@ -11,6 +11,7 @@ const touchState = {
   steerLeft: false,
   steerRight: false,
   handbrake: false,
+  nitro: false,
   interact: false,
   reset: false,
 };
@@ -22,7 +23,7 @@ window.addEventListener('keydown', (e) => {
 
 window.addEventListener('keyup', (e) => keys.delete(e.code));
 
-/** True exactly once per physical press of `code` (e.g. 'KeyE', 'KeyR', 'KeyG', 'KeyM', 'KeyN', 'KeyC'). */
+/** True exactly once per physical press of `code` (e.g. 'KeyE', 'KeyR', 'KeyM', 'KeyG', 'KeyN', 'KeyC'). */
 export function consumePress(code) {
   if (pressedOnce.has(code)) {
     pressedOnce.delete(code);
@@ -100,6 +101,11 @@ export function initTouchControls() {
     () => { touchState.handbrake = false; }
   );
 
+  bindTouchButton('btn-nitro', 
+    () => { touchState.nitro = true; }, 
+    () => { touchState.nitro = false; }
+  );
+
   bindTouchButton('btn-interact', 
     () => { triggerPress('KeyE'); }, 
     () => {}
@@ -119,6 +125,7 @@ export function readInput() {
   if (keys.has('KeyA') || keys.has('ArrowLeft')) kbSteer += 1;
   if (keys.has('KeyD') || keys.has('ArrowRight')) kbSteer -= 1;
   const kbHandbrake = keys.has('Space');
+  const kbNitro = keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyN');
   const kbReset = keys.has('KeyR') || consumePress('KeyR');
 
   // Touch inputs
@@ -131,7 +138,8 @@ export function readInput() {
   const brake = Math.max(kbBrake, touchState.brake);
   const steer = kbSteer !== 0 ? kbSteer : touchSteer;
   const handbrake = kbHandbrake || touchState.handbrake;
+  const nitro = kbNitro || touchState.nitro;
   const reset = kbReset || touchState.reset;
 
-  return { throttle, brake, steer, handbrake, reset };
+  return { throttle, brake, steer, handbrake, nitro, reset };
 }

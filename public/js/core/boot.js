@@ -3,6 +3,7 @@ import { buildDistrict, LIGHTING_MODES } from '/js/world/district.js';
 import { WeatherSystem, WEATHER_TYPES } from '/js/world/weather.js';
 import { SpeedTrapSystem } from '/js/world/speedTraps.js';
 import { PoliceSystem } from '/js/traffic/policeSystem.js';
+import { RadioSystem } from '/js/audio/radioSystem.js';
 import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
 import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
 import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
@@ -19,19 +20,22 @@ import { audioEngine } from '/js/audio/audioEngine.js';
 const canvas = document.getElementById('game-canvas');
 const startBtn = document.getElementById('start-btn');
 const introOverlay = document.getElementById('intro-overlay');
+const radioToggleBtn = document.getElementById('radio-toggle');
 const modeToggleBtn = document.getElementById('mode-toggle');
 const weatherToggleBtn = document.getElementById('weather-toggle');
 const audioToggleBtn = document.getElementById('audio-toggle');
 const touchToggleBtn = document.getElementById('touch-toggle');
 const touchControls = document.getElementById('touch-controls');
+const garageOpenBtn = document.getElementById('garage-open');
 
-// Speed trap & Police HUD elements
+// Speed trap, Police & Near-miss HUD elements
 const speedtrapHud = document.getElementById('speedtrap-hud');
 const speedtrapVal = document.getElementById('speedtrap-val');
 const speedtrapReward = document.getElementById('speedtrap-reward');
 const policeHud = document.getElementById('police-hud');
 const policeStars = document.getElementById('police-stars');
 const policeStatus = document.getElementById('police-status');
+const nearmissHud = document.getElementById('nearmiss-hud');
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -44,13 +48,42 @@ scene.background = new THREE.Color(0x2a3550);
 const camera = createChaseCamera(window.innerWidth / window.innerHeight);
 const { colliders, setDayNight, getCurrentMode } = buildDistrict(scene);
 const weather = new WeatherSystem(scene);
+const radio = new RadioSystem(audioEngine);
 
 // --- Progression + Garage + Vehicles -----------------------------------------
 const progression = new Progression();
 let activeCarDef = progression.getSelectedVehicle();
 let vehicle = progression.applyUpgrades(activeCarDef);
 
+let nitroFlameL = null;
+let nitroFlameR = null;
+
+function createNitroFlames() {
+  const flameMat = new THREE.MeshBasicMaterial({
+    color: 0x00ffff,
+    transparent: true,
+    opacity: 0.85,
+  });
+  const flameGeo = new THREE.ConeGeometry(0.12, 0.65, 8);
+  flameGeo.rotateX(-Math.PI / 2);
+
+  const flameL = new THREE.Mesh(flameGeo, flameMat);
+  flameL.position.set(0.45, 0.35, -2.35);
+  flameL.visible = false;
+
+  const flameR = new THREE.Mesh(flameGeo, flameMat);
+  flameR.position.set(-0.45, 0.35, -2.35);
+  flameR.visible = false;
+
+  return { flameL, flameR };
+}
+
 let carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint);
+const flames = createNitroFlames();
+nitroFlameL = flames.flameL;
+nitroFlameR = flames.flameR;
+carMesh.add(nitroFlameL);
+carMesh.add(nitroFlameR);
 scene.add(carMesh);
 
 function rebuildCarMesh() {
@@ -58,6 +91,11 @@ function rebuildCarMesh() {
   activeCarDef = progression.getSelectedVehicle();
   vehicle = progression.applyUpgrades(activeCarDef);
   carMesh = buildVehicleMesh(activeCarDef, progression.data.selectedPaint);
+  const newFlames = createNitroFlames();
+  nitroFlameL = newFlames.flameL;
+  nitroFlameR = newFlames.flameR;
+  carMesh.add(nitroFlameL);
+  carMesh.add(nitroFlameR);
   carMesh.position.set(carState.x, 0, carState.z);
   carMesh.rotation.y = carState.heading;
   scene.add(carMesh);
@@ -88,10 +126,12 @@ const ui = new GameUI(
 );
 
 ui.updateWallet();
-document.getElementById('garage-open').addEventListener('click', () => {
-  paused = true;
-  ui.openGarage();
-});
+if (garageOpenBtn) {
+  garageOpenBtn.addEventListener('click', () => {
+    paused = true;
+    ui.openGarage();
+  });
+}
 
 // --- Racing -----------------------------------------------------------------
 const race = new RaceSystem(scene, (result) => {
@@ -108,6 +148,8 @@ ui.onResultsClosed = () => {
 
 // --- Police Pursuit & Heat System -------------------------------------------
 let speedtrapTimeout = null;
+let nearmissTimeout = null;
+
 const police = new PoliceSystem(
   scene,
   ({ fine }) => {
@@ -162,6 +204,38 @@ snapChaseCamera(camera, carState);
 traffic.seed(carState.x, carState.z);
 traffic.update(0.016, carState.x, carState.z);
 
+// --- Near-Miss Traffic Bonus Detection ---------------------------------------
+let lastNearMissTime = 0;
+
+function checkNearMisses(state, trafficPositions) {
+  const kmh = Math.abs(state.speed) * 3.6;
+  if (kmh < 58) return;
+
+  const now = performance.now();
+  if (now - lastNearMissTime < 1500) return; // cooldown between near misses
+
+  for (const t of trafficPositions) {
+    if (t.x === undefined) continue;
+    const dist = Math.hypot(state.x - t.x, state.z - t.z);
+    // Near miss window: close enough without colliding
+    if (dist > 2.2 && dist < 3.6) {
+      lastNearMissTime = now;
+      state.nitro = Math.min(100, state.nitro + 18);
+      progression.awardDrift(1250); // grants +₹50 bonus
+      ui.updateWallet();
+
+      if (nearmissHud) {
+        nearmissHud.classList.remove('hidden');
+        if (nearmissTimeout) clearTimeout(nearmissTimeout);
+        nearmissTimeout = setTimeout(() => {
+          nearmissHud.classList.add('hidden');
+        }, 1200);
+      }
+      break;
+    }
+  }
+}
+
 // --- Drift Scoring System ---------------------------------------------------
 let driftScore = 0;
 let driftMultiplier = 1.0;
@@ -183,6 +257,7 @@ function updateDriftScore(dt, state, isHandbraking) {
     if (driftScore > 0 && performance.now() - lastDriftEnd > 700) {
       if (driftScore > 50) {
         progression.awardDrift(driftScore);
+        state.nitro = Math.min(100, state.nitro + 15);
         ui.updateWallet();
       }
       driftScore = 0;
@@ -195,7 +270,14 @@ function updateDriftScore(dt, state, isHandbraking) {
   return isDrifting;
 }
 
-// --- Quick Toggles (Day/Night, Weather, Audio, Touch) ------------------------
+// --- Quick Toggles (Radio, Day/Night, Weather, Audio, Touch) ----------------
+if (radioToggleBtn) {
+  radioToggleBtn.addEventListener('click', () => {
+    const nextStn = radio.nextStation();
+    radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
+  });
+}
+
 if (modeToggleBtn) {
   modeToggleBtn.addEventListener('click', () => {
     const cur = getCurrentMode();
@@ -282,6 +364,11 @@ function animate(now) {
     const input = readInput();
     if (input.reset) resetCar();
 
+    if (consumePress('KeyM')) {
+      const nextStn = radio.nextStation();
+      if (radioToggleBtn) radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
+    }
+
     const interactPressed = consumePress('KeyE');
     const kmh = Math.abs(carState.speed) * 3.6;
 
@@ -290,6 +377,7 @@ function animate(now) {
     weather.update(dt, carState.x, carState.z);
     speedTraps.update(dt, carState.x, carState.z, kmh);
     police.update(dt, carState.x, carState.z, kmh);
+    checkNearMisses(carState, traffic.getPositions());
 
     // Update Police Pursuit HUD
     if (police.heat > 0 && policeHud) {
@@ -337,12 +425,21 @@ function animate(now) {
     stepCarPhysics(
       carState,
       frozen
-        ? { throttle: 0, brake: 0, steer: 0, handbrake: false }
-        : { throttle: input.throttle, brake: input.brake, steer: input.steer, handbrake: input.handbrake },
+        ? { throttle: 0, brake: 0, steer: 0, handbrake: false, nitro: false }
+        : { throttle: input.throttle, brake: input.brake, steer: input.steer, handbrake: input.handbrake, nitro: input.nitro },
       effectiveVehicle,
       dt,
       frameColliders
     );
+
+    // Nitro exhaust flame visibility & camera FOV push
+    if (nitroFlameL && nitroFlameR) {
+      nitroFlameL.visible = carState.isBoosting;
+      nitroFlameR.visible = carState.isBoosting;
+    }
+    const targetFov = carState.isBoosting ? 67 : 60;
+    camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 6);
+    camera.updateProjectionMatrix();
 
     // Impact sound check and police heat trigger on severe collision
     if (Math.abs(speedBeforeStep) > 10 && Math.abs(carState.speed) < Math.abs(speedBeforeStep) * 0.7) {
@@ -376,11 +473,13 @@ function animate(now) {
   renderer.render(scene, camera);
 }
 
-startBtn.addEventListener('click', () => {
-  introOverlay.classList.add('hidden');
-  audioEngine.unlock();
-  running = true;
-});
+if (startBtn) {
+  startBtn.addEventListener('click', () => {
+    if (introOverlay) introOverlay.classList.add('hidden');
+    audioEngine.unlock();
+    running = true;
+  });
+}
 
 window.addEventListener('touchstart', () => audioEngine.unlock(), { once: true, passive: true });
 window.addEventListener('click', () => audioEngine.unlock(), { once: true, passive: true });

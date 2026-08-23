@@ -21,28 +21,33 @@ export class GameUI {
     this.raceTimer = el('race-timer');
     this.raceCheckpoint = el('race-checkpoint');
     this.racePosition = el('race-position');
-    this.results = el('results');
-    this.resultsBody = el('results-body');
-    this.garage = el('garage');
-    this.garageBody = el('garage-body');
+    this.results = el('results-overlay') || el('results');
+    this.resultsBody = el('results-rewards') || el('results-body');
+    this.garage = el('garage-overlay') || el('garage');
+    this.garageBody = el('tab-cars') || el('garage-body');
     this.walletEl = el('wallet');
     this.driftHud = el('drift-hud');
     this.driftScoreEl = el('drift-score');
 
-    el('results-close').addEventListener('click', () => {
-      this.results.classList.add('hidden');
-      if (this.onResultsClosed) this.onResultsClosed();
-    });
+    const resultsCloseBtn = el('results-dismiss') || el('results-close');
+    if (resultsCloseBtn) {
+      resultsCloseBtn.addEventListener('click', () => {
+        if (this.results) this.results.classList.add('hidden');
+        if (this.onResultsClosed) this.onResultsClosed();
+      });
+    }
 
-    el('garage-close').addEventListener('click', () => {
-      this.garage.classList.add('hidden');
-      if (this.onCloseGarage) this.onCloseGarage();
-    });
-
-    el('garage-open').addEventListener('click', () => this.openGarage());
+    const garageCloseBtn = el('garage-close');
+    if (garageCloseBtn) {
+      garageCloseBtn.addEventListener('click', () => {
+        if (this.garage) this.garage.classList.add('hidden');
+        if (this.onCloseGarage) this.onCloseGarage();
+      });
+    }
   }
 
   updateWallet() {
+    if (!this.walletEl) return;
     const d = this.progression.data;
     this.walletEl.innerHTML =
       `<span class="w-cash">₹${d.cash.toLocaleString('en-IN')}</span>` +
@@ -51,7 +56,7 @@ export class GameUI {
   }
 
   updateDrift(driftScore, comboMultiplier, isDrifting) {
-    if (!this.driftHud) return;
+    if (!this.driftHud || !this.driftScoreEl) return;
     if (isDrifting && driftScore > 20) {
       this.driftHud.classList.remove('hidden');
       this.driftScoreEl.innerHTML = `DRIFT <strong>+${Math.floor(driftScore)}</strong> <span class="d-mult">x${comboMultiplier.toFixed(1)}</span>`;
@@ -63,31 +68,39 @@ export class GameUI {
   updateRace(race) {
     const s = race.state;
 
-    this.prompt.classList.toggle('hidden', s !== RACE_STATE.PROMPT);
-    if (s === RACE_STATE.PROMPT && race.nearbyEvent) {
-      el('event-name').textContent = race.nearbyEvent.label;
-      el('event-desc').textContent = race.nearbyEvent.description;
+    if (this.prompt) {
+      this.prompt.classList.toggle('hidden', s !== RACE_STATE.PROMPT);
+      if (s === RACE_STATE.PROMPT && race.nearbyEvent) {
+        const nameEl = el('event-name');
+        const descEl = el('event-desc');
+        if (nameEl) nameEl.textContent = race.nearbyEvent.label;
+        if (descEl) descEl.textContent = race.nearbyEvent.description;
+      }
     }
 
     const inCountdown = s === RACE_STATE.COUNTDOWN;
-    this.countdown.classList.toggle('hidden', !inCountdown);
-    if (inCountdown) {
-      const n = Math.ceil(race.countdown);
-      this.countdown.textContent = n > 0 ? String(n) : 'GO!';
+    if (this.countdown) {
+      this.countdown.classList.toggle('hidden', !inCountdown);
+      if (inCountdown) {
+        const n = Math.ceil(race.countdown);
+        this.countdown.textContent = n > 0 ? String(n) : 'GO!';
+      }
     }
 
     const racing = s === RACE_STATE.RACING;
-    this.raceHud.classList.toggle('hidden', !racing);
-    if (racing && race.activeEvent) {
-      this.raceTimer.textContent = race.elapsed.toFixed(2);
-      const total = race.activeEvent.checkpoints.length;
-      const cpText = `CP ${Math.min(race.checkpointIndex + 1, total)} / ${total}`;
-      const lapText = race.totalLaps > 1 ? ` · LAP ${race.currentLap} / ${race.totalLaps}` : '';
-      this.raceCheckpoint.textContent = `${cpText}${lapText}`;
+    if (this.raceHud) {
+      this.raceHud.classList.toggle('hidden', !racing);
+      if (racing && race.activeEvent) {
+        if (this.raceTimer) this.raceTimer.textContent = race.elapsed.toFixed(2);
+        const total = race.activeEvent.checkpoints.length;
+        const cpText = `CP ${Math.min(race.checkpointIndex + 1, total)} / ${total}`;
+        const lapText = race.totalLaps > 1 ? ` · LAP ${race.currentLap} / ${race.totalLaps}` : '';
+        if (this.raceCheckpoint) this.raceCheckpoint.textContent = `${cpText}${lapText}`;
 
-      if (this.racePosition) {
-        const totalRacers = race.aiOpponents.length + 1;
-        this.racePosition.textContent = `POS ${race.playerPosition} / ${totalRacers}`;
+        if (this.racePosition) {
+          const totalRacers = race.aiOpponents.length + 1;
+          this.racePosition.textContent = `POS ${race.playerPosition} / ${totalRacers}`;
+        }
       }
     }
   }
@@ -97,25 +110,27 @@ export class GameUI {
     const posSuffix = result.position === 1 ? '1st' : result.position === 2 ? '2nd' : result.position === 3 ? '3rd' : `${result.position}th`;
     const posBadge = `<div class="res-pos-badge ${result.position === 1 ? 'gold' : result.position <= 3 ? 'podium' : ''}">FINISH: ${posSuffix} of ${result.totalRacers}</div>`;
 
-    this.resultsBody.innerHTML = `
-      <div class="res-event">${result.eventLabel}</div>
-      ${posBadge}
-      <div class="res-time">${t}<span>s</span></div>
-      <div class="res-target">${result.beatTarget
-        ? `Beat target of ${result.targetTime}s — bonus awarded`
-        : `Target was ${result.targetTime}s — no bonus`}</div>
-      <div class="res-rewards">
-        <div><span>CASH</span><strong>+₹${result.cash.toLocaleString('en-IN')}</strong></div>
-        <div><span>XP</span><strong>+${result.xp}</strong></div>
-        <div><span>REP</span><strong>+${result.rep}</strong></div>
-      </div>`;
-    this.results.classList.remove('hidden');
+    if (this.resultsBody) {
+      this.resultsBody.innerHTML = `
+        <div class="res-event">${result.eventLabel}</div>
+        ${posBadge}
+        <div class="res-time">${t}<span>s</span></div>
+        <div class="res-target">${result.beatTarget
+          ? `Beat target of ${result.targetTime}s — bonus awarded`
+          : `Target was ${result.targetTime}s — no bonus`}</div>
+        <div class="res-rewards">
+          <div><span>CASH</span><strong>+₹${result.cash.toLocaleString('en-IN')}</strong></div>
+          <div><span>XP</span><strong>+${result.xp}</strong></div>
+          <div><span>REP</span><strong>+${result.rep}</strong></div>
+        </div>`;
+    }
+    if (this.results) this.results.classList.remove('hidden');
     this.updateWallet();
   }
 
   openGarage() {
     this.renderGarage();
-    this.garage.classList.remove('hidden');
+    if (this.garage) this.garage.classList.remove('hidden');
   }
 
   renderGarage() {
@@ -123,7 +138,7 @@ export class GameUI {
     const currentCar = p.getSelectedVehicle();
     const unlocked = p.data.unlockedVehicles || ['vantra-rs'];
 
-    // 1. Vehicle Selection Bar
+    // 1. Vehicle Selection Grid
     const vehicleCards = Object.values(VEHICLE_CATALOGUE).map((car) => {
       const isOwned = unlocked.includes(car.id);
       const isSelected = car.id === currentCar.id;
@@ -139,92 +154,102 @@ export class GameUI {
       }
 
       return `
-        <div class="car-card ${isSelected ? 'selected' : ''}">
-          <div class="car-card-header">
-            <strong>${car.name}</strong>
-            <span>${car.category}</span>
-          </div>
-          <div class="car-stats-mini">
-            <div><span>SPEED</span> ${(car.topSpeed * 3.6).toFixed(0)} km/h</div>
-            <div><span>ACCEL</span> ${car.acceleration} m/s²</div>
-            <div><span>GRIP</span> ${(car.grip * 100).toFixed(0)}%</div>
+        <div class="garage-car-card ${isSelected ? 'selected' : ''}">
+          <div class="car-cat">${car.category}</div>
+          <div class="car-name">${car.name}</div>
+          <div class="car-desc">${car.description}</div>
+          <div class="car-specs">
+            <div><span>TOP SPEED</span><strong>${Math.round(car.topSpeed * 3.6)} km/h</strong></div>
+            <div><span>ACCEL</span><strong>${car.acceleration} m/s²</strong></div>
+            <div><span>GRIP</span><strong>${Math.round(car.grip * 100)}%</strong></div>
           </div>
           ${btn}
         </div>
       `;
     }).join('');
 
-    // 2. Color Palette Selector
-    const paintSwatches = AVAILABLE_PAINTS.map((pt) => {
-      const isSelected = (p.data.selectedPaint || currentCar.defaultColor) === pt.hex;
-      return `<div class="paint-swatch ${isSelected ? 'active' : ''}" style="background-color: #${pt.hex.toString(16).padStart(6, '0')}" title="${pt.name}" data-color="${pt.hex}"></div>`;
+    // 2. Custom Paint Palette
+    const paintSwatches = AVAILABLE_PAINTS.map((paint) => {
+      const isCur = (p.data.selectedPaint === paint.hex) || (!p.data.selectedPaint && paint.hex === currentCar.defaultColor);
+      return `
+        <button class="paint-swatch ${isCur ? 'active' : ''}" data-color="${paint.hex}" style="background-color: #${paint.hex.toString(16).padStart(6, '0')}" title="${paint.name}"></button>
+      `;
     }).join('');
 
-    // 3. Performance Upgrades Rows
+    // 3. Performance Upgrades List
     const rows = Object.entries(UPGRADES).map(([key, def]) => {
       const lvl = p.data.upgrades[key] || 0;
       const cost = p.upgradeCost(key);
-      const maxed = cost === null;
-      const afford = p.canAfford(key);
-      const pips = Array.from({ length: def.max }, (_, i) =>
-        `<i class="${i < lvl ? 'on' : ''}"></i>`).join('');
-      const btn = maxed
-        ? `<button class="up-btn" disabled>MAX</button>`
-        : `<button class="up-btn" data-key="${key}" ${afford ? '' : 'disabled'}>₹${cost.toLocaleString('en-IN')}</button>`;
-      return `<div class="up-row">
-          <div class="up-meta"><span class="up-name">${def.label}</span>
-          <span class="up-stat">${def.stat}</span></div>
-          <div class="up-pips">${pips}</div>${btn}</div>`;
+      const isMax = lvl >= def.max;
+      const canBuy = p.canAfford(key);
+
+      const pips = Array.from({ length: def.max }, (_, i) => `<span class="pip ${i < lvl ? 'on' : ''}"></span>`).join('');
+      const btn = isMax
+        ? `<button class="up-btn maxed" disabled>MAX</button>`
+        : `<button class="up-btn" data-key="${key}" ${canBuy ? '' : 'disabled'}>UPGRADE ₹${cost.toLocaleString('en-IN')}</button>`;
+
+      return `
+        <div class="up-row">
+          <div class="up-info">
+            <span class="up-label">${def.label}</span>
+            <div class="up-pips">${pips}</div>
+          </div>
+          ${btn}
+        </div>
+      `;
     }).join('');
 
-    this.garageBody.innerHTML = `
-      <div class="garage-section-title">VEHICLE LINEUP</div>
-      <div class="garage-car-grid">${vehicleCards}</div>
+    const targetEl = el('garage-body') || this.garageBody;
+    if (targetEl) {
+      targetEl.innerHTML = `
+        <div class="garage-section-title">VEHICLE LINEUP</div>
+        <div class="garage-car-grid">${vehicleCards}</div>
 
-      <div class="garage-section-title">CUSTOM PAINT</div>
-      <div class="garage-paint-palette">${paintSwatches}</div>
+        <div class="garage-section-title">CUSTOM PAINT</div>
+        <div class="garage-paint-palette">${paintSwatches}</div>
 
-      <div class="garage-section-title">PERFORMANCE TUNING — ${currentCar.name}</div>
-      <div class="garage-upgrade-list">${rows}</div>
-    `;
+        <div class="garage-section-title">PERFORMANCE TUNING — ${currentCar.name}</div>
+        <div class="garage-upgrade-list">${rows}</div>
+      `;
 
-    // Event listeners
-    this.garageBody.querySelectorAll('.up-btn[data-key]').forEach((b) => {
-      b.addEventListener('click', () => {
-        if (this.onBuyUpgrade(b.dataset.key)) {
+      // Event listeners
+      targetEl.querySelectorAll('.up-btn[data-key]').forEach((b) => {
+        b.addEventListener('click', () => {
+          if (this.onBuyUpgrade(b.dataset.key)) {
+            this.renderGarage();
+            this.updateWallet();
+          }
+        });
+      });
+
+      targetEl.querySelectorAll('.car-act-btn[data-select]').forEach((b) => {
+        b.addEventListener('click', () => {
+          if (this.onSelectVehicle(b.dataset.select)) {
+            this.renderGarage();
+            this.updateWallet();
+          }
+        });
+      });
+
+      targetEl.querySelectorAll('.car-act-btn[data-buy]').forEach((b) => {
+        b.addEventListener('click', () => {
+          if (p.buyVehicle(b.dataset.buy)) {
+            if (this.onSelectVehicle) this.onSelectVehicle(b.dataset.buy);
+            this.renderGarage();
+            this.updateWallet();
+          }
+        });
+      });
+
+      targetEl.querySelectorAll('.paint-swatch[data-color]').forEach((sw) => {
+        sw.addEventListener('click', () => {
+          const hex = parseInt(sw.dataset.color, 10);
+          p.selectPaint(hex);
+          if (this.onSelectPaint) this.onSelectPaint(hex);
           this.renderGarage();
-          this.updateWallet();
-        }
+        });
       });
-    });
-
-    this.garageBody.querySelectorAll('.car-act-btn[data-select]').forEach((b) => {
-      b.addEventListener('click', () => {
-        if (this.onSelectVehicle(b.dataset.select)) {
-          this.renderGarage();
-          this.updateWallet();
-        }
-      });
-    });
-
-    this.garageBody.querySelectorAll('.car-act-btn[data-buy]').forEach((b) => {
-      b.addEventListener('click', () => {
-        if (p.buyVehicle(b.dataset.buy)) {
-          if (this.onSelectVehicle) this.onSelectVehicle(b.dataset.buy);
-          this.renderGarage();
-          this.updateWallet();
-        }
-      });
-    });
-
-    this.garageBody.querySelectorAll('.paint-swatch[data-color]').forEach((sw) => {
-      sw.addEventListener('click', () => {
-        const hex = parseInt(sw.dataset.color, 10);
-        p.selectPaint(hex);
-        if (this.onSelectPaint) this.onSelectPaint(hex);
-        this.renderGarage();
-      });
-    });
+    }
 
     this.updateWallet();
   }

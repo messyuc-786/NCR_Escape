@@ -14,15 +14,30 @@ export function createCarState(spawnPoint) {
     speed: 0,          // signed, m/s, +forward / -reverse
     steerInput: 0,
     driftYaw: 0,         // extra yaw applied while drifting
+    nitro: 100,          // 0 to 100 nitro capacity
+    isBoosting: false,
   };
 }
 
 export function stepCarPhysics(state, input, vehicle, dt, colliders) {
-  const { throttle, brake, steer, handbrake } = input;
+  const { throttle, brake, steer, handbrake, nitro: wantsNitro } = input;
+
+  // Nitro Boost
+  const canBoost = wantsNitro && state.nitro > 5 && state.speed > 3;
+  state.isBoosting = canBoost;
+
+  if (canBoost) {
+    state.nitro = Math.max(0, state.nitro - 28 * dt);
+  } else {
+    state.nitro = Math.min(100, state.nitro + 7 * dt); // Passive refill
+  }
+
+  const effectiveAccel = vehicle.acceleration * (canBoost ? 1.55 : 1.0);
+  const maxTopSpeed = vehicle.topSpeed * (canBoost ? 1.18 : 1.0);
 
   // Longitudinal
   if (throttle > 0) {
-    state.speed += vehicle.acceleration * throttle * dt;
+    state.speed += effectiveAccel * throttle * dt;
   } else if (brake > 0) {
     if (state.speed > 0.5) {
       state.speed -= vehicle.braking * brake * dt;
@@ -34,7 +49,7 @@ export function stepCarPhysics(state, input, vehicle, dt, colliders) {
     if (Math.abs(state.speed) < 0.05) state.speed = 0;
   }
 
-  state.speed = clamp(state.speed, -vehicle.topSpeed * 0.4, vehicle.topSpeed);
+  state.speed = clamp(state.speed, -vehicle.topSpeed * 0.4, maxTopSpeed);
 
   // Lateral / steering — scaled down at high speed for arcade stability
   const speedFactor = 1 - Math.min(Math.abs(state.speed) / vehicle.topSpeed, 1) * 0.55;
