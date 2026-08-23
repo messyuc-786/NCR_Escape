@@ -1,9 +1,10 @@
 import { RACE_STATE } from '/js/racing/raceSystem.js';
 import { UPGRADES } from '/js/progression/progression.js';
 import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS } from '/js/vehicles/vehicle.js';
+import { ACHIEVEMENTS } from '/js/progression/achievementSystem.js';
 
 // Game UI Controller for NCR ESCAPE (spec §17-18).
-// Manages Garage car selection, paint customizer, performance upgrades, event HUD, live position & laps, and results.
+// Manages Garage car selection, paint customizer, performance upgrades, achievements, event HUD, live position & laps, and results.
 
 const el = (id) => document.getElementById(id);
 
@@ -137,6 +138,7 @@ export class GameUI {
     const p = this.progression;
     const currentCar = p.getSelectedVehicle();
     const unlocked = p.data.unlockedVehicles || ['vantra-rs'];
+    const unlockedAchs = p.data.unlockedAchievements || [];
 
     // 1. Vehicle Selection Grid
     const vehicleCards = Object.values(VEHICLE_CATALOGUE).map((car) => {
@@ -199,6 +201,21 @@ export class GameUI {
       `;
     }).join('');
 
+    // 4. Achievements & Milestones List
+    const achCards = ACHIEVEMENTS.map((ach) => {
+      const isUnlocked = unlockedAchs.includes(ach.id);
+      return `
+        <div class="garage-ach-card ${isUnlocked ? 'unlocked' : 'locked'}">
+          <div class="ach-icon">${ach.icon}</div>
+          <div class="ach-info">
+            <div class="ach-card-title">${ach.title} ${isUnlocked ? '✓' : ''}</div>
+            <div class="ach-card-desc">${ach.desc}</div>
+            <div class="ach-card-reward">+₹${ach.rewardCash.toLocaleString('en-IN')} · +${ach.rewardRep} REP</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
     const targetEl = el('garage-body') || this.garageBody;
     if (targetEl) {
       targetEl.innerHTML = `
@@ -210,6 +227,9 @@ export class GameUI {
 
         <div class="garage-section-title">PERFORMANCE TUNING — ${currentCar.name}</div>
         <div class="garage-upgrade-list">${rows}</div>
+
+        <div class="garage-section-title">ACHIEVEMENTS & MILESTONES (${unlockedAchs.length} / ${ACHIEVEMENTS.length})</div>
+        <div class="garage-ach-grid">${achCards}</div>
       `;
 
       // Event listeners

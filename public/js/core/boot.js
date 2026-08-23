@@ -16,6 +16,7 @@ import { spawnPoint } from '/js/roads/network.js';
 import { TrafficSystem } from '/js/traffic/trafficSystem.js';
 import { RaceSystem, RACE_STATE } from '/js/racing/raceSystem.js';
 import { Progression } from '/js/progression/progression.js';
+import { AchievementSystem } from '/js/progression/achievementSystem.js';
 import { GameUI } from '/js/ui/gameUI.js';
 import { audioEngine } from '/js/audio/audioEngine.js';
 
@@ -52,8 +53,13 @@ const { colliders, setDayNight, getCurrentMode } = buildDistrict(scene);
 const weather = new WeatherSystem(scene);
 const radio = new RadioSystem(audioEngine);
 
-// --- Progression + Garage + Vehicles -----------------------------------------
+// --- Progression + Achievements + Garage + Vehicles -------------------------
 const progression = new Progression();
+const achievements = new AchievementSystem(progression, () => {
+  audioEngine.playChime();
+  if (ui) ui.updateWallet();
+});
+
 let activeCarDef = progression.getSelectedVehicle();
 let vehicle = progression.applyUpgrades(activeCarDef);
 
@@ -116,6 +122,12 @@ const photoMode = new PhotoMode(scene, camera, renderer, setDayNight, () => {
   camera.updateProjectionMatrix();
 });
 
+const origCapture = photoMode.captureScreenshot.bind(photoMode);
+photoMode.captureScreenshot = () => {
+  origCapture();
+  achievements.recordPhotoTaken();
+};
+
 if (photoOpenBtn) {
   photoOpenBtn.addEventListener('click', () => {
     paused = true;
@@ -127,7 +139,10 @@ const ui = new GameUI(
   progression,
   (key) => {
     const ok = progression.buyUpgrade(key);
-    if (ok) vehicle = progression.applyUpgrades(activeCarDef);
+    if (ok) {
+      vehicle = progression.applyUpgrades(activeCarDef);
+      achievements.recordUpgrade();
+    }
     return ok;
   },
   (vehicleId) => {
@@ -153,6 +168,7 @@ if (garageOpenBtn) {
 // --- Racing -----------------------------------------------------------------
 const race = new RaceSystem(scene, (result) => {
   progression.awardRace(result, race.activeEvent?.id);
+  achievements.recordRaceWin(result.position);
   audioEngine.playChime();
   ui.showResults(result);
   paused = true;
@@ -180,6 +196,7 @@ const police = new PoliceSystem(
   },
   ({ heat, cash, rep }) => {
     progression.awardPoliceEscape(cash, rep);
+    achievements.recordPoliceEscape(heat);
     audioEngine.playChime();
     audioEngine.setSiren(false);
     ui.updateWallet();
@@ -195,6 +212,7 @@ const speedTraps = new SpeedTrapSystem(scene, (res) => {
   audioEngine.playCameraShutter();
   if (res.beatTarget) {
     progression.awardSpeedTrap(res.reward);
+    achievements.recordSpeedTrapBeat();
     ui.updateWallet();
     police.addHeat(1);
     audioEngine.setSiren(true);
@@ -238,6 +256,7 @@ function checkNearMisses(state, trafficPositions) {
       lastNearMissTime = now;
       state.nitro = Math.min(100, state.nitro + 18);
       progression.awardDrift(1250);
+      achievements.recordNearMiss();
       ui.updateWallet();
 
       if (nearmissHud) {
@@ -273,6 +292,7 @@ function updateDriftScore(dt, state, isHandbraking) {
     if (driftScore > 0 && performance.now() - lastDriftEnd > 700) {
       if (driftScore > 50) {
         progression.awardDrift(driftScore);
+        achievements.recordDrift(driftScore);
         state.nitro = Math.min(100, state.nitro + 15);
         ui.updateWallet();
       }
@@ -334,6 +354,7 @@ window.__DEBUG_INTERSECTIONS = () => traffic.getIntersectionState();
 window.__DEBUG_RACE = () => race.getDebugState();
 window.__DEBUG_POLICE = () => police.getDebugState();
 window.__DEBUG_PROGRESSION = () => ({ ...progression.data, level: progression.level });
+window.__DEBUG_ACHIEVEMENTS = () => achievements.getUnlockedList();
 window.__DEBUG_VEHICLE = () => ({ ...vehicle });
 window.__DEBUG_TELEPORT = (x, z, heading = 0) => {
   carState.x = x;
@@ -393,6 +414,9 @@ function animate(now) {
 
     const interactPressed = consumePress('KeyE');
     const kmh = Math.abs(carState.speed) * 3.6;
+
+    achievements.recordSpeed(kmh);
+    achievements.recordDistrict(minimap.getDistrictName(carState.x, carState.z));
 
     traffic.update(dt, carState.x, carState.z);
     race.update(dt, carState.x, carState.z, interactPressed, traffic.getPositions());

@@ -875,3 +875,113 @@ html, body {
   letter-spacing: 1px;
   text-transform: uppercase;
 }
+
+/* Achievement Toast Notification */
+#achievement-hud {
+  position: absolute;
+  top: 74px;
+  right: 24px;
+  z-index: 105;
+  background: rgba(13, 20, 36, 0.92);
+  border: 1.5px solid #ffd166;
+  border-radius: 10px;
+  padding: 12px 18px;
+  box-shadow: 0 8px 30px rgba(255, 209, 102, 0.25);
+  backdrop-filter: blur(10px);
+  min-width: 240px;
+  animation: achSlide 0.35s ease;
+}
+
+@keyframes achSlide {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.ach-badge {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #ffd166;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+#ach-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+#ach-desc {
+  font-size: 11px;
+  color: #a0aec0;
+  margin: 3px 0 6px 0;
+}
+
+#ach-reward {
+  font-size: 11px;
+  font-weight: 800;
+  color: #38ef7d;
+}
+
+/* Garage Achievements Grid */
+.garage-ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.garage-ach-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+
+.garage-ach-card.unlocked {
+  background: rgba(255, 209, 102, 0.08);
+  border-color: rgba(255, 209, 102, 0.4);
+}
+
+.garage-ach-card.locked {
+  opacity: 0.55;
+  filter: grayscale(80%);
+}
+
+.ach-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.ach-info {
+  flex: 1;
+}
+
+.ach-card-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.garage-ach-card.unlocked .ach-card-title {
+  color: #ffd166;
+}
+
+.ach-card-desc {
+  font-size: 11px;
+  color: #a0aec0;
+  margin: 2px 0 4px 0;
+}
+
+.ach-card-reward {
+  font-size: 10px;
+  font-weight: 800;
+  color: #38ef7d;
+}
