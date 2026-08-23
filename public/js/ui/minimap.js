@@ -24,7 +24,7 @@ export class Minimap {
     return 'CYBER DISTRICT';
   }
 
-  update(playerState, trafficSystem, raceSystem) {
+  update(playerState, trafficSystem, raceSystem, multiplayerSystem = null) {
     if (!this.ctx || !this.canvas) return;
 
     const w = this.canvas.width;
@@ -140,6 +140,23 @@ export class Minimap {
         const ty = (t.z - pz) * this.scale;
         if (Math.hypot(tx, ty) < cx) {
           ctx.fillRect(tx - 1.2, ty - 1.2, 2.5, 2.5);
+        }
+      }
+    }
+
+    // 5. Draw Remote Multiplayer Players
+    if (multiplayerSystem && multiplayerSystem.remotePlayers) {
+      ctx.fillStyle = '#00ffff';
+      for (const remote of multiplayerSystem.remotePlayers.values()) {
+        const rx = (remote.x - px) * this.scale;
+        const ry = (remote.z - pz) * this.scale;
+        if (Math.hypot(rx, ry) < cx) {
+          ctx.beginPath();
+          ctx.arc(rx, ry, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.0;
+          ctx.stroke();
         }
       }
     }

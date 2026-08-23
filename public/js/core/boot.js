@@ -4,6 +4,7 @@ import { WeatherSystem, WEATHER_TYPES } from '/js/world/weather.js';
 import { SpeedTrapSystem } from '/js/world/speedTraps.js';
 import { PoliceSystem } from '/js/traffic/policeSystem.js';
 import { RadioSystem } from '/js/audio/radioSystem.js';
+import { MultiplayerSystem } from '/js/multiplayer/multiplayerSystem.js';
 import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
 import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
 import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
@@ -103,6 +104,7 @@ function rebuildCarMesh() {
 
 const traffic = new TrafficSystem(scene);
 const minimap = new Minimap('minimap-canvas', 'minimap-label');
+const multiplayer = new MultiplayerSystem(scene);
 
 let paused = false;
 
@@ -377,6 +379,7 @@ function animate(now) {
     weather.update(dt, carState.x, carState.z);
     speedTraps.update(dt, carState.x, carState.z, kmh);
     police.update(dt, carState.x, carState.z, kmh);
+    multiplayer.update(dt, carState, activeCarDef, progression.data.selectedPaint);
     checkNearMisses(carState, traffic.getPositions());
 
     // Update Police Pursuit HUD
@@ -408,7 +411,10 @@ function animate(now) {
     }
 
     const frozen = race.state === RACE_STATE.COUNTDOWN;
-    const frameColliders = colliders.concat(traffic.getColliders()).concat(police.getColliders());
+    const frameColliders = colliders
+      .concat(traffic.getColliders())
+      .concat(police.getColliders())
+      .concat(multiplayer.getRemoteColliders());
 
     if (frozen) {
       carState.speed = 0;
@@ -465,7 +471,7 @@ function animate(now) {
 
     updateChaseCamera(camera, carState, dt);
     updateHUD(carState, vehicle);
-    minimap.update(carState, traffic, race);
+    minimap.update(carState, traffic, race, multiplayer);
     ui.updateRace(race);
     audioEngine.update(carState.speed, input.throttle, isDrifting, dt);
   }
