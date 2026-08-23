@@ -34,7 +34,7 @@ function onRoadNetwork(c) {
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   const pinned = findChromium();
-  const opts = { args: ['--no-sandbox'] };
+  const opts = { args: ['--no-sandbox', '--use-gl=swiftshader'] };
   if (pinned) opts.executablePath = pinned;
 
   const browser = await chromium.launch(opts);

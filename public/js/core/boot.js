@@ -6,10 +6,11 @@ import { PoliceSystem } from '/js/traffic/policeSystem.js';
 import { RadioSystem } from '/js/audio/radioSystem.js';
 import { MultiplayerSystem } from '/js/multiplayer/multiplayerSystem.js';
 import { PhotoMode } from '/js/core/photoMode.js';
+import { WorldMap } from '/js/ui/worldMap.js';
 import { buildVehicleMesh, VEHICLE_CATALOGUE } from '/js/vehicles/vehicle.js';
 import { createCarState, stepCarPhysics } from '/js/physics/carPhysics.js';
 import { readInput, consumePress, initTouchControls } from '/js/core/input.js';
-import { createChaseCamera, updateChaseCamera, snapChaseCamera, cycleCameraMode, getCurrentCameraMode } from '/js/core/camera.js';
+import { createChaseCamera, updateChaseCamera, snapChaseCamera, cycleCameraMode } from '/js/core/camera.js';
 import { updateHUD } from '/js/ui/hud.js';
 import { Minimap } from '/js/ui/minimap.js';
 import { spawnPoint } from '/js/roads/network.js';
@@ -35,9 +36,11 @@ const modeToggleBtn = document.getElementById('mode-toggle');
 const weatherToggleBtn = document.getElementById('weather-toggle');
 const audioToggleBtn = document.getElementById('audio-toggle');
 const cameraToggleBtn = document.getElementById('camera-toggle');
+const mapOpenBtn = document.getElementById('map-open');
 const photoOpenBtn = document.getElementById('photo-open');
 const touchControls = document.getElementById('touch-controls');
 const garageOpenBtn = document.getElementById('garage-open');
+const minimapContainer = document.getElementById('minimap-container');
 
 // Speed trap, Police & Near-miss HUD elements
 const speedtrapHud = document.getElementById('speedtrap-hud');
@@ -130,6 +133,34 @@ const minimap = new Minimap('minimap-canvas', 'minimap-label');
 const multiplayer = new MultiplayerSystem(scene);
 
 let paused = false;
+
+// Full-Screen World Map
+const worldMap = new WorldMap(
+  (tx, tz) => {
+    carState.x = tx;
+    carState.z = tz;
+    carState.speed = 0;
+    carState.driftYaw = 0;
+    carMesh.position.set(carState.x, 0, carState.z);
+    snapChaseCamera(camera, carState);
+    paused = false;
+  },
+  () => { paused = false; }
+);
+
+if (mapOpenBtn) {
+  mapOpenBtn.addEventListener('click', () => {
+    paused = true;
+    worldMap.open(carState);
+  });
+}
+
+if (minimapContainer) {
+  minimapContainer.addEventListener('click', () => {
+    paused = true;
+    worldMap.open(carState);
+  });
+}
 
 // Photo Mode
 const photoMode = new PhotoMode(scene, camera, renderer, setDayNight, () => {
@@ -427,9 +458,15 @@ function animate(now) {
     const input = readInput();
     if (input.reset) resetCar();
 
-    if (consumePress('KeyM')) {
+    if (consumePress('KeyB')) {
       const nextStn = radio.nextStation();
       if (radioToggleBtn) radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
+    }
+
+    if (consumePress('KeyM')) {
+      paused = true;
+      worldMap.open(carState);
+      return;
     }
 
     if (consumePress('KeyC')) {

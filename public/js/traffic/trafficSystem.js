@@ -13,10 +13,10 @@ import { IntersectionController } from '/js/traffic/intersections.js';
 //
 // NOT yet implemented (see ROADMAP): lane changes mid-segment, emergency vehicles.
 
-const MAX_TRAFFIC = 34;
+const MAX_TRAFFIC = 54;
 const DESPAWN_DISTANCE = 320;    // beyond this from the player, recycle the car
-const SPAWN_MIN_DISTANCE = 22;   // never pop a car in this close to the player
-const SPAWN_MAX_DISTANCE = 200;
+const SPAWN_MIN_DISTANCE = 20;   // never pop a car in this close to the player
+const SPAWN_MAX_DISTANCE = 220;
 const FOLLOW_DISTANCE = 14;      // start slowing within this gap to the car ahead
 const MIN_GAP = 6;               // hard stop gap
 const STOP_LINE_GAP = 3.0;       // how far before the junction box a car waits at red
@@ -61,8 +61,27 @@ export class TrafficSystem {
    * data happens to be dense, leaving the player's own stretch of road empty.
    */
   seed(playerX, playerZ) {
-    for (const car of this.cars) {
-      this.respawn(car, playerX, playerZ);
+    const mainSeg = this.segById.get('main-boulevard');
+    let mainCount = 0;
+    for (let i = 0; i < this.cars.length; i++) {
+      const car = this.cars[i];
+      if (mainSeg && mainCount < 6) {
+        const t = 0.2 + (mainCount / 6) * 0.6;
+        const dir = mainCount % 2 === 0 ? 1 : -1;
+        const lane = mainCount % mainSeg.lanes;
+        this.assignRoute(car, mainSeg, t);
+        car.dir = dir;
+        car.lane = lane;
+        this.refreshJunctions(car);
+        const pos = sampleLane(mainSeg, t, dir, lane);
+        car.mesh.position.set(pos.x, 0, pos.z);
+        car.mesh.rotation.y = pos.heading;
+        car.x = pos.x;
+        car.z = pos.z;
+        mainCount++;
+      } else {
+        this.respawn(car, playerX, playerZ);
+      }
     }
   }
 

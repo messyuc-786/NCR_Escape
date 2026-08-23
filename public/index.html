@@ -72,6 +72,7 @@
         <button id="weather-toggle" title="Toggle Weather Mode">☀️ CLEAR</button>
         <button id="audio-toggle" title="Toggle Audio">🔊 SOUND</button>
         <button id="camera-toggle" title="Switch Camera View (C)">🎥 CAM</button>
+        <button id="map-open" title="Open World Map (M)">🗺️ MAP</button>
         <button id="photo-open" title="Open Photo Mode (P)">📸 PHOTO</button>
         <button id="garage-open">GARAGE</button>
       </div>
@@ -178,6 +179,26 @@
           <button id="photo-exit-btn" class="photo-btn close">EXIT</button>
         </div>
         <div class="photo-hint">Drag on screen to orbit camera around car</div>
+      </div>
+    </div>
+
+    <!-- Full-Screen GPS Interactive World Map Overlay -->
+    <div id="world-map-overlay" class="hidden">
+      <div class="world-map-panel">
+        <div class="world-map-header">
+          <h2>🗺️ NCR REGION TACTICAL GPS MAP</h2>
+          <button id="world-map-close" class="close-btn">&times;</button>
+        </div>
+        <div class="world-map-body">
+          <canvas id="world-map-canvas" width="800" height="540"></canvas>
+          <div id="map-event-info" class="map-sidebar">
+            <div class="map-info-placeholder">
+              <div class="map-hint-icon">📍</div>
+              <div class="map-hint-title">SELECT A WAYPOINT</div>
+              <div class="map-hint-text">Click anywhere on the map or select an event icon (🏁) to inspect details and fast-travel.</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

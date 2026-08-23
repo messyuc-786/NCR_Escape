@@ -985,3 +985,138 @@ html, body {
   font-weight: 800;
   color: #38ef7d;
 }
+
+/* Full-Screen GPS World Map Modal */
+#world-map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(8, 12, 24, 0.88);
+  backdrop-filter: blur(14px);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.world-map-panel {
+  background: #0f172a;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  width: 92vw;
+  max-width: 1100px;
+  height: 86vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+}
+
+.world-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.world-map-header h2 {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #ff7a18;
+}
+
+.world-map-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+#world-map-canvas {
+  flex: 1;
+  background: #090e1a;
+  cursor: crosshair;
+  height: 100%;
+}
+
+.map-sidebar {
+  width: 280px;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.map-info-placeholder {
+  text-align: center;
+  color: #a0aec0;
+}
+
+.map-hint-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.map-hint-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.map-hint-text {
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.map-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-info-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffd166;
+  letter-spacing: 1px;
+}
+
+.map-info-desc {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.map-info-payout {
+  font-size: 11px;
+  font-weight: 800;
+  color: #38ef7d;
+  margin-top: 4px;
+}
+
+.map-tp-btn {
+  margin-top: 14px;
+  background: linear-gradient(135deg, #ff7a18, #ff3b30);
+  border: none;
+  color: #000;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.map-tp-btn:hover {
+  transform: scale(1.02);
+}
