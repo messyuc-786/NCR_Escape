@@ -3,7 +3,8 @@ import { buildDistrict, LIGHTING_MODES } from '/js/world/district.js';
 import { WeatherSystem, WEATHER_TYPES } from '/js/world/weather.js';
 import { SpeedTrapSystem } from '/js/world/speedTraps.js';
 import { PoliceSystem } from '/js/traffic/policeSystem.js';
-import { RadioSystem } from '/js/audio/radioSystem.js';
+import { SoundSystem } from '/js/audio/soundSystem.js';
+import { SoundSystemUI } from '/js/ui/soundSystemUI.js';
 import { MultiplayerSystem } from '/js/multiplayer/multiplayerSystem.js';
 import { PhotoMode } from '/js/core/photoMode.js';
 import { WorldMap } from '/js/ui/worldMap.js';
@@ -31,7 +32,7 @@ if ('serviceWorker' in navigator) {
 const canvas = document.getElementById('game-canvas');
 const startBtn = document.getElementById('start-btn');
 const introOverlay = document.getElementById('intro-overlay');
-const radioToggleBtn = document.getElementById('radio-toggle');
+const soundToggleBtn = document.getElementById('sound-toggle-btn');
 const modeToggleBtn = document.getElementById('mode-toggle');
 const weatherToggleBtn = document.getElementById('weather-toggle');
 const audioToggleBtn = document.getElementById('audio-toggle');
@@ -62,7 +63,21 @@ scene.background = new THREE.Color(0x2a3550);
 const camera = createChaseCamera(window.innerWidth / window.innerHeight);
 const { colliders, setDayNight, getCurrentMode } = buildDistrict(scene);
 const weather = new WeatherSystem(scene);
-const radio = new RadioSystem(audioEngine);
+const soundSystem = new SoundSystem(audioEngine);
+
+let paused = false;
+
+// In-Car Sound System & Subwoofer UI
+const soundUI = new SoundSystemUI(soundSystem, () => {
+  paused = false;
+});
+
+if (soundToggleBtn) {
+  soundToggleBtn.addEventListener('click', () => {
+    paused = true;
+    soundUI.open();
+  });
+}
 
 // --- Progression + Achievements + Garage + Vehicles -------------------------
 const progression = new Progression();
@@ -131,8 +146,6 @@ function rebuildCarMesh() {
 const traffic = new TrafficSystem(scene);
 const minimap = new Minimap('minimap-canvas', 'minimap-label');
 const multiplayer = new MultiplayerSystem(scene);
-
-let paused = false;
 
 // Full-Screen World Map
 const worldMap = new WorldMap(
@@ -353,14 +366,7 @@ function updateDriftScore(dt, state, isHandbraking) {
   return isDrifting;
 }
 
-// --- Quick Toggles (Radio, Day/Night, Weather, Audio, Camera) ----------------
-if (radioToggleBtn) {
-  radioToggleBtn.addEventListener('click', () => {
-    const nextStn = radio.nextStation();
-    radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
-  });
-}
-
+// --- Quick Toggles ----------------------------------------------------------
 if (cameraToggleBtn) {
   cameraToggleBtn.addEventListener('click', () => {
     const nextCam = cycleCameraMode();
@@ -390,7 +396,7 @@ if (weatherToggleBtn) {
 if (audioToggleBtn) {
   audioToggleBtn.addEventListener('click', () => {
     const isMuted = audioEngine.toggleMute();
-    audioToggleBtn.textContent = isMuted ? '🔇 MUTED' : '🔊 SOUND';
+    audioToggleBtn.textContent = isMuted ? '🔇 FX: OFF' : '🔊 FX: ON';
   });
 }
 
@@ -459,8 +465,9 @@ function animate(now) {
     if (input.reset) resetCar();
 
     if (consumePress('KeyB')) {
-      const nextStn = radio.nextStation();
-      if (radioToggleBtn) radioToggleBtn.textContent = `📻 ${nextStn.name.toUpperCase()}`;
+      paused = true;
+      soundUI.open();
+      return;
     }
 
     if (consumePress('KeyM')) {

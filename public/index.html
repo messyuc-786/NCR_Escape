@@ -67,10 +67,10 @@
     <div id="topbar">
       <div id="wallet"></div>
       <div class="topbar-actions">
-        <button id="radio-toggle" title="Cycle Radio Stations">📻 RADIO: OFF</button>
+        <button id="sound-toggle-btn" title="Open In-Car Sound System (B)">🔊 SOUND SYSTEM</button>
         <button id="mode-toggle" title="Toggle Day/Night Mode">☀️ DAY</button>
         <button id="weather-toggle" title="Toggle Weather Mode">☀️ CLEAR</button>
-        <button id="audio-toggle" title="Toggle Audio">🔊 SOUND</button>
+        <button id="audio-toggle" title="Toggle Audio FX">🔊 FX</button>
         <button id="camera-toggle" title="Switch Camera View (C)">🎥 CAM</button>
         <button id="map-open" title="Open World Map (M)">🗺️ MAP</button>
         <button id="photo-open" title="Open Photo Mode (P)">📸 PHOTO</button>
@@ -179,6 +179,76 @@
           <button id="photo-exit-btn" class="photo-btn close">EXIT</button>
         </div>
         <div class="photo-hint">Drag on screen to orbit camera around car</div>
+      </div>
+    </div>
+
+    <!-- In-Car Sound System & Subwoofer Speaker Overlay -->
+    <div id="sound-system-overlay" class="hidden">
+      <div class="sound-system-panel">
+        <div class="sound-system-header">
+          <div class="ss-head-left">
+            <h2>🔊 NCR PRO-AUDIO IN-CAR SOUND SYSTEM</h2>
+            <span class="ss-head-badge">90s · 2000s · PUNJABI BASS</span>
+          </div>
+          <button id="sound-system-close" class="close-btn">&times;</button>
+        </div>
+
+        <div class="sound-system-body">
+          <!-- Left: Animated Subwoofer Speaker Unit -->
+          <div class="ss-speaker-section">
+            <div id="subwoofer-ring-ui" class="subwoofer-enclosure">
+              <div id="subwoofer-cone-ui" class="subwoofer-cone">
+                <div class="subwoofer-dustcap">
+                  <span>NCR BASS</span>
+                </div>
+              </div>
+            </div>
+            <div class="subwoofer-label">12" COMPETITION SUBWOOFER</div>
+            <div class="subwoofer-stats">1200W RMS · DUAL VOICE COIL</div>
+
+            <!-- RGB Equalizer Canvas -->
+            <canvas id="ss-eq-canvas" width="220" height="40"></canvas>
+          </div>
+
+          <!-- Right: Audio Media Deck & Playlist Hub -->
+          <div class="ss-deck-section">
+            <!-- Now Playing LCD -->
+            <div class="ss-lcd-screen">
+              <div class="ss-lcd-top">
+                <span id="ss-track-badge" class="ss-lcd-badge">90s NOSTALGIA</span>
+                <span class="ss-lcd-eq-mode">EQ: BASS BOOST</span>
+              </div>
+              <div id="ss-track-title" class="ss-lcd-title">Tujhe Dekha Toh (DDLJ Riff)</div>
+              <div id="ss-track-artist" class="ss-lcd-artist">Lata Mangeshkar & Kumar Sanu (1995)</div>
+            </div>
+
+            <!-- Playlist Category Tabs -->
+            <div id="ss-playlist-tabs" class="ss-tabs-row"></div>
+
+            <!-- Track List Browser -->
+            <div id="ss-track-list" class="ss-tracks-container"></div>
+
+            <!-- Audio Controls Bar -->
+            <div class="ss-controls-bar">
+              <div class="ss-ctrl-btns">
+                <button id="ss-btn-prev" class="ss-ctrl-btn" title="Previous Track">⏮️</button>
+                <button id="ss-btn-play" class="ss-ctrl-btn play" title="Play/Pause">▶️ PLAY</button>
+                <button id="ss-btn-next" class="ss-ctrl-btn" title="Next Track">⏭️</button>
+              </div>
+
+              <div class="ss-extra-ctrls">
+                <button id="ss-btn-eq" class="ss-util-btn" title="Toggle Equalizer Preset">🔊 EQ: BASS BOOST</button>
+                <button id="ss-btn-aux" class="ss-util-btn" title="Upload custom MP3">📁 LOAD MP3</button>
+                <input type="file" id="ss-file-input" accept="audio/*" style="display:none;" />
+              </div>
+
+              <div class="ss-vol-grp">
+                <label>VOL</label>
+                <input type="range" id="ss-volume-slider" min="0" max="1" step="0.05" value="1.0" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
