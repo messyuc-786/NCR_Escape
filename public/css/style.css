@@ -753,13 +753,9 @@ html, body {
   pointer-events: none;
 }
 
-/* Centering 16:9 container that preserves mockup layout at all aspect ratios */
+/* Dynamic aspect-locked container that covers the viewport with no black bars */
 .title-screen-container {
-  position: relative;
-  width: 100vw;
-  height: 56.25vw; /* 16:9 */
-  max-width: 177.78vh; /* 16:9 */
-  max-height: 100vh;
+  position: absolute;
   background: url('../assets/images/title-mockup.jpg') no-repeat center center;
   background-size: 100% 100%;
 }

@@ -531,10 +531,49 @@ function resetCar() {
   if (policeHud) policeHud.classList.add('hidden');
 }
 
+function resizeTitleScreen() {
+  const container = document.querySelector('.title-screen-container');
+  if (!container) return;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const targetRatio = 16 / 9;
+  const currentRatio = w / h;
+
+  let renderedW, renderedH, left, top;
+  if (h > w) {
+    // Mobile/Portrait screen: lock container to fit width exactly, show full image with letterboxing
+    renderedW = w;
+    renderedH = w / targetRatio;
+    left = 0;
+    top = (h - renderedH) / 2;
+  } else {
+    // Desktop/Landscape screen: stretch to cover the screen (no blank bars on left/right/top/bottom)
+    if (currentRatio > targetRatio) {
+      // Screen is wider than 16:9 (crop top/bottom)
+      renderedW = w;
+      renderedH = w / targetRatio;
+      left = 0;
+      top = (h - renderedH) / 2;
+    } else {
+      // Screen is taller than 16:9 (crop left/right)
+      renderedH = h;
+      renderedW = h * targetRatio;
+      left = (w - renderedW) / 2;
+      top = 0;
+    }
+  }
+
+  container.style.width = `${renderedW}px`;
+  container.style.height = `${renderedH}px`;
+  container.style.left = `${left}px`;
+  container.style.top = `${top}px`;
+}
+
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  resizeTitleScreen();
 }
 window.addEventListener('resize', onResize);
 
@@ -941,9 +980,9 @@ if (btnQuickExit) {
   });
 }
 
-window.addEventListener('touchstart', () => audioEngine.unlock(), { once: true, passive: true });
 window.addEventListener('click', () => audioEngine.unlock(), { once: true, passive: true });
 
+resizeTitleScreen();
 requestAnimationFrame(animate);
 
 
