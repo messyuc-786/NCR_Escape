@@ -263,6 +263,86 @@ class AudioEngine {
     } catch {}
   }
 
+  playHorn(tone = 0) {
+    if (!this.initialized || !this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      if (tone === 0) {
+        // Iconic Indian Musical Pressure Horn (Tri-Tone Blast)
+        const notes = [
+          { f: 440.00, t: 0, d: 0.14 },
+          { f: 554.37, t: 0.10, d: 0.15 },
+          { f: 659.25, t: 0.22, d: 0.32 },
+          { f: 880.00, t: 0.22, d: 0.32 },
+        ];
+        notes.forEach((n) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(n.f, now + n.t);
+
+          gain.gain.setValueAtTime(0.24, now + n.t);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now + n.t);
+          osc.stop(now + n.t + n.d + 0.01);
+        });
+      } else if (tone === 1) {
+        // High-Pitch Twin Disc Horn
+        [440.00, 523.25].forEach((f) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.29);
+        });
+      } else {
+        // Heavy Pneumatic Highway Blast
+        [164.81, 220.00].forEach((f) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.28, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.46);
+        });
+      }
+    } catch {}
+  }
+
+  playRadarChirp(intensity = 0.5) {
+    if (!this.initialized || !this.ctx || this.isMuted) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1450 + intensity * 600, now);
+      osc.frequency.exponentialRampToValueAtTime(2200, now + 0.06);
+
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch {}
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.masterGain && this.ctx) {

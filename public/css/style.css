@@ -876,6 +876,62 @@ html, body {
   text-transform: uppercase;
 }
 
+/* Radar Detector Alert (Speed Traps & Police) */
+#radar-detector-hud {
+  position: absolute;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(13, 20, 36, 0.94);
+  border: 1.5px solid #ff3b30;
+  border-radius: 8px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 20px rgba(255, 59, 48, 0.5);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  animation: radarPulse 0.5s infinite alternate;
+}
+
+@keyframes radarPulse {
+  from { border-color: #ff3b30; box-shadow: 0 0 10px rgba(255, 59, 48, 0.4); }
+  to { border-color: #ffd166; box-shadow: 0 0 25px rgba(255, 209, 102, 0.8); }
+}
+
+.radar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b30;
+  box-shadow: 0 0 8px #ff3b30;
+}
+
+#radar-detector-text {
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.radar-bars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 12px;
+}
+
+.radar-bars .r-bar {
+  width: 3px;
+  background: #ff3b30;
+  border-radius: 1px;
+}
+
+.radar-bars .r1 { height: 4px; }
+.radar-bars .r2 { height: 8px; }
+.radar-bars .r3 { height: 12px; }
+
 /* Achievement Toast Notification */
 #achievement-hud {
   position: absolute;

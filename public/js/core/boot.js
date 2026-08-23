@@ -335,6 +335,55 @@ function checkNearMisses(state, trafficPositions) {
   }
 }
 
+// --- Radar Detector Alert System (Speed Traps & Police) --------------------
+let lastRadarChirpTime = 0;
+const radarDetectorHud = document.getElementById('radar-detector-hud');
+const radarDetectorText = document.getElementById('radar-detector-text');
+
+function updateRadarDetector(state, traps, policeUnits) {
+  if (!radarDetectorHud) return;
+
+  let nearestDist = 999;
+  let alertType = '';
+
+  // Check speed traps
+  if (traps) {
+    for (const trap of traps) {
+      const dist = Math.hypot(state.x - trap.x, state.z - trap.z);
+      if (dist < 85 && dist < nearestDist) {
+        nearestDist = dist;
+        alertType = `⚠️ CAMERA ${Math.round(dist)}m (${trap.targetKmh}km/h)`;
+      }
+    }
+  }
+
+  // Check police interceptors
+  if (policeUnits && policeUnits.length > 0) {
+    for (const unit of policeUnits) {
+      if (!unit.mesh) continue;
+      const dist = Math.hypot(state.x - unit.mesh.position.x, state.z - unit.mesh.position.z);
+      if (dist < 110 && dist < nearestDist) {
+        nearestDist = dist;
+        alertType = `🚨 POLICE RADAR ${Math.round(dist)}m`;
+      }
+    }
+  }
+
+  if (nearestDist < 90) {
+    radarDetectorHud.classList.remove('hidden');
+    if (radarDetectorText) radarDetectorText.textContent = alertType;
+
+    const now = performance.now();
+    const chirpInterval = Math.max(180, (nearestDist / 90) * 800);
+    if (now - lastRadarChirpTime > chirpInterval) {
+      lastRadarChirpTime = now;
+      audioEngine.playRadarChirp(1.0 - (nearestDist / 90));
+    }
+  } else {
+    radarDetectorHud.classList.add('hidden');
+  }
+}
+
 // --- Drift Scoring System ---------------------------------------------------
 let driftScore = 0;
 let driftMultiplier = 1.0;
@@ -468,6 +517,11 @@ function animate(now) {
     const input = readInput();
     if (input.reset) resetCar();
 
+    if (consumePress('KeyH') || input.horn) {
+      const tone = Math.floor(Math.random() * 3);
+      audioEngine.playHorn(tone);
+    }
+
     if (consumePress('KeyB')) {
       paused = true;
       soundUI.open();
@@ -518,6 +572,7 @@ function animate(now) {
     police.update(dt, carState.x, carState.z, kmh);
     multiplayer.update(dt, carState, activeCarDef, progression.data.selectedPaint);
     checkNearMisses(carState, traffic.getPositions());
+    updateRadarDetector(carState, speedTraps.traps, police.policeUnits);
 
     // Update Police Pursuit HUD
     if (police.heat > 0 && policeHud) {

@@ -12,6 +12,7 @@ const touchState = {
   steerRight: false,
   handbrake: false,
   nitro: false,
+  horn: false,
   interact: false,
   reset: false,
 };
@@ -106,6 +107,11 @@ export function initTouchControls() {
     () => { touchState.nitro = false; }
   );
 
+  bindTouchButton('btn-horn', 
+    () => { triggerPress('KeyH'); }, 
+    () => {}
+  );
+
   bindTouchButton('btn-interact', 
     () => { triggerPress('KeyE'); }, 
     () => {}
@@ -126,6 +132,7 @@ export function readInput() {
   if (keys.has('KeyD') || keys.has('ArrowRight')) kbSteer -= 1;
   const kbHandbrake = keys.has('Space');
   const kbNitro = keys.has('ShiftLeft') || keys.has('ShiftRight') || keys.has('KeyN');
+  const kbHorn = keys.has('KeyH') || consumePress('KeyH');
   const kbReset = keys.has('KeyR') || consumePress('KeyR');
 
   // Touch inputs
@@ -139,7 +146,8 @@ export function readInput() {
   const steer = kbSteer !== 0 ? kbSteer : touchSteer;
   const handbrake = kbHandbrake || touchState.handbrake;
   const nitro = kbNitro || touchState.nitro;
+  const horn = kbHorn || touchState.horn;
   const reset = kbReset || touchState.reset;
 
-  return { throttle, brake, steer, handbrake, nitro, reset };
+  return { throttle, brake, steer, handbrake, nitro, horn, reset };
 }
