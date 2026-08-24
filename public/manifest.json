@@ -2,7 +2,7 @@
   "name": "NCR ESCAPE — Indian Street Racing",
   "short_name": "NCR ESCAPE",
   "description": "Original open-world Indian street-driving and racing game inspired by the NCR region.",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "landscape",
   "background_color": "#0a0f1d",

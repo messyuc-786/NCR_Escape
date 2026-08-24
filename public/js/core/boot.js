@@ -29,7 +29,7 @@ import { TrafficRunSystem } from '../racing/trafficRun.js';
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js?v=20260825-7').catch(() => {});
   });
 }
 

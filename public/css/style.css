@@ -756,8 +756,16 @@ html, body {
 /* Dynamic aspect-locked container that covers the viewport with no black bars */
 .title-screen-container {
   position: absolute;
+  /* Give the image a real initial box before JS resize runs.
+     Without explicit dimensions the absolute element collapses to 0×0,
+     leaving only the fallback dark overlay visible. */
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   background: url('../assets/images/title-mockup.jpg') no-repeat center center;
   background-size: 100% 100%;
+  background-color: #03050a;
+  z-index: 1;
 }
 
 /* Quick Action Buttons (Top Right) Hitboxes */
