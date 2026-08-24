@@ -7,11 +7,10 @@ import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS } from '../vehicles/vehicle.js';
 const STORAGE_KEY = 'ncr-escape:save:v2';
 
 export const UPGRADES = {
-  engine:   { label: 'Engine Tune',      max: 4, baseCost: 600,  stat: 'acceleration', perLevel: 0.12 },
-  turbo:    { label: 'Turbo / Induction', max: 4, baseCost: 900,  stat: 'topSpeed',     perLevel: 0.08 },
-  tires:    { label: 'Street Tires',      max: 4, baseCost: 500,  stat: 'grip',         perLevel: 0.04 },
-  brakes:   { label: 'Sport Brakes',      max: 4, baseCost: 450,  stat: 'braking',      perLevel: 0.10 },
-  handling: { label: 'Suspension & Sway', max: 4, baseCost: 550,  stat: 'handling',     perLevel: 0.07 },
+  engine:   { label: 'Engine Tune',       max: 5, baseCost: 1500, stat: 'acceleration', perLevel: 0.12 },
+  tires:    { label: 'Street Tires',      max: 5, baseCost: 1000, stat: 'grip',         perLevel: 0.05 },
+  brakes:   { label: 'Sport Brakes',      max: 5, baseCost: 800,  stat: 'braking',      perLevel: 0.10 },
+  nitro:    { label: 'Nitro Charger',     max: 5, baseCost: 1200, stat: 'nitroRefill',  perLevel: 0.15 },
 };
 
 const DEFAULT_SAVE = {
@@ -22,8 +21,9 @@ const DEFAULT_SAVE = {
   unlockedVehicles: ['vantra-rs'],
   selectedPaint: null,
   selectedNeon: null,
+  selectedHorn: 0,
   completedEvents: [],
-  upgrades: { engine: 0, turbo: 0, tires: 0, brakes: 0, handling: 0 },
+  upgrades: { engine: 0, tires: 0, brakes: 0, nitro: 0 },
 };
 
 export class Progression {
@@ -121,10 +121,23 @@ export class Progression {
     return true;
   }
 
+  vehicleRequiredLevel(vehicleId) {
+    const levels = {
+      'vantra-rs': 1,
+      'kaveri-gt': 2,
+      'indus-cruiser': 3,
+      'garuda-rx': 5,
+      'sherpa-4x4': 6,
+      'apex-gt': 10
+    };
+    return levels[vehicleId] || 1;
+  }
+
   buyVehicle(vehicleId) {
     const carDef = VEHICLE_CATALOGUE[vehicleId];
     if (!carDef || this.data.unlockedVehicles.includes(vehicleId)) return false;
     if (this.data.cash < carDef.price) return false;
+    if (this.level < this.vehicleRequiredLevel(vehicleId)) return false;
 
     this.data.cash -= carDef.price;
     this.data.unlockedVehicles.push(vehicleId);
@@ -152,6 +165,11 @@ export class Progression {
     this.save();
   }
 
+  selectHorn(tone) {
+    this.data.selectedHorn = tone;
+    this.save();
+  }
+
   getSelectedVehicle() {
     const id = this.data.selectedVehicleId || 'vantra-rs';
     return VEHICLE_CATALOGUE[id] || VEHICLE_CATALOGUE['vantra-rs'];
@@ -162,6 +180,7 @@ export class Progression {
    */
   applyUpgrades(baseVehicle = this.getSelectedVehicle()) {
     const v = { ...baseVehicle };
+    if (v.nitroRefill === undefined) v.nitroRefill = 1.0;
     for (const [key, def] of Object.entries(UPGRADES)) {
       const lvl = this.data.upgrades[key] || 0;
       if (lvl > 0) v[def.stat] = v[def.stat] * (1 + def.perLevel * lvl);

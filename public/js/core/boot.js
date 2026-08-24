@@ -164,6 +164,71 @@ function rebuildCarMesh() {
   scene.add(carMesh);
 }
 
+let showroomCarMesh = null;
+let showroomPlatform = null;
+let showroomSpotlight = null;
+let showroomFillLight = null;
+
+function setupShowroomEnvironment() {
+  if (showroomPlatform) return;
+
+  const platformGeom = new THREE.CylinderGeometry(5.5, 5.5, 0.15, 32);
+  const platformMat = new THREE.MeshStandardMaterial({
+    color: 0x090d16,
+    roughness: 0.12,
+    metalness: 0.85
+  });
+  showroomPlatform = new THREE.Mesh(platformGeom, platformMat);
+  showroomPlatform.position.set(1000, -0.075, 1000);
+  scene.add(showroomPlatform);
+
+  showroomSpotlight = new THREE.SpotLight(0xffffff, 8.0, 20, Math.PI / 4, 0.6, 1);
+  showroomSpotlight.position.set(1000, 8, 1000);
+  showroomSpotlight.target = showroomPlatform;
+  scene.add(showroomSpotlight);
+
+  showroomFillLight = new THREE.DirectionalLight(0xffffff, 1.5);
+  showroomFillLight.position.set(996, 4, 1004);
+  scene.add(showroomFillLight);
+}
+
+function updateShowroomCar(previewState) {
+  setupShowroomEnvironment();
+
+  if (showroomCarMesh) {
+    scene.remove(showroomCarMesh);
+  }
+
+  const previewCarDef = VEHICLE_CATALOGUE[previewState.carId];
+  showroomCarMesh = buildVehicleMesh(previewCarDef, previewState.paint, previewState.neon);
+  showroomCarMesh.position.set(1000, 0, 1000);
+
+  const headlampMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const headlampL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), headlampMat);
+  headlampL.position.set(-0.7, 0.45, 1.95);
+  const headlampR = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), headlampMat);
+  headlampR.position.set(0.7, 0.45, 1.95);
+  showroomCarMesh.add(headlampL);
+  showroomCarMesh.add(headlampR);
+
+  scene.add(showroomCarMesh);
+}
+
+window.onOpenGarageShowroom = (previewState) => {
+  updateShowroomCar(previewState);
+};
+
+window.onUpdateGarageShowroom = (previewState) => {
+  updateShowroomCar(previewState);
+};
+
+window.onCloseGarageShowroom = () => {
+  if (showroomCarMesh) {
+    scene.remove(showroomCarMesh);
+    showroomCarMesh = null;
+  }
+};
+
 const traffic = new TrafficSystem(scene);
 const pedestrians = new PedestrianSystem(scene);
 const minimap = new Minimap('minimap-canvas', 'minimap-label');
@@ -749,7 +814,7 @@ function animate(now) {
     if (input.reset) resetCar();
 
     if (consumePress('KeyH') || input.horn) {
-      const tone = Math.floor(Math.random() * 3);
+      const tone = progression.data.selectedHorn !== undefined ? progression.data.selectedHorn : (activeCarDef.id === 'sherpa-4x4' ? 2 : (activeCarDef.id === 'garuda-rx' ? 1 : 0));
       audioEngine.playHorn(tone);
     }
 
@@ -931,6 +996,12 @@ function animate(now) {
     minimap.update(carState, traffic, race, multiplayer);
     ui.updateRace(race);
     audioEngine.update(carState.speed, input.throttle, isDrifting, dt);
+  } else if (running && window.garageOpen) {
+    if (showroomCarMesh) {
+      showroomCarMesh.rotation.y += dt * 0.20;
+    }
+    camera.position.set(1000 - 3.8, 1.8, 1000 + 4.8);
+    camera.lookAt(new THREE.Vector3(1000, 0.45, 1000));
   } else if (!running) {
     // Subtle slow cinematic breathing / camera sway on the title screen
     const titleTime = now * 0.0004;

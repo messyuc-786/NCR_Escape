@@ -29,7 +29,7 @@ export function stepCarPhysics(state, input, vehicle, dt, colliders) {
   if (canBoost) {
     state.nitro = Math.max(0, state.nitro - 28 * dt);
   } else {
-    state.nitro = Math.min(100, state.nitro + 7 * dt); // Passive refill
+    state.nitro = Math.min(100, state.nitro + 7 * (vehicle.nitroRefill || 1.0) * dt); // Passive refill
   }
 
   const effectiveAccel = vehicle.acceleration * (canBoost ? 1.55 : 1.0);

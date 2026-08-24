@@ -234,9 +234,72 @@
 
     <!-- Garage & Upgrade Menu Overlay -->
     <div id="garage-overlay" class="hidden">
+      <!-- Left side: Showroom UI overlay (displays previewed car details & stats bars) -->
+      <div class="garage-showroom-overlay">
+        <div class="showroom-car-info">
+          <div id="showroom-car-name" class="showroom-title">VANTRA RS</div>
+          <div id="showroom-car-category" class="showroom-category">AGILE SPORTS COUPE</div>
+          <div id="showroom-car-price" class="showroom-price">₹0</div>
+        </div>
+
+        <div class="showroom-stats">
+          <div class="stat-bar-group">
+            <div class="stat-label">
+              <span>TOP SPEED</span>
+              <span id="stat-val-topSpeed" class="stat-number">82</span>
+              <span id="stat-delta-topSpeed" class="stat-delta"></span>
+            </div>
+            <div class="stat-bar-bg">
+              <div id="stat-fill-topSpeed" class="stat-bar-fill" style="width: 82%;"></div>
+            </div>
+          </div>
+          <div class="stat-bar-group">
+            <div class="stat-label">
+              <span>ACCELERATION</span>
+              <span id="stat-val-acceleration" class="stat-number">88</span>
+              <span id="stat-delta-acceleration" class="stat-delta"></span>
+            </div>
+            <div class="stat-bar-bg">
+              <div id="stat-fill-acceleration" class="stat-bar-fill" style="width: 88%;"></div>
+            </div>
+          </div>
+          <div class="stat-bar-group">
+            <div class="stat-label">
+              <span>HANDLING</span>
+              <span id="stat-val-handling" class="stat-number">92</span>
+              <span id="stat-delta-handling" class="stat-delta"></span>
+            </div>
+            <div class="stat-bar-bg">
+              <div id="stat-fill-handling" class="stat-bar-fill" style="width: 92%;"></div>
+            </div>
+          </div>
+          <div class="stat-bar-group">
+            <div class="stat-label">
+              <span>BRAKING</span>
+              <span id="stat-val-braking" class="stat-number">78</span>
+              <span id="stat-delta-braking" class="stat-delta"></span>
+            </div>
+            <div class="stat-bar-bg">
+              <div id="stat-fill-braking" class="stat-bar-fill" style="width: 78%;"></div>
+            </div>
+          </div>
+          <div class="stat-bar-group">
+            <div class="stat-label">
+              <span>NITRO</span>
+              <span id="stat-val-nitro" class="stat-number">80</span>
+              <span id="stat-delta-nitro" class="stat-delta"></span>
+            </div>
+            <div class="stat-bar-bg">
+              <div id="stat-fill-nitro" class="stat-bar-fill" style="width: 80%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side: Controls Panel -->
       <div class="garage-panel">
         <div class="garage-header">
-          <h2>NCR CUSTOMS & TUNING GARAGE</h2>
+          <h2>NCR CUSTOMS & TUNING</h2>
           <button id="garage-close" class="close-btn">&times;</button>
         </div>
 
@@ -256,9 +319,9 @@
         </div>
 
         <div class="garage-tabs">
-          <button class="g-tab active" data-tab="cars">VEHICLE ROSTER</button>
-          <button class="g-tab" data-tab="upgrades">PERFORMANCE TUNING</button>
-          <button class="g-tab" data-tab="paint">CUSTOM PAINT</button>
+          <button class="g-tab active" data-tab="cars">ROSTER</button>
+          <button class="g-tab" data-tab="upgrades">UPGRADES</button>
+          <button class="g-tab" data-tab="paint">AESTHETICS</button>
         </div>
 
         <div class="garage-content">
@@ -269,8 +332,19 @@
             <div id="upgrade-list" class="upgrade-list"></div>
           </div>
           <div id="tab-paint" class="g-tab-pane">
+            <div class="aesthetic-section-title">CUSTOM PAINT FINISHES</div>
             <div id="paint-grid" class="paint-grid"></div>
+
+            <div class="aesthetic-section-title" style="margin-top: 24px;">UNDERGLOW NEONS</div>
+            <div id="neon-grid" class="neon-grid"></div>
+
+            <div class="aesthetic-section-title" style="margin-top: 24px;">CUSTOM HORN SOUND</div>
+            <div id="horn-grid" class="horn-grid"></div>
           </div>
+        </div>
+
+        <div class="garage-footer" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+          <button id="btn-garage-action" class="primary-btn" style="margin-top: 0; padding: 12px 30px; font-size: 15px; width: auto; min-width: 150px; font-weight: 900; letter-spacing: 1.5px; border-radius: 6px;"></button>
         </div>
       </div>
     </div>

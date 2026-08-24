@@ -2,11 +2,41 @@ import { RACE_STATE } from '../racing/raceSystem.js';
 import { UPGRADES } from '../progression/progression.js';
 import { VEHICLE_CATALOGUE, AVAILABLE_PAINTS, AVAILABLE_NEONS } from '../vehicles/vehicle.js';
 import { ACHIEVEMENTS } from '../progression/achievementSystem.js';
-
-// Game UI Controller for NCR ESCAPE (spec §17-18).
-// Manages Garage car selection, paint customizer, underglow neons, performance upgrades, achievements, and results.
+import { audioEngine } from '../audio/audioEngine.js';
 
 const el = (id) => document.getElementById(id);
+
+export const AVAILABLE_HORNS = [
+  { id: 0, name: 'NCR Tri-Tone Melodic', desc: 'Musical Indian pressure horn blast.' },
+  { id: 1, name: 'Twin Electric Disc', desc: 'High-pitch piercing double disc.' },
+  { id: 2, name: 'Pneumatic Highway Truck', desc: 'Deafening heavy-duty truck sound.' }
+];
+
+export function getCarUIStats(car, upgrades = { engine: 0, tires: 0, brakes: 0, nitro: 0 }) {
+  let topSpeed = car.topSpeed;
+  let accel = car.acceleration;
+  let grip = car.grip;
+  let braking = car.braking;
+  let nitroLvl = upgrades.nitro || 0;
+
+  if (upgrades.engine > 0) {
+    accel = accel * (1 + 0.12 * upgrades.engine);
+  }
+  if (upgrades.tires > 0) {
+    grip = Math.min(0.99, grip * (1 + 0.05 * upgrades.tires));
+  }
+  if (upgrades.brakes > 0) {
+    braking = braking * (1 + 0.10 * upgrades.brakes);
+  }
+
+  return {
+    topSpeed: Math.round((topSpeed / 100) * 100),
+    acceleration: Math.round((accel / 50) * 100),
+    handling: Math.round((grip / 1.0) * 100),
+    braking: Math.round((braking / 50) * 100),
+    nitro: Math.round(80 + nitroLvl * 4)
+  };
+}
 
 export class GameUI {
   constructor(progression, onBuyUpgrade, onSelectVehicle, onSelectPaint, onSelectNeon, onCloseGarage) {
@@ -26,10 +56,16 @@ export class GameUI {
     this.results = el('results-overlay') || el('results');
     this.resultsBody = el('results-rewards') || el('results-body');
     this.garage = el('garage-overlay') || el('garage');
-    this.garageBody = el('tab-cars') || el('garage-body');
     this.walletEl = el('wallet');
     this.driftHud = el('drift-hud');
     this.driftScoreEl = el('drift-score');
+
+    this.previewState = {
+      carId: 'vantra-rs',
+      paint: null,
+      neon: null,
+      horn: 0
+    };
 
     const resultsCloseBtn = el('results-dismiss') || el('results-close');
     if (resultsCloseBtn) {
@@ -43,7 +79,73 @@ export class GameUI {
     if (garageCloseBtn) {
       garageCloseBtn.addEventListener('click', () => {
         if (this.garage) this.garage.classList.add('hidden');
+        window.garageOpen = false;
+        if (window.onCloseGarageShowroom) window.onCloseGarageShowroom();
         if (this.onCloseGarage) this.onCloseGarage();
+      });
+    }
+
+    this.initGarageTabs();
+    this.initGarageActionBtn();
+  }
+
+  initGarageTabs() {
+    const tabs = document.querySelectorAll('.g-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const target = tab.dataset.tab;
+        const panes = document.querySelectorAll('.g-tab-pane');
+        panes.forEach(pane => {
+          if (pane.id === `tab-${target}`) {
+            pane.classList.add('active');
+          } else {
+            pane.classList.remove('active');
+          }
+        });
+        this.renderGarage();
+      });
+    });
+  }
+
+  initGarageActionBtn() {
+    const actBtn = el('btn-garage-action');
+    if (actBtn) {
+      actBtn.addEventListener('click', () => {
+        const carId = this.previewState.carId;
+        const p = this.progression;
+        const isOwned = p.data.unlockedVehicles.includes(carId);
+
+        if (isOwned) {
+          // Select and drive
+          p.selectVehicle(carId);
+          p.selectPaint(this.previewState.paint);
+          p.selectNeon(this.previewState.neon);
+          p.selectHorn(this.previewState.horn);
+          if (this.onSelectVehicle) this.onSelectVehicle(carId);
+          if (this.onSelectPaint) this.onSelectPaint(this.previewState.paint);
+          if (this.onSelectNeon) this.onSelectNeon(this.previewState.neon);
+
+          // Close garage
+          if (this.garage) this.garage.classList.add('hidden');
+          window.garageOpen = false;
+          if (window.onCloseGarageShowroom) window.onCloseGarageShowroom();
+          if (this.onCloseGarage) this.onCloseGarage();
+        } else {
+          // Buy
+          if (p.buyVehicle(carId)) {
+            // Equip cosmetics previewed
+            p.selectPaint(this.previewState.paint);
+            p.selectNeon(this.previewState.neon);
+            p.selectHorn(this.previewState.horn);
+            if (this.onSelectVehicle) this.onSelectVehicle(carId);
+            
+            this.renderGarage();
+            this.updateWallet();
+          }
+        }
       });
     }
   }
@@ -131,86 +233,238 @@ export class GameUI {
   }
 
   openGarage() {
+    const equipped = this.progression.getSelectedVehicle();
+    this.previewState = {
+      carId: equipped.id,
+      paint: this.progression.data.selectedPaint !== null ? this.progression.data.selectedPaint : equipped.defaultColor,
+      neon: this.progression.data.selectedNeon,
+      horn: this.progression.data.selectedHorn || 0
+    };
+
+    window.garageOpen = true;
+    if (window.onOpenGarageShowroom) window.onOpenGarageShowroom(this.previewState);
+
     this.renderGarage();
     if (this.garage) this.garage.classList.remove('hidden');
   }
 
+  updateGarageShowroomUI(hoverUpgradeKey = null) {
+    const p = this.progression;
+    const carId = this.previewState.carId;
+    const car = VEHICLE_CATALOGUE[carId];
+    if (!car) return;
+
+    // Showroom text
+    const nameEl = el('showroom-car-name');
+    const catEl = el('showroom-car-category');
+    const priceEl = el('showroom-car-price');
+
+    if (nameEl) nameEl.textContent = car.name;
+    if (catEl) catEl.textContent = car.category;
+    if (priceEl) {
+      const isOwned = p.data.unlockedVehicles.includes(carId);
+      const reqLvl = p.vehicleRequiredLevel(carId);
+      priceEl.textContent = isOwned ? 'OWNED' : `₹${car.price.toLocaleString('en-IN')} (REQ. LEVEL ${reqLvl})`;
+    }
+
+    // Active car specs & upgrades
+    const equippedCar = p.getSelectedVehicle();
+    const equippedUpgrades = p.data.upgrades;
+    const equippedStats = getCarUIStats(equippedCar, equippedUpgrades);
+
+    // Current preview stats
+    const previewUpgrades = carId === equippedCar.id ? p.data.upgrades : { engine: 0, tires: 0, brakes: 0, nitro: 0 };
+    const baseStats = getCarUIStats(car, previewUpgrades);
+
+    // If hovering an upgrade, simulate it
+    let hoverStats = null;
+    if (hoverUpgradeKey && carId === equippedCar.id) {
+      const simulatedUpgrades = { ...previewUpgrades };
+      simulatedUpgrades[hoverUpgradeKey] = Math.min(5, (simulatedUpgrades[hoverUpgradeKey] || 0) + 1);
+      hoverStats = getCarUIStats(car, simulatedUpgrades);
+    }
+
+    const statsKeys = ['topSpeed', 'acceleration', 'handling', 'braking', 'nitro'];
+    statsKeys.forEach(key => {
+      const valEl = el(`stat-val-${key}`);
+      const fillEl = el(`stat-fill-${key}`);
+      const deltaEl = el(`stat-delta-${key}`);
+
+      let currentVal = baseStats[key];
+      let displayValText = String(currentVal);
+
+      // Upgrade Hover Preview Mode
+      if (hoverStats) {
+        const nextVal = hoverStats[key];
+        const diff = nextVal - currentVal;
+        if (diff > 0) {
+          displayValText = `${currentVal} → ${nextVal}`;
+          if (deltaEl) {
+            deltaEl.textContent = `+${diff} ▲`;
+            deltaEl.className = 'stat-delta up';
+          }
+        } else {
+          if (deltaEl) {
+            deltaEl.textContent = '';
+            deltaEl.className = 'stat-delta';
+          }
+        }
+        if (fillEl) fillEl.style.width = `${nextVal}%`;
+      } else {
+        // Normal Compare Mode
+        if (fillEl) fillEl.style.width = `${currentVal}%`;
+        if (carId !== equippedCar.id) {
+          const equippedVal = equippedStats[key];
+          const diff = currentVal - equippedVal;
+          if (diff > 0) {
+            if (deltaEl) {
+              deltaEl.textContent = `+${diff} ▲`;
+              deltaEl.className = 'stat-delta up';
+            }
+          } else if (diff < 0) {
+            if (deltaEl) {
+              deltaEl.textContent = `${diff} ▼`;
+              deltaEl.className = 'stat-delta down';
+            }
+          } else {
+            if (deltaEl) {
+              deltaEl.textContent = '';
+              deltaEl.className = 'stat-delta';
+            }
+          }
+        } else {
+          if (deltaEl) {
+            deltaEl.textContent = '';
+            deltaEl.className = 'stat-delta';
+          }
+        }
+      }
+
+      if (valEl) valEl.textContent = displayValText;
+    });
+
+    // Update Action Button
+    const actBtn = el('btn-garage-action');
+    if (actBtn) {
+      const isOwned = p.data.unlockedVehicles.includes(carId);
+      const isEquipped = carId === equippedCar.id;
+
+      if (isEquipped) {
+        actBtn.textContent = 'CURRENTLY EQUIPPED';
+        actBtn.disabled = true;
+      } else if (isOwned) {
+        actBtn.textContent = 'DRIVE';
+        actBtn.disabled = false;
+      } else {
+        const reqLvl = p.vehicleRequiredLevel(carId);
+        const levelMet = p.level >= reqLvl;
+        const cashMet = p.data.cash >= car.price;
+
+        if (!levelMet) {
+          actBtn.textContent = `LEVEL ${reqLvl} REQUIRED`;
+          actBtn.disabled = true;
+        } else if (!cashMet) {
+          actBtn.textContent = 'INSUFFICIENT ₹ CREDITS';
+          actBtn.disabled = true;
+        } else {
+          actBtn.textContent = `BUY ₹${car.price.toLocaleString('en-IN')}`;
+          actBtn.disabled = false;
+        }
+      }
+    }
+  }
+
   renderGarage() {
     const p = this.progression;
-    const currentCar = p.getSelectedVehicle();
-    const unlocked = p.data.unlockedVehicles || ['vantra-rs'];
-    const unlockedAchs = p.data.unlockedAchievements || [];
-
-    // Update garage dashboard header values (Step 6 / Step 10)
     const level = p.level;
+
+    // Header Profile Summary
     const currentLevelCumulativeXP = 250 * level * (level - 1);
     const nextLevelCumulativeXP = 250 * (level + 1) * level;
     const xpNeededForNextLevel = nextLevelCumulativeXP - currentLevelCumulativeXP;
     const xpEarnedInCurrentLevel = p.data.xp - currentLevelCumulativeXP;
     const xpPercent = Math.min(100, Math.max(0, (xpEarnedInCurrentLevel / xpNeededForNextLevel) * 100));
 
-    const lvlEl = document.getElementById('garage-player-level');
-    const xpBarEl = document.getElementById('garage-xp-progress-bar');
-    const xpValEl = document.getElementById('garage-xp-val');
-    const walletValEl = document.getElementById('garage-wallet-val');
+    const lvlEl = el('garage-player-level');
+    const xpBarEl = el('garage-xp-progress-bar');
+    const xpValEl = el('garage-xp-val');
+    const walletValEl = el('garage-wallet-val');
 
     if (lvlEl) lvlEl.textContent = `LEVEL ${level}`;
     if (xpBarEl) xpBarEl.style.width = `${xpPercent}%`;
     if (xpValEl) xpValEl.textContent = `${xpEarnedInCurrentLevel} / ${xpNeededForNextLevel} XP`;
     if (walletValEl) walletValEl.textContent = `₹${p.data.cash.toLocaleString('en-IN')}`;
 
-    // 1. Vehicle Selection Grid
-    const vehicleCards = Object.values(VEHICLE_CATALOGUE).map((car) => {
-      const isOwned = unlocked.includes(car.id);
-      const isSelected = car.id === currentCar.id;
-      const canBuy = p.data.cash >= car.price;
+    this.renderRoster();
+    this.renderUpgrades();
+    this.renderAesthetics();
+    this.updateGarageShowroomUI();
+  }
 
-      let btn = '';
-      if (isSelected) {
-        btn = `<button class="car-act-btn active" disabled>SELECTED</button>`;
+  renderRoster() {
+    const grid = el('vehicle-grid');
+    if (!grid) return;
+
+    const p = this.progression;
+    const unlocked = p.data.unlockedVehicles || ['vantra-rs'];
+    const equipped = p.getSelectedVehicle();
+
+    grid.innerHTML = Object.values(VEHICLE_CATALOGUE).map((car) => {
+      const isOwned = unlocked.includes(car.id);
+      const isEquipped = car.id === equipped.id;
+      const isPreviewed = car.id === this.previewState.carId;
+
+      let status = '';
+      if (isEquipped) {
+        status = '<span class="car-card-status equipped">EQUIPPED</span>';
       } else if (isOwned) {
-        btn = `<button class="car-act-btn select" data-select="${car.id}">DRIVE</button>`;
+        status = '<span class="car-card-status owned">OWNED</span>';
       } else {
-        btn = `<button class="car-act-btn buy" data-buy="${car.id}" ${canBuy ? '' : 'disabled'}>BUY ₹${car.price.toLocaleString('en-IN')}</button>`;
+        status = '<span class="car-card-status locked">LOCKED</span>';
       }
 
       return `
-        <div class="garage-car-card ${isSelected ? 'selected' : ''}">
-          <div class="car-cat">${car.category}</div>
-          <div class="car-name">${car.name}</div>
-          <div class="car-desc">${car.description}</div>
-          <div class="car-specs">
-            <div><span>TOP SPEED</span><strong>${Math.round(car.topSpeed * 3.6)} km/h</strong></div>
-            <div><span>ACCEL</span><strong>${car.acceleration} m/s²</strong></div>
-            <div><span>GRIP</span><strong>${Math.round(car.grip * 100)}%</strong></div>
+        <div class="garage-car-card ${isPreviewed ? 'selected' : ''}" data-car-id="${car.id}">
+          <div class="car-card-left">
+            <span class="car-card-name">${car.name}</span>
+            <span class="car-card-cat">${car.category}</span>
           </div>
-          ${btn}
+          ${status}
         </div>
       `;
     }).join('');
 
-    // 2. Custom Paint Palette
-    const paintSwatches = AVAILABLE_PAINTS.map((paint) => {
-      const isCur = (p.data.selectedPaint === paint.hex) || (!p.data.selectedPaint && paint.hex === currentCar.defaultColor);
-      return `
-        <button class="paint-swatch ${isCur ? 'active' : ''}" data-color="${paint.hex}" style="background-color: #${paint.hex.toString(16).padStart(6, '0')}" title="${paint.name}"></button>
-      `;
-    }).join('');
+    grid.querySelectorAll('.garage-car-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const carId = card.dataset.carId;
+        this.previewState.carId = carId;
 
-    // 2b. Underglow Ground Neons Palette
-    const currentNeon = p.data.selectedNeon;
-    const neonSwatches = AVAILABLE_NEONS.map((neon) => {
-      const isCur = (currentNeon === neon.hex) || (currentNeon === null && neon.hex === null);
-      const bg = neon.hex !== null ? `#${neon.hex.toString(16).padStart(6, '0')}` : '#1e293b';
-      return `
-        <button class="paint-swatch neon-swatch ${isCur ? 'active' : ''}" data-neon="${neon.hex !== null ? neon.hex : 'none'}" style="background-color: ${bg}; box-shadow: ${neon.hex !== null ? `0 0 10px ${bg}` : 'none'};" title="${neon.name}">
-          ${neon.hex === null ? '✕' : ''}
-        </button>
-      `;
-    }).join('');
+        // Reset aesthetic previews to the vehicle's default if switching cars
+        const carDef = VEHICLE_CATALOGUE[carId];
+        this.previewState.paint = carDef.defaultColor;
+        this.previewState.neon = null;
 
-    // 3. Performance Upgrades List
-    const rows = Object.entries(UPGRADES).map(([key, def]) => {
+        if (window.onUpdateGarageShowroom) window.onUpdateGarageShowroom(this.previewState);
+        this.renderGarage();
+      });
+    });
+  }
+
+  renderUpgrades() {
+    const list = el('upgrade-list');
+    if (!list) return;
+
+    const p = this.progression;
+    const carId = this.previewState.carId;
+    const equipped = p.getSelectedVehicle();
+    const isEquipped = carId === equipped.id;
+
+    if (!isEquipped) {
+      list.innerHTML = `<div style="text-align: center; color: #8fa3c7; padding: 30px 10px; font-weight: bold;">SELECT AND DRIVE THIS VEHICLE TO ACCESS TUNING UPGRADES</div>`;
+      return;
+    }
+
+    list.innerHTML = Object.entries(UPGRADES).map(([key, def]) => {
       const lvl = p.data.upgrades[key] || 0;
       const cost = p.upgradeCost(key);
       const isMax = lvl >= def.max;
@@ -224,7 +478,7 @@ export class GameUI {
       return `
         <div class="up-row">
           <div class="up-info">
-            <span class="up-label">${def.label}</span>
+            <span class="up-label">${def.label} (LV. ${lvl})</span>
             <div class="up-pips">${pips}</div>
           </div>
           ${btn}
@@ -232,89 +486,99 @@ export class GameUI {
       `;
     }).join('');
 
-    // 4. Achievements & Milestones List
-    const achCards = ACHIEVEMENTS.map((ach) => {
-      const isUnlocked = unlockedAchs.includes(ach.id);
-      return `
-        <div class="garage-ach-card ${isUnlocked ? 'unlocked' : 'locked'}">
-          <div class="ach-icon">${ach.icon}</div>
-          <div class="ach-info">
-            <div class="ach-card-title">${ach.title} ${isUnlocked ? '✓' : ''}</div>
-            <div class="ach-card-desc">${ach.desc}</div>
-            <div class="ach-card-reward">+₹${ach.rewardCash.toLocaleString('en-IN')} · +${ach.rewardRep} REP</div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    // Hover previews
+    list.querySelectorAll('.up-btn[data-key]').forEach(b => {
+      const key = b.dataset.key;
+      b.addEventListener('mouseenter', () => this.updateGarageShowroomUI(key));
+      b.addEventListener('mouseleave', () => this.updateGarageShowroomUI());
 
-    const targetEl = el('garage-body') || this.garageBody;
-    if (targetEl) {
-      targetEl.innerHTML = `
-        <div class="garage-section-title">VEHICLE LINEUP</div>
-        <div class="garage-car-grid">${vehicleCards}</div>
-
-        <div class="garage-section-title">CUSTOM BODY PAINT</div>
-        <div class="garage-paint-palette">${paintSwatches}</div>
-
-        <div class="garage-section-title">UNDERGLOW GROUND NEONS</div>
-        <div class="garage-paint-palette">${neonSwatches}</div>
-
-        <div class="garage-section-title">PERFORMANCE TUNING — ${currentCar.name}</div>
-        <div class="garage-upgrade-list">${rows}</div>
-
-        <div class="garage-section-title">ACHIEVEMENTS & MILESTONES (${unlockedAchs.length} / ${ACHIEVEMENTS.length})</div>
-        <div class="garage-ach-grid">${achCards}</div>
-      `;
-
-      // Event listeners
-      targetEl.querySelectorAll('.up-btn[data-key]').forEach((b) => {
-        b.addEventListener('click', () => {
-          if (this.onBuyUpgrade(b.dataset.key)) {
-            this.renderGarage();
-            this.updateWallet();
-          }
-        });
-      });
-
-      targetEl.querySelectorAll('.car-act-btn[data-select]').forEach((b) => {
-        b.addEventListener('click', () => {
-          if (this.onSelectVehicle(b.dataset.select)) {
-            this.renderGarage();
-            this.updateWallet();
-          }
-        });
-      });
-
-      targetEl.querySelectorAll('.car-act-btn[data-buy]').forEach((b) => {
-        b.addEventListener('click', () => {
-          if (p.buyVehicle(b.dataset.buy)) {
-            if (this.onSelectVehicle) this.onSelectVehicle(b.dataset.buy);
-            this.renderGarage();
-            this.updateWallet();
-          }
-        });
-      });
-
-      targetEl.querySelectorAll('.paint-swatch[data-color]').forEach((sw) => {
-        sw.addEventListener('click', () => {
-          const hex = parseInt(sw.dataset.color, 10);
-          p.selectPaint(hex);
-          if (this.onSelectPaint) this.onSelectPaint(hex);
+      b.addEventListener('click', () => {
+        if (this.onBuyUpgrade(key)) {
           this.renderGarage();
-        });
+          this.updateWallet();
+        }
       });
+    });
+  }
 
-      targetEl.querySelectorAll('.paint-swatch[data-neon]').forEach((sw) => {
-        sw.addEventListener('click', () => {
-          const raw = sw.dataset.neon;
-          const hex = raw === 'none' ? null : parseInt(raw, 10);
-          p.selectNeon(hex);
-          if (this.onSelectNeon) this.onSelectNeon(hex);
+  renderAesthetics() {
+    const paintGrid = el('paint-grid');
+    const neonGrid = el('neon-grid');
+    const hornGrid = el('horn-grid');
+
+    // Paints
+    if (paintGrid) {
+      paintGrid.innerHTML = AVAILABLE_PAINTS.map((paint) => {
+        const isCur = this.previewState.paint === paint.hex;
+        return `
+          <button class="paint-swatch ${isCur ? 'active' : ''}" data-color="${paint.hex}" style="background-color: #${paint.hex.toString(16).padStart(6, '0')}" title="${paint.name}"></button>
+        `;
+      }).join('');
+
+      paintGrid.querySelectorAll('.paint-swatch').forEach(b => {
+        b.addEventListener('click', () => {
+          const hex = parseInt(b.dataset.color, 10);
+          this.previewState.paint = hex;
+          if (window.onUpdateGarageShowroom) window.onUpdateGarageShowroom(this.previewState);
           this.renderGarage();
         });
       });
     }
 
-    this.updateWallet();
+    // Neons
+    if (neonGrid) {
+      neonGrid.innerHTML = AVAILABLE_NEONS.map((neon) => {
+        const isCur = (this.previewState.neon === neon.hex) || (this.previewState.neon === null && neon.hex === null);
+        const bg = neon.hex !== null ? `#${neon.hex.toString(16).padStart(6, '0')}` : '#111827';
+        return `
+          <button class="paint-swatch neon-swatch ${isCur ? 'active' : ''}" data-neon="${neon.hex !== null ? neon.hex : 'none'}" style="background-color: ${bg}; box-shadow: ${neon.hex !== null ? `0 0 10px ${bg}` : 'none'};" title="${neon.name}">
+            ${neon.hex === null ? '✕' : ''}
+          </button>
+        `;
+      }).join('');
+
+      neonGrid.querySelectorAll('.neon-swatch').forEach(b => {
+        b.addEventListener('click', () => {
+          const raw = b.dataset.neon;
+          const hex = raw === 'none' ? null : parseInt(raw, 10);
+          this.previewState.neon = hex;
+          if (window.onUpdateGarageShowroom) window.onUpdateGarageShowroom(this.previewState);
+          this.renderGarage();
+        });
+      });
+    }
+
+    // Horns
+    if (hornGrid) {
+      hornGrid.innerHTML = AVAILABLE_HORNS.map((horn) => {
+        const isCur = this.previewState.horn === horn.id;
+        return `
+          <div class="horn-row ${isCur ? 'active' : ''}" data-horn-id="${horn.id}">
+            <div class="horn-info">
+              <span class="horn-name">${horn.name}</span>
+              <span class="horn-desc">${horn.desc}</span>
+            </div>
+            <button class="horn-test-btn" data-test-id="${horn.id}">PREVIEW 📢</button>
+          </div>
+        `;
+      }).join('');
+
+      hornGrid.querySelectorAll('.horn-row').forEach(row => {
+        row.addEventListener('click', (e) => {
+          if (e.target.classList.contains('horn-test-btn')) return;
+          const hornId = parseInt(row.dataset.hornId, 10);
+          this.previewState.horn = hornId;
+          this.renderGarage();
+        });
+      });
+
+      hornGrid.querySelectorAll('.horn-test-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const hornId = parseInt(btn.dataset.testId, 10);
+          audioEngine.playHorn(hornId);
+        });
+      });
+    }
   }
 }

@@ -33,3 +33,21 @@
 - [x] Monsoon Rain friction, speed limits, and cautious lane checks
 - [x] Optimised Night-Only PointLights to preserve WebGL shader budgets
 - [x] Verified full player gameplay freedom (ignoring signals for combos)
+
+## Phase 5: Challenges & Light Progression
+- [x] Reusable, data-driven challenges engine templates
+- [x] Complete daily challenges picker with calendar-based reset
+- [x] XP and level progression using slower quadratic scaling formula
+- [x] Cash rewards mapped to player runs and completed tasks
+- [x] Challenge HUD widget and animated completion toasts
+- [x] Integrated XP bar and Level indicators in tuning garage
+
+## Phase 6: Garage 2.0 & Car Progression
+- [x] Scenic 3D showroom platform rotating layout with spotlighting
+- [x] Split-pane HTML overlay with statistics HUD and category selectors
+- [x] Before/after hover upgrade stat previews
+- [x] Level requirements to unlock advanced vehicles
+- [x] Upgrades categorized into Engine, Tires, Brakes, and Nitro
+- [x] Persistence of equipped car, custom paint, neons, and horn sounds
+- [x] Custom horn profile tests via audio deck singleton
+- [x] Standalone E2E Playwright test suite `garage.smoke.js`
