@@ -8,7 +8,7 @@ const http = require('http');
 
 const ROOT = path.join(__dirname, '..');
 const PORT = process.env.PORT || 3000;
-const SUITES = ['title-screen.test.js', 'traffic-run.smoke.js', 'radio.smoke.js', 'challenges.smoke.js', 'garage.smoke.js', 'phase1-world.smoke.js', 'drive.smoke.js', 'traffic.smoke.js', 'intersections.smoke.js', 'loop.smoke.js'];
+const SUITES = ['title-screen.test.js', 'police.smoke.js', 'traffic-run.smoke.js', 'radio.smoke.js', 'challenges.smoke.js', 'garage.smoke.js', 'phase1-world.smoke.js', 'drive.smoke.js', 'traffic.smoke.js', 'intersections.smoke.js', 'loop.smoke.js'];
 
 function waitForServer(timeoutMs = 10000) {
   const start = Date.now();

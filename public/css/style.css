@@ -279,6 +279,16 @@ html, body {
   to { opacity: 1.0; transform: scale(1.04); }
 }
 
+#police-hud.police-searching {
+  background: rgba(234, 179, 8, 0.88);
+  border-color: #facc15;
+  box-shadow: 0 0 25px rgba(250, 204, 21, 0.4);
+}
+
+#police-hud.police-searching .police-heat-stars {
+  color: #fff4b8;
+}
+
 /* ---------- Top Status Bar ---------- */
 #topbar {
   position: absolute;
@@ -756,16 +766,8 @@ html, body {
 /* Dynamic aspect-locked container that covers the viewport with no black bars */
 .title-screen-container {
   position: absolute;
-  /* Give the image a real initial box before JS resize runs.
-     Without explicit dimensions the absolute element collapses to 0×0,
-     leaving only the fallback dark overlay visible. */
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
   background: url('../assets/images/title-mockup.jpg') no-repeat center center;
   background-size: 100% 100%;
-  background-color: #03050a;
-  z-index: 1;
 }
 
 /* Quick Action Buttons (Top Right) Hitboxes */

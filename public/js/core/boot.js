@@ -29,7 +29,7 @@ import { TrafficRunSystem } from '../racing/trafficRun.js';
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js?v=20260825-7').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
 
@@ -524,6 +524,9 @@ function checkNearMisses(state, trafficPositions) {
       progression.awardDrift(bonusCash);
       achievements.recordNearMiss();
       challenges.recordNearMiss(isTruck, clearance);
+      if (police.reportNearMiss()) {
+        audioEngine.setSiren(true);
+      }
       challenges.recordCombo(currentCombo);
       ui.updateWallet();
 
@@ -724,6 +727,7 @@ window.__DEBUG_TRAFFIC_POSITIONS = () => traffic.getPositions();
 window.__DEBUG_INTERSECTIONS = () => traffic.getIntersectionState();
 window.__DEBUG_RACE = () => race.getDebugState();
 window.__DEBUG_POLICE = () => police.getDebugState();
+window.__DEBUG_POLICE_ADD_HEAT = (amount = 1) => police.addHeat(amount);
 window.__DEBUG_PROGRESSION = () => ({ ...progression.data, level: progression.level });
 window.__DEBUG_ACHIEVEMENTS = () => achievements.getUnlockedList();
 window.__DEBUG_PEDESTRIANS = () => pedestrians.getDebugState();
@@ -897,7 +901,10 @@ function animate(now) {
     weather.update(dt, carState.x, carState.z);
     timeCycle.update(dt);
     speedTraps.update(dt, carState.x, carState.z, kmh);
-    police.update(dt, carState.x, carState.z, kmh);
+    if (police.observeDriving(kmh, dt)) {
+      audioEngine.setSiren(true);
+    }
+    police.update(dt, carState.x, carState.z, kmh, carState.heading);
     multiplayer.update(dt, carState, activeCarDef, progression.data.selectedPaint);
     checkNearMisses(carState, traffic.getPositions());
     trafficRun.update(dt, carState.x, carState.z, kmh);
@@ -906,18 +913,23 @@ function animate(now) {
     // Update Police Pursuit HUD
     if (police.heat > 0 && policeHud) {
       policeHud.classList.remove('hidden');
+      policeHud.classList.toggle('police-searching', police.state === 'SEARCH');
       if (policeStars) {
         policeStars.textContent = '★'.repeat(police.heat) + '☆'.repeat(3 - police.heat);
       }
       if (policeStatus) {
         if (police.bustProgress > 0.5) {
-          policeStatus.textContent = `BUST IN PROGRESS: ${Math.round((police.bustProgress / 3.0) * 100)}%`;
+          policeStatus.textContent = `BUST IN PROGRESS: ${Math.round((police.bustProgress / 2.8) * 100)}%`;
+        } else if (police.state === 'SEARCH') {
+          policeStatus.textContent = `SEARCHING — LAST SEEN`;
         } else if (police.escapeCooldown > 0.5) {
           policeStatus.textContent = `ESCAPING... ${Math.round((police.escapeCooldown / 5.0) * 100)}%`;
         } else {
           policeStatus.textContent = `PURSUIT — HEAT ${police.heat}`;
         }
       }
+    } else if (policeHud) {
+      policeHud.classList.remove('police-searching');
     }
 
     // Audio cue during countdown

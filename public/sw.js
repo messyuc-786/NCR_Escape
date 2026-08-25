@@ -1,5 +1,5 @@
 // Service Worker for NCR ESCAPE (spec §18, PWA).
-const CACHE_NAME = 'ncr-escape-v7';
+const CACHE_NAME = 'ncr-escape-v1';
 const STATIC_ASSETS = [
   './',
   './index.html',
