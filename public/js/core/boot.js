@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three.module.js';
 import { buildDistrict, LIGHTING_MODES } from '../world/district.js';
+import { loadAssetWorld } from '../world/assetWorld.js';
 import { WeatherSystem, WEATHER_TYPES } from '../world/weather.js';
 import { TimeCycleSystem } from '../world/timeCycle.js';
 import { SpeedTrapSystem } from '../world/speedTraps.js';
@@ -68,6 +69,13 @@ const camera = createChaseCamera(window.innerWidth / window.innerHeight);
 const { colliders, setDayNight, getCurrentMode, setWeatherMode } = buildDistrict(scene);
 window.setDistrictWeatherMode = setWeatherMode;
 window.getCurrentDistrictLightingMode = getCurrentMode;
+
+// Purely visual, best-effort: layers the Blender-authored world art (anchored to the
+// same road-network coordinates as the procedural geometry above) on top of the scene.
+// Collision/physics/traffic/racing all continue to use `colliders` from buildDistrict()
+// above, unchanged — this never touches gameplay, and a failed/slow load never blocks
+// boot (fire-and-forget, with a console warning on failure).
+loadAssetWorld(scene).catch(() => {});
 const weather = new WeatherSystem(scene);
 window.weather = weather;
 const timeCycle = new TimeCycleSystem(scene, setDayNight);
@@ -739,6 +747,18 @@ window.__DEBUG_TELEPORT = (x, z, heading = 0) => {
   carState.heading = heading;
   carState.driftYaw = 0;
 };
+// Advances the police simulation by a fixed amount of sim-time without depending on
+// real-world frame rate — on a slow/software-rendered or headless host, rAF can run
+// far below the 0.05s/frame dt clamp assumes, making time-based tests (e.g. the
+// 8s SEARCH_DURATION escape window) flaky if driven by wall-clock waits alone.
+window.__DEBUG_POLICE_FAST_FORWARD = (totalSeconds, stepDt = 0.05) => {
+  let remaining = totalSeconds;
+  while (remaining > 0.0001) {
+    const step = Math.min(stepDt, remaining);
+    police.update(step, carState.x, carState.z, Math.abs(carState.speed) * 3.6, carState.heading);
+    remaining -= step;
+  }
+};
 
 function resetCar() {
   carState = createCarState(spawnPoint);
@@ -802,9 +822,17 @@ window.addEventListener('resize', onResize);
 
 let lastCountdownNum = null;
 
+// Debug-only time dilation for Playwright tests: multiplies the per-frame dt so
+// simulated time can outrun real wall-clock time on a slow/software-rendered or
+// headless host, where requestAnimationFrame can run well below the 0.05s/frame dt
+// clamp assumes (observed: traffic movement, signal-phase cycling, and race-loop
+// timers all depend on enough simulated seconds elapsing, which a fixed real-time
+// wait can't guarantee on a slow host). Defaults to 1 (no effect on real gameplay).
+window.__DEBUG_TIME_SCALE = 1;
+
 function animate(now) {
   requestAnimationFrame(animate);
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  const dt = Math.min((now - lastTime) / 1000, 0.05) * window.__DEBUG_TIME_SCALE;
   lastTime = now;
 
   if (photoMode.active) {
