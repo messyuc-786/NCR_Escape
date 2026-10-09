@@ -49,7 +49,13 @@ async function testPoliceSystem() {
 
   const startPos = await page.evaluate(() => window.__DEBUG_POS());
   await page.evaluate(({ x, z }) => window.__DEBUG_TELEPORT(x + 300, z + 300, 0), startPos);
-  await page.waitForTimeout(6200);
+
+  // Drive the police simulation forward by sim-time directly rather than waiting on
+  // real wall-clock frames: SEARCH_DURATION (8s) is measured in simulated seconds, and
+  // dt is clamped to 0.05s/frame, so on a slow/software-rendered or headless host real
+  // frame rate can fall far below what a fixed real-time wait assumes (observed as low
+  // as ~2 sim-seconds per 25 real-seconds here), making a wall-clock wait flaky.
+  await page.evaluate(() => window.__DEBUG_POLICE_FAST_FORWARD(8.5));
   const escaped = await page.evaluate(() => window.__DEBUG_POLICE());
   if (escaped.heat !== 0 || escaped.state !== 'IDLE' || escaped.activeUnits !== 0) {
     throw new Error(`Police did not clear after escape: ${JSON.stringify(escaped)}`);

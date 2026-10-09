@@ -31,6 +31,9 @@ async function main() {
   try {
     await page.goto(BASE_URL, { waitUntil: 'load' });
     await page.click('#start-btn');
+    // Dilate sim-time so this test's real-time waits reliably cover full signal-phase
+    // cycles (GREEN 22s/YELLOW 4s/ALL_RED 1.5s) even on slow/headless hosts.
+    await page.evaluate(() => { window.__DEBUG_TIME_SCALE = 8; });
     await page.waitForTimeout(800);
 
     // --- 1. Opposing axes must never both be green at the same junction ---

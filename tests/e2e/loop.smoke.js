@@ -37,6 +37,10 @@ function findChromium() {
   try {
     await page.goto(BASE_URL, { waitUntil: 'load' });
     await page.click('#start-btn');
+    // Dilate sim-time: on a slow/headless/contended host, real-time waits for the
+    // countdown and race-finish polling below can otherwise exceed their budgets even
+    // though the underlying logic is correct (see __DEBUG_TIME_SCALE in boot.js).
+    await page.evaluate(() => { window.__DEBUG_TIME_SCALE = 8; });
     await page.waitForTimeout(1500);
 
     // --- Traffic alive ---

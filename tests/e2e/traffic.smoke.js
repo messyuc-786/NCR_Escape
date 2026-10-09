@@ -48,6 +48,9 @@ function onRoadNetwork(c) {
   try {
     await page.goto(BASE_URL, { waitUntil: 'load' });
     await page.click('#start-btn');
+    // Dilate sim-time so fixed real-time waits below are reliable on slow/headless hosts
+    // (see __DEBUG_TIME_SCALE in boot.js). No effect on correctness, only on timing margin.
+    await page.evaluate(() => { window.__DEBUG_TIME_SCALE = 8; });
     await page.waitForTimeout(1500);
 
     // --- 1. Per-car movement (not just an aggregate "moving" counter) ---
