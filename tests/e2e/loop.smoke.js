@@ -24,7 +24,11 @@ function findChromium() {
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   const pinned = findChromium();
-  const opts = { args: ['--no-sandbox'] };
+  // --use-gl=swiftshader matches every other suite: without it, WebGL init can be
+  // unreliable on this sandbox's headless Chromium and the page can hang indefinitely
+  // on the first interaction after boot (observed as "waiting for scheduled
+  // navigations to finish" past a click that never actually navigates).
+  const opts = { args: ['--no-sandbox', '--use-gl=swiftshader'] };
   if (pinned) opts.executablePath = pinned;
 
   const browser = await chromium.launch(opts);
