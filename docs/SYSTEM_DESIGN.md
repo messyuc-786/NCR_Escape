@@ -55,6 +55,7 @@ Independent, original open-world driving and street-racing game for desktop and 
 | **Radar Minimap** | `public/js/ui/minimap.js` | Real-time 2D Canvas radar displaying 4-region road network, active district name, traffic blips, AI rivals, and player heading. |
 | **Multi-Touch Controls** | `public/js/core/input.js` | On-screen virtual buttons (steer left/right, gas pedal, brake/reverse pedal, drift handbrake) with multi-touch pointer tracking. |
 | **Progression & Economy** | `public/js/progression/progression.js` | Cash, XP, Reputation, Level, Garage car purchases, 8 custom paints, 5-tier performance upgrades, drift bank, and local save persistence. |
+| **Blender Visual Art Layer** | `public/js/world/assetWorld.js` | Additive glTF overlay (`public/assets/world/ncr-world.glb`), Blender-authored directly from `roads/network.js` coordinates. Purely visual — collision/physics/traffic/race logic untouched; a failed load never blocks boot. |
 
 ---
 

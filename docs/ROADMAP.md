@@ -81,3 +81,10 @@ Status legend: ✅ Done & Automated-Tested · 🚧 In Progress · ⏳ Planned (F
 - Client-side smooth position lerping and slerp angular interpolation (`multiplayer/multiplayerSystem.js`)
 - Dynamic 3D procedural vehicle mesh instantiation with custom paint colorways
 - Radar minimap synchronization with cyan online driver blips
+
+## Phase 10 — Blender-Authored Visual Art Layer & Hardening ✅
+- Additive, non-invasive glTF visual overlay (`public/assets/world/ncr-world.glb`) authored in Blender directly from the live `roads/network.js` coordinate data, so every road ribbon, flyover pillar, Yamuna bridge pylon/cable, and district building is spatially anchored to exactly where the procedural world already expects them
+- `world/assetWorld.js` loads the GLB via a locally vendored `GLTFLoader`/`BufferGeometryUtils` (`public/js/vendor/loaders/`, `public/js/vendor/utils/`) — purely visual, never touches collision/physics/traffic/race logic, and a failed or slow load never blocks game boot
+- Fixed a real timing-flakiness class across the e2e suite: on a slow/software-rendered host, simulated game time can lag real wall-clock time by up to ~40x because `boot.js`'s per-frame `dt` is clamped at 0.05s/frame. Added a global `window.__DEBUG_TIME_SCALE` dt multiplier (default `1`, zero effect on real gameplay) so tests can dilate simulated time instead of relying on fixed real-time waits
+- Resolved `proxy-addr` (critical) and `qs` (moderate) npm audit vulnerabilities via `npm audit fix`
+- New `tests/e2e/asset-world.smoke.js` verifies the GLB loads, produces zero console errors, and gameplay (collision, physics, teleport) remains fully driven by the procedural network — full suite verified at 12/12 passing

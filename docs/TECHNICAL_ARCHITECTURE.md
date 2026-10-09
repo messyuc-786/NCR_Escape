@@ -22,16 +22,22 @@ NCR Escape/
 │   │   └── style.css            # Cyber-racing theme, HUD, and mobile touch styles
 │   ├── js/
 │   │   ├── vendor/              # Vendored Three.js r160 ES module
+│   │   │   ├── loaders/          # Vendored GLTFLoader (three@0.160, zero CDN)
+│   │   │   └── utils/            # Vendored BufferGeometryUtils (GLTFLoader dependency)
 │   │   ├── core/                # Game boot, game loop, camera, multi-touch input
 │   │   ├── vehicles/            # Vehicle definitions, mesh generators, traffic vehicles
 │   │   ├── physics/             # Arcade physics integrator, collisions, drift yaw
-│   │   ├── world/               # Cyber district assembly, metro viaduct, signs, lighting
+│   │   ├── world/               # Cyber district assembly, metro viaduct, signs, lighting,
+│   │   │                        #  assetWorld.js (additive Blender GLB visual overlay)
 │   │   ├── roads/               # Road network single-source-of-truth data
 │   │   ├── traffic/             # AI traffic system, lane sampling, intersection lights
 │   │   ├── racing/              # Event definitions, state machine, checkpoint gates
 │   │   ├── progression/         # Progression, economy, upgrades, save/load
 │   │   ├── audio/               # Web Audio API sound synthesizer
 │   │   └── ui/                  # Speedometer HUD, minimap canvas, garage showroom
+│   ├── assets/
+│   │   └── world/
+│   │       └── ncr-world.glb    # Blender-authored visual overlay, built from roads/network.js
 │   ├── models/ textures/ audio/ maps/
 ├── docs/
 │   ├── ROADMAP.md
@@ -74,3 +80,11 @@ NCR Escape/
 
 ### Real-Time Radar Minimap (`ui/minimap.js`)
 - Circular HUD canvas drawing road segments, traffic vehicles, event markers, checkpoints, and player orientation in real time.
+
+### Blender Visual Art Layer (`world/assetWorld.js`)
+- `loadAssetWorld(scene)` loads `public/assets/world/ncr-world.glb` — a Blender-authored glTF built directly from `roads/network.js`'s own coordinates, so every road ribbon, flyover pillar, Yamuna bridge pylon/cable, and district building is spatially anchored to exactly where the procedural world already expects them.
+- Imported via a locally vendored `GLTFLoader` + `BufferGeometryUtils` (copied from the project's own `three@0.160` dependency, zero CDN reliance, matching the project's offline-reliability policy).
+- Purely additive and visual: loaded meshes are flagged `userData.isAssetWorldVisual = true` and never participate in collision, physics, traffic, or race logic, which continue to run exclusively against the procedural colliders from `world/district.js`. The load is fire-and-forget — a failed or slow fetch degrades gracefully and never blocks game boot.
+
+### Test-Time Simulation Dilation (`core/boot.js`)
+- `window.__DEBUG_TIME_SCALE` (default `1`) multiplies the per-frame `dt` in the main loop. On a slow or software-rendered host, real frame rate can fall far enough below 60fps that simulated game time lags real wall-clock time by a large factor; e2e tests set this to `8` right after boot to dilate simulated time so fixed real-time waits reliably cover the needed simulated duration, with zero effect on normal gameplay.

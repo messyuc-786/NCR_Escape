@@ -56,3 +56,6 @@ REGION 4: SECTOR 143 TECHNOLOGY VALLEY
 
 ## 3. Dynamic Radar Minimap Integration
 The radar minimap (`public/js/ui/minimap.js`) continually monitors player coordinates, updates road geometry in real-time, displays traffic blips and race checkpoints, and identifies the active district dynamically.
+
+## 4. Visual Art Layer
+Every road, flyover pillar, Yamuna bridge pylon/cable, and district building above is additionally rendered through a Blender-authored glTF (`public/assets/world/ncr-world.glb`, loaded by `public/js/world/assetWorld.js`), built directly from this same `roads/network.js` coordinate data — so the visual art is spatially anchored to exactly where the procedural, collidable world already places these roads and districts, with zero drift between what the player sees and what they drive on.

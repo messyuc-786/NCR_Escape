@@ -61,3 +61,10 @@ Concrete acceptance criteria and validation status for each development phase.
 - [x] Mobile virtual on-screen touch controls with multi-touch support.
 - [x] Speedometer, gear indicator, and RPM gauge bar.
 - **Acceptance:** Verified with automated test suites and interactive testing across desktop and simulated mobile viewports.
+
+## Phase 10 — Blender Visual Art Layer & Test Hardening ✅
+- [x] Blender-authored `ncr-world.glb` built directly from `roads/network.js` coordinates (road ribbons, flyover pillars, Yamuna bridge pylons/cables, district buildings), imported via a locally vendored `GLTFLoader`.
+- [x] `world/assetWorld.js` loads the overlay additively on top of the existing procedural geometry — collision, physics, traffic, and race logic are untouched, and a failed/slow load degrades gracefully without blocking boot.
+- [x] Global `window.__DEBUG_TIME_SCALE` dt-dilation hook added to `boot.js` to fix cross-suite timing flakiness on slow/headless renderers, replacing fragile fixed-duration real-time waits in `traffic.smoke.js`, `intersections.smoke.js`, and `loop.smoke.js`.
+- [x] `npm audit fix` applied — 0 known vulnerabilities (previously 1 critical, 1 moderate).
+- **Acceptance:** `asset-world.smoke.js` asserts the GLB loads, zero console errors, and post-load gameplay (teleport, collision, physics) is unchanged. Full 12-suite regression (`node tests/run-all.js`) passes clean.
